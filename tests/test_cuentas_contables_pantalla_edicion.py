@@ -303,3 +303,40 @@ def test_actualizar_cuenta_contable_raiz_desde_pantalla_no_rechaza_formato():
     assert cuenta_actualizada["imputable"] == 0
     assert cuenta_actualizada["monetaria"] == 0
     assert cuenta_actualizada["sumarizadora"] is None
+
+
+def test_formulario_edicion_cuenta_raiz_no_renderiza_none_en_sumarizadora():
+    """
+    Valida render de cuenta raiz sin sumarizadora.
+
+    SQLite devuelve None para sumarizadora, pero el formulario debe renderizar
+    valor vacio. Si renderiza "None", el POST envia un codigo invalido.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+
+        _insertar_cuenta_contable_para_test(
+            db,
+            "1.0.00.00.000",
+            "ACTIVO",
+            saldo_habitual="DEBE",
+            naturaleza="PATRIMONIAL",
+            imputable=0,
+            monetaria=0,
+            sumarizadora=None,
+        )
+
+        response = client.get(
+            "/contabilidad/cuentas-contables/1.0.00.00.000/editar/"
+        )
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'id="cc-sumarizadora"' in html
+    assert 'id="cc-descripcion-sumarizadora"' in html
+    assert 'value="None"' not in html

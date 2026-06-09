@@ -160,7 +160,7 @@
                             name="sumarizadora"
                             type="text"
                             class="form-control"
-                            value="{{ cuenta_contable.get('sumarizadora', '') }}"
+                            value="{{ cuenta_contable.get('sumarizadora') or '' }}"
                             placeholder="Codigo de cuenta padre"
                             autocomplete="off"
                         >
@@ -176,7 +176,7 @@
                             data-field="descripcion_sumarizadora"
                             type="text"
                             class="form-control"
-                            value="{{ cuenta_contable.get('descripcion_sumarizadora', '') }}"
+                            value="{{ cuenta_contable.get('descripcion_sumarizadora') or '' }}"
                             placeholder="Descripcion de la cuenta padre"
                             autocomplete="off"
                             readonly
