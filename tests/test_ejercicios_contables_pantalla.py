@@ -35,8 +35,8 @@ def test_pantalla_ejercicios_contables_responde_ok_sin_datos():
     """
     Valida pantalla minima de solo lectura sin ejercicios cargados.
 
-    En TestConfig se usa SQLite :memory:. El request se ejecuta dentro
-    del mismo app_context para conservar la misma conexion de test.
+    El HTML usa IDs cortos y data-* para trazabilidad tecnica:
+    tabla SQL, consulta y campo.
     """
     app = create_app(TestConfig)
     client = app.test_client()
@@ -48,22 +48,18 @@ def test_pantalla_ejercicios_contables_responde_ok_sin_datos():
     assert response.status_code == 200
     assert b"Ejercicios contables" in response.data
     assert b"No hay ejercicios contables cargados" in response.data
-    assert (
-        b'id="ejercicios_contables__listar_ejercicios_contables__tabla"'
-        in response.data
-    )
-    assert (
-        b'id="ejercicios_contables__listar_ejercicios_contables__mensaje_sin_datos"'
-        in response.data
-    )
+    assert b'id="ec-listado"' in response.data
+    assert b'id="ec-tabla"' in response.data
+    assert b'id="ec-mensaje-sin-datos"' in response.data
+    assert b'data-table="ejercicios_contables"' in response.data
+    assert b'data-query="listar_ejercicios_contables"' in response.data
 
 
-def test_pantalla_ejercicios_contables_muestra_ejercicio_activo_con_ids_sql():
+def test_pantalla_ejercicios_contables_muestra_ejercicio_activo_con_ids_cortos():
     """
-    Valida IDs HTML relacionados a tabla y consulta del listado.
+    Valida fila de ejercicios_contables con ID corto y data-row-codigo.
 
-    El request queda dentro del mismo app_context para conservar la base
-    SQLite :memory: usada por los tests.
+    No se exige ID en cada celda: cada celda usa data-field.
     """
     app = create_app(TestConfig)
     client = app.test_client()
@@ -78,22 +74,18 @@ def test_pantalla_ejercicios_contables_muestra_ejercicio_activo_con_ids_sql():
     assert response.status_code == 200
     assert b"EJ2026" in response.data
     assert b"Ejercicio 2026" in response.data
-    assert (
-        b'id="ejercicios_contables__listar_ejercicios_contables__fila__ej2026"'
-        in response.data
-    )
-    assert (
-        b'id="ejercicios_contables__listar_ejercicios_contables__campo_codigo__ej2026"'
-        in response.data
-    )
-    assert (
-        b'id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__activo"'
-        in response.data
-    )
+    assert b'id="ec-row-ej2026"' in response.data
+    assert b'data-row-codigo="EJ2026"' in response.data
+    assert b'data-field="fecha_desde"' in response.data
+    assert b'id="ec-activo-resumen"' in response.data
 
 
-def test_pantalla_contabilidad_tiene_acceso_identificable_a_ejercicios_contables():
-    """Valida acceso identificable desde contabilidad al listado de ejercicios."""
+def test_pantalla_contabilidad_tiene_acceso_corto_a_ejercicios_contables():
+    """
+    Valida acceso desde contabilidad con ID corto.
+
+    La trazabilidad de tabla/consulta queda en data-table y data-query.
+    """
     app = create_app(TestConfig)
     client = app.test_client()
 
@@ -102,7 +94,5 @@ def test_pantalla_contabilidad_tiene_acceso_identificable_a_ejercicios_contables
     assert response.status_code == 200
     assert b"Ejercicios contables" in response.data
     assert b"/contabilidad/ejercicios-contables/" in response.data
-    assert (
-        b'id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__acceso"'
-        in response.data
-    )
+    assert b'id="ec-acceso"' in response.data
+    assert b'data-table="ejercicios_contables"' in response.data

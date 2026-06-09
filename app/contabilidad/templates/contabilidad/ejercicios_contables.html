@@ -4,41 +4,41 @@
 
 {% block content %}
 <section
-    id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__seccion"
+    id="ec-listado"
+    data-table="ejercicios_contables"
+    data-query="obtener_contexto_listado_ejercicios_contables"
     class="row g-3"
 >
     <div class="col-12">
-        <div
-            id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__encabezado"
-            class="d-flex justify-content-between align-items-start gap-3 mb-3"
-        >
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
-                <h1
-                    id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__titulo"
-                    class="h3 mb-1"
-                >
+                <h1 id="ec-titulo" class="h3 mb-1">
                     Ejercicios contables
                 </h1>
-                <p
-                    id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__descripcion"
-                    class="text-muted mb-0"
-                >
+                <p id="ec-descripcion" class="text-muted mb-0">
                     Listado de solo lectura. No carga asientos ni comprobantes.
                 </p>
             </div>
-            <div id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__acciones">
+            <div id="ec-acciones-listado">
                 {{ secondary_link("Volver a contabilidad", url_for("contabilidad.index")) }}
             </div>
         </div>
     </div>
 
     <div class="col-12">
-        <div id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__resumen">
+        <div
+            id="ec-resumen"
+            data-table="ejercicios_contables"
+            data-query="obtener_contexto_listado_ejercicios_contables"
+        >
             {% call card("Resumen", "Contexto contable") %}
                 <dl class="row mb-0">
                     <dt class="col-sm-3">Cantidad</dt>
                     <dd
-                        id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__cantidad"
+                        id="ec-cantidad"
+                        data-table="ejercicios_contables"
+                        data-query="obtener_contexto_listado_ejercicios_contables"
+                        data-field="cantidad_ejercicios_contables"
                         class="col-sm-9"
                     >
                         {{ cantidad_ejercicios_contables }}
@@ -46,7 +46,10 @@
 
                     <dt class="col-sm-3">Activo</dt>
                     <dd
-                        id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__activo"
+                        id="ec-activo-resumen"
+                        data-table="ejercicios_contables"
+                        data-query="obtener_contexto_listado_ejercicios_contables"
+                        data-field="ejercicio_contable_activo"
                         class="col-sm-9"
                     >
                         {% if ejercicio_contable_activo %}
@@ -62,63 +65,65 @@
     </div>
 
     <div class="col-12">
-        <div id="ejercicios_contables__listar_ejercicios_contables__contenedor">
+        <div
+            id="ec-contenedor-tabla"
+            data-table="ejercicios_contables"
+            data-query="listar_ejercicios_contables"
+        >
             {% call card("Listado", "ejercicios_contables") %}
                 <div class="table-responsive">
                     <table
-                        id="ejercicios_contables__listar_ejercicios_contables__tabla"
+                        id="ec-tabla"
+                        data-table="ejercicios_contables"
+                        data-query="listar_ejercicios_contables"
                         class="table table-sm table-striped align-middle mb-0"
                     >
-                        <thead id="ejercicios_contables__listar_ejercicios_contables__thead">
+                        <thead>
                             <tr>
-                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_codigo">Codigo</th>
-                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_nombre">Nombre</th>
-                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_fecha_desde">Desde</th>
-                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_fecha_hasta">Hasta</th>
-                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_estado">Estado</th>
-                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_fase_cierre">Fase cierre</th>
-                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_activo" class="text-center">Activo</th>
-                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_bloqueado" class="text-center">Bloqueado</th>
+                                <th data-field="codigo">Codigo</th>
+                                <th data-field="nombre">Nombre</th>
+                                <th data-field="fecha_desde">Desde</th>
+                                <th data-field="fecha_hasta">Hasta</th>
+                                <th data-field="estado">Estado</th>
+                                <th data-field="fase_cierre">Fase cierre</th>
+                                <th data-field="activo" class="text-center">Activo</th>
+                                <th data-field="bloqueado" class="text-center">Bloqueado</th>
                             </tr>
                         </thead>
-                        <tbody id="ejercicios_contables__listar_ejercicios_contables__tbody">
+                        <tbody id="ec-tbody">
                             {% for ejercicio_contable in ejercicios_contables %}
-                                <tr id="ejercicios_contables__listar_ejercicios_contables__fila__{{ ejercicio_contable.codigo|lower }}">
-                                    <td
-                                        id="ejercicios_contables__listar_ejercicios_contables__campo_codigo__{{ ejercicio_contable.codigo|lower }}"
-                                        class="fw-semibold"
-                                    >
+                                <tr
+                                    id="ec-row-{{ ejercicio_contable.codigo|lower }}"
+                                    data-table="ejercicios_contables"
+                                    data-query="listar_ejercicios_contables"
+                                    data-row-codigo="{{ ejercicio_contable.codigo }}"
+                                >
+                                    <td data-field="codigo" class="fw-semibold">
                                         {{ ejercicio_contable.codigo }}
                                     </td>
-                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_nombre__{{ ejercicio_contable.codigo|lower }}">
+                                    <td data-field="nombre">
                                         {{ ejercicio_contable.nombre }}
                                     </td>
-                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_fecha_desde__{{ ejercicio_contable.codigo|lower }}">
+                                    <td data-field="fecha_desde">
                                         {{ ejercicio_contable.fecha_desde }}
                                     </td>
-                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_fecha_hasta__{{ ejercicio_contable.codigo|lower }}">
+                                    <td data-field="fecha_hasta">
                                         {{ ejercicio_contable.fecha_hasta }}
                                     </td>
-                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_estado__{{ ejercicio_contable.codigo|lower }}">
+                                    <td data-field="estado">
                                         {{ ejercicio_contable.estado_codigo }}
                                     </td>
-                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_fase_cierre__{{ ejercicio_contable.codigo|lower }}">
+                                    <td data-field="fase_cierre">
                                         {{ ejercicio_contable.fase_cierre_codigo }}
                                     </td>
-                                    <td
-                                        id="ejercicios_contables__listar_ejercicios_contables__campo_activo__{{ ejercicio_contable.codigo|lower }}"
-                                        class="text-center"
-                                    >
+                                    <td data-field="activo" class="text-center">
                                         {% if ejercicio_contable.es_activo %}
                                             Si
                                         {% else %}
                                             No
                                         {% endif %}
                                     </td>
-                                    <td
-                                        id="ejercicios_contables__listar_ejercicios_contables__campo_bloqueado__{{ ejercicio_contable.codigo|lower }}"
-                                        class="text-center"
-                                    >
+                                    <td data-field="bloqueado" class="text-center">
                                         {% if ejercicio_contable.esta_bloqueado %}
                                             Si
                                         {% else %}
@@ -127,9 +132,13 @@
                                     </td>
                                 </tr>
                             {% else %}
-                                <tr id="ejercicios_contables__listar_ejercicios_contables__fila_sin_datos">
+                                <tr
+                                    id="ec-row-sin-datos"
+                                    data-table="ejercicios_contables"
+                                    data-query="listar_ejercicios_contables"
+                                >
                                     <td
-                                        id="ejercicios_contables__listar_ejercicios_contables__mensaje_sin_datos"
+                                        id="ec-mensaje-sin-datos"
                                         colspan="8"
                                         class="text-center text-muted py-4"
                                     >
