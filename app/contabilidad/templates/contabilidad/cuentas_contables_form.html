@@ -159,12 +159,14 @@
                             data-field="sumarizadora"
                             data-lookup="cuentas-contables-descripcion-sumarizadora"
                             data-lookup-url="{{ url_for('contabilidad.buscar_cuenta_contable_para_sumarizadora', cuenta_contable_codigo='__CUENTA_CONTABLE__') }}"
+                            data-derived="cuentas-contables-sumarizadora-desde-cuenta"
                             name="sumarizadora"
                             type="text"
                             class="form-control"
                             value="{{ cuenta_contable.get('sumarizadora') or '' }}"
                             placeholder="Codigo de cuenta padre"
                             autocomplete="off"
+                            readonly
                         >
                     </div>
 
@@ -205,4 +207,5 @@
 </section>
 <script src="{{ url_for('static', filename='js/cuentas_contables_form_validacion_cuenta.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cuentas_contables_form_lookup_sumarizadora.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cuentas_contables_form_sugerencia_sumarizadora.js') }}"></script>
 {% endblock %}
