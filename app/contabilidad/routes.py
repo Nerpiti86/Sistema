@@ -1,7 +1,9 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.contabilidad.cuentas_contables_service import (
+    actualizar_cuenta_contable_desde_formulario,
     crear_cuenta_contable_desde_formulario,
+    obtener_contexto_detalle_cuenta_contable,
     obtener_contexto_listado_cuentas_contables,
 )
 
@@ -93,6 +95,99 @@ def crear_cuenta_contable_nueva():
             cuenta=cuenta_contable["cuenta"],
         )
     )
+
+
+@bp.get("/cuentas-contables/<cuenta_contable_codigo>/editar/")
+def ver_formulario_editar_cuenta_contable(cuenta_contable_codigo):
+    """
+    Muestra formulario de edicion de una cuenta contable.
+
+    Esta route no ejecuta SQL directo. Obtiene contexto desde service y
+    reutiliza el formulario de cuentas_contables en modo edicion.
+    """
+    try:
+        contexto_detalle = obtener_contexto_detalle_cuenta_contable(
+            cuenta_contable_codigo
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("contabilidad.ver_listado_cuentas_contables"))
+
+    cuenta_contable = contexto_detalle["cuenta_contable"]
+
+    return render_template(
+        "contabilidad/cuentas_contables_form.html",
+        page_title=f"Editar cuenta contable {cuenta_contable['cuenta']}",
+        modo_formulario="edicion",
+        cuenta_contable=cuenta_contable,
+        action_url=url_for(
+            "contabilidad.actualizar_cuenta_contable_existente",
+            cuenta_contable_codigo=cuenta_contable["cuenta"],
+        ),
+        form_titulo=f"Editar cuenta contable {cuenta_contable['cuenta']}",
+        form_descripcion="Edicion de campos mutables de cuentas_contables.",
+        form_data_action="editar_cuenta_contable",
+        form_submit_label="Guardar cambios",
+        form_cancelar_url=url_for(
+            "contabilidad.ver_listado_cuentas_contables",
+            cuenta=cuenta_contable["cuenta"],
+        ),
+        cuenta_solo_lectura=True,
+    )
+
+
+@bp.post("/cuentas-contables/<cuenta_contable_codigo>/editar/")
+def actualizar_cuenta_contable_existente(cuenta_contable_codigo):
+    """
+    Actualiza una cuenta contable desde formulario.
+
+    Esta route no ejecuta SQL directo. La normalizacion queda en service y la
+    persistencia queda en repository.
+    """
+    try:
+        cuenta_contable = actualizar_cuenta_contable_desde_formulario(
+            cuenta_contable_codigo,
+            request.form,
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        cuenta_contable_form = {
+            campo: request.form.get(campo, "")
+            for campo in request.form.keys()
+        }
+        cuenta_contable_form["cuenta"] = cuenta_contable_codigo
+
+        return (
+            render_template(
+                "contabilidad/cuentas_contables_form.html",
+                page_title=f"Editar cuenta contable {cuenta_contable_codigo}",
+                modo_formulario="edicion",
+                cuenta_contable=cuenta_contable_form,
+                action_url=url_for(
+                    "contabilidad.actualizar_cuenta_contable_existente",
+                    cuenta_contable_codigo=cuenta_contable_codigo,
+                ),
+                form_titulo=f"Editar cuenta contable {cuenta_contable_codigo}",
+                form_descripcion="Edicion de campos mutables de cuentas_contables.",
+                form_data_action="editar_cuenta_contable",
+                form_submit_label="Guardar cambios",
+                form_cancelar_url=url_for(
+                    "contabilidad.ver_listado_cuentas_contables",
+                    cuenta=cuenta_contable_codigo,
+                ),
+                cuenta_solo_lectura=True,
+            ),
+            400,
+        )
+
+    flash("Cuenta contable actualizada correctamente.", "success")
+    return redirect(
+        url_for(
+            "contabilidad.ver_listado_cuentas_contables",
+            cuenta=cuenta_contable["cuenta"],
+        )
+    )
+
 
 
 @bp.get("/ejercicios-contables/")

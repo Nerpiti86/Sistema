@@ -6,17 +6,17 @@
 <section
     id="cc-form"
     data-table="cuentas_contables"
-    data-action="crear_cuenta_contable"
+    data-action="{{ form_data_action|default('crear_cuenta_contable') }}"
     class="row g-3"
 >
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
                 <h1 id="cc-form-titulo" class="h3 mb-1">
-                    Nueva cuenta contable
+                    {{ form_titulo|default('Nueva cuenta contable') }}
                 </h1>
                 <p id="cc-form-descripcion" class="text-muted mb-0">
-                    Alta del maestro de cuentas contables.
+                    {{ form_descripcion|default('Alta del maestro de cuentas contables.') }}
                 </p>
             </div>
             <div id="cc-form-acciones">
@@ -30,7 +30,7 @@
             <form
                 id="cc-formulario"
                 data-table="cuentas_contables"
-                data-action="crear_cuenta_contable"
+                data-action="{{ form_data_action|default('crear_cuenta_contable') }}"
                 method="post"
                 action="{{ action_url }}"
                 novalidate
@@ -48,6 +48,7 @@
                             value="{{ cuenta_contable.get('cuenta', '') }}"
                             placeholder="1.1.01.01.001"
                             autocomplete="off"
+                            {% if cuenta_solo_lectura|default(false) %}readonly{% endif %}
                             required
                         >
                     </div>
@@ -175,13 +176,13 @@
                         <button
                             id="cc-guardar"
                             data-table="cuentas_contables"
-                            data-action="crear_cuenta_contable"
+                            data-action="{{ form_data_action|default('crear_cuenta_contable') }}"
                             type="submit"
                             class="btn btn-primary"
                         >
-                            Guardar
+                            {{ form_submit_label|default('Guardar') }}
                         </button>
-                        {{ secondary_link("Cancelar", url_for("contabilidad.ver_listado_cuentas_contables")) }}
+                        {{ secondary_link("Cancelar", form_cancelar_url|default(url_for("contabilidad.ver_listado_cuentas_contables"))) }}
                     </div>
                 </div>
             </form>
