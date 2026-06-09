@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+
+{% block content %}
+<section
+    id="ec-detalle"
+    data-table="ejercicios_contables"
+    data-query="obtener_contexto_detalle_ejercicio_contable"
+    data-row-codigo="{{ ejercicio_contable.codigo }}"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="ec-detalle-titulo" class="h3 mb-1">
+                    Ejercicio contable {{ ejercicio_contable.codigo }}
+                </h1>
+                <p id="ec-detalle-descripcion" class="text-muted mb-0">
+                    Detalle de solo lectura. No modifica el ejercicio contable.
+                </p>
+            </div>
+            <div id="ec-detalle-acciones">
+                <a
+                    id="ec-volver-listado"
+                    href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
+                    class="btn btn-secondary"
+                >
+                    Volver al listado
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="ec-detalle-card"
+            data-table="ejercicios_contables"
+            data-query="obtener_contexto_detalle_ejercicio_contable"
+            data-row-codigo="{{ ejercicio_contable.codigo }}"
+        >
+            {% call card("Datos del ejercicio", "ejercicios_contables") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Codigo</dt>
+                    <dd class="col-sm-9" data-field="codigo">
+                        {{ ejercicio_contable.codigo }}
+                    </dd>
+
+                    <dt class="col-sm-3">Nombre</dt>
+                    <dd class="col-sm-9" data-field="nombre">
+                        {{ ejercicio_contable.nombre }}
+                    </dd>
+
+                    <dt class="col-sm-3">Fecha desde</dt>
+                    <dd class="col-sm-9" data-field="fecha_desde">
+                        {{ ejercicio_contable.fecha_desde }}
+                    </dd>
+
+                    <dt class="col-sm-3">Fecha hasta</dt>
+                    <dd class="col-sm-9" data-field="fecha_hasta">
+                        {{ ejercicio_contable.fecha_hasta }}
+                    </dd>
+
+                    <dt class="col-sm-3">Estado</dt>
+                    <dd class="col-sm-9" data-field="estado">
+                        {{ ejercicio_contable.estado_codigo }}
+                    </dd>
+
+                    <dt class="col-sm-3">Fase cierre</dt>
+                    <dd class="col-sm-9" data-field="fase_cierre">
+                        {{ ejercicio_contable.fase_cierre_codigo }}
+                    </dd>
+
+                    <dt class="col-sm-3">Activo</dt>
+                    <dd class="col-sm-9" data-field="activo">
+                        {% if ejercicio_contable.es_activo %}
+                            Si
+                        {% else %}
+                            No
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-3">Bloqueado</dt>
+                    <dd class="col-sm-9" data-field="bloqueado">
+                        {% if ejercicio_contable.esta_bloqueado %}
+                            Si
+                        {% else %}
+                            No
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-3">Bloqueado en</dt>
+                    <dd class="col-sm-9" data-field="bloqueado_en">
+                        {{ ejercicio_contable.bloqueado_en or "Sin bloqueo" }}
+                    </dd>
+
+                    <dt class="col-sm-3">Es primer ejercicio</dt>
+                    <dd class="col-sm-9" data-field="es_primer_ejercicio">
+                        {% if ejercicio_contable.es_primer_ejercicio_bool %}
+                            Si
+                        {% else %}
+                            No
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-3">Observaciones cierre</dt>
+                    <dd class="col-sm-9" data-field="observaciones_cierre">
+                        {{ ejercicio_contable.observaciones_cierre or "Sin observaciones" }}
+                    </dd>
+
+                    <dt class="col-sm-3">Creado en</dt>
+                    <dd class="col-sm-9" data-field="creado_en">
+                        {{ ejercicio_contable.creado_en }}
+                    </dd>
+
+                    <dt class="col-sm-3">Actualizado en</dt>
+                    <dd class="col-sm-9" data-field="actualizado_en">
+                        {{ ejercicio_contable.actualizado_en or "Sin actualizar" }}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

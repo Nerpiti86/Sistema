@@ -2,6 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.contabilidad.ejercicios_contables_service import (
     crear_ejercicio_contable_desde_formulario,
+    obtener_contexto_detalle_ejercicio_contable,
     obtener_contexto_listado_ejercicios_contables,
 )
 
@@ -75,3 +76,25 @@ def crear_ejercicio_contable():
 
     flash("Ejercicio contable creado correctamente.", "success")
     return redirect(url_for("contabilidad.ver_listado_ejercicios_contables"))
+
+@bp.get("/ejercicios-contables/<codigo>/")
+def ver_detalle_ejercicio_contable(codigo):
+    """
+    Muestra detalle de un ejercicio contable.
+
+    Esta route no ejecuta SQL directo. Pide contexto al service y renderiza una
+    pantalla de solo lectura.
+    """
+    try:
+        contexto_detalle = obtener_contexto_detalle_ejercicio_contable(codigo)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("contabilidad.ver_listado_ejercicios_contables"))
+
+    ejercicio_contable = contexto_detalle["ejercicio_contable"]
+
+    return render_template(
+        "contabilidad/ejercicios_contables_detalle.html",
+        page_title=f"Ejercicio contable {ejercicio_contable['codigo']}",
+        **contexto_detalle,
+    )

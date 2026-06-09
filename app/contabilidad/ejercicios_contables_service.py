@@ -83,6 +83,30 @@ def crear_ejercicio_contable_desde_formulario(
     return crear_ejercicio_contable(datos_ejercicio_contable)
 
 
+def obtener_contexto_detalle_ejercicio_contable(
+    ejercicio_contable_codigo: str,
+) -> dict[str, Any]:
+    """
+    Devuelve contexto chico para pantalla de detalle de ejercicios_contables.
+
+    Este service no ejecuta SQL directo. La lectura puntual queda delegada al
+    repository por codigo.
+    """
+    codigo_normalizado = str(ejercicio_contable_codigo or "").strip()
+
+    if not codigo_normalizado:
+        raise ValueError("El codigo de ejercicio contable es obligatorio.")
+
+    ejercicio_contable = obtener_ejercicio_contable_por_codigo(codigo_normalizado)
+
+    if ejercicio_contable is None:
+        raise ValueError("No existe el ejercicio contable informado.")
+
+    return {
+        "ejercicio_contable": ejercicio_contable,
+    }
+
+
 def obtener_contexto_ejercicio_contable_activo() -> dict[str, Any]:
     """
     Devuelve un contexto minimo del ejercicio contable activo.
