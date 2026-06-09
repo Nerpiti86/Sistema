@@ -1,4 +1,5 @@
 import re
+import sqlite3
 from datetime import datetime
 from typing import Any
 
@@ -129,6 +130,81 @@ def obtener_ejercicio_contable_por_fecha(
     return ejercicios_contables_en_fecha[0]
 
 
+
+def crear_ejercicio_contable(
+    datos_ejercicio_contable: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Inserta un registro en ejercicios_contables y devuelve la fila creada.
+
+    Este repository ejecuta SQL directo. No resuelve reglas de formulario,
+    rutas ni pantalla. La tabla mantiene sus propias restricciones, incluido
+    el indice unico de activo.
+    """
+    ejercicio_contable_codigo = _validar_codigo_ejercicio_contable(
+        datos_ejercicio_contable["codigo"]
+    )
+    ejercicio_contable_nombre = _validar_nombre_ejercicio_contable(
+        datos_ejercicio_contable["nombre"]
+    )
+    ejercicio_contable_fecha_desde = _validar_fecha_iso_ejercicio_contable(
+        datos_ejercicio_contable["fecha_desde"]
+    )
+    ejercicio_contable_fecha_hasta = _validar_fecha_iso_ejercicio_contable(
+        datos_ejercicio_contable["fecha_hasta"]
+    )
+
+    if ejercicio_contable_fecha_hasta < ejercicio_contable_fecha_desde:
+        raise ValueError("La fecha hasta no puede ser anterior a la fecha desde.")
+
+    db = get_db()
+
+    try:
+        with db:
+            db.execute(
+                """
+                INSERT INTO ejercicios_contables (
+                    codigo,
+                    nombre,
+                    fecha_desde,
+                    fecha_hasta,
+                    estado,
+                    activo,
+                    fase_cierre,
+                    bloqueado,
+                    bloqueado_en,
+                    observaciones_cierre,
+                    es_primer_ejercicio
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    ejercicio_contable_codigo,
+                    ejercicio_contable_nombre,
+                    ejercicio_contable_fecha_desde,
+                    ejercicio_contable_fecha_hasta,
+                    datos_ejercicio_contable["estado"],
+                    int(datos_ejercicio_contable["activo"]),
+                    datos_ejercicio_contable["fase_cierre"],
+                    int(datos_ejercicio_contable["bloqueado"]),
+                    datos_ejercicio_contable["bloqueado_en"],
+                    datos_ejercicio_contable["observaciones_cierre"],
+                    int(datos_ejercicio_contable["es_primer_ejercicio"]),
+                ),
+            )
+    except sqlite3.IntegrityError as exc:
+        raise ValueError("No se pudo crear el ejercicio contable.") from exc
+
+    ejercicio_contable_creado = obtener_ejercicio_contable_por_codigo(
+        ejercicio_contable_codigo
+    )
+
+    if ejercicio_contable_creado is None:
+        raise ValueError("No se pudo recuperar el ejercicio contable creado.")
+
+    return ejercicio_contable_creado
+
+
 def validar_fecha_dentro_de_ejercicio_contable(
     fecha_operacion_iso: str,
     ejercicio_contable_codigo: str,
@@ -247,6 +323,22 @@ def _validar_codigo_ejercicio_contable(
         raise ValueError("El codigo de ejercicio contable es obligatorio.")
 
     return ejercicio_contable_codigo_validado
+
+
+
+def _validar_nombre_ejercicio_contable(
+    ejercicio_contable_nombre: str,
+) -> str:
+    """Valida y normaliza nombre de ejercicio contable."""
+    if not isinstance(ejercicio_contable_nombre, str):
+        raise ValueError("El nombre de ejercicio contable es obligatorio.")
+
+    ejercicio_contable_nombre_validado = ejercicio_contable_nombre.strip()
+
+    if not ejercicio_contable_nombre_validado:
+        raise ValueError("El nombre de ejercicio contable es obligatorio.")
+
+    return ejercicio_contable_nombre_validado
 
 
 def _validar_fecha_iso_ejercicio_contable(fecha_operacion_iso: str) -> str:
