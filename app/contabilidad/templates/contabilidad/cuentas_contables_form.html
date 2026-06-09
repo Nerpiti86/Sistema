@@ -157,6 +157,8 @@
                             id="cc-sumarizadora"
                             data-table="cuentas_contables"
                             data-field="sumarizadora"
+                            data-lookup="cuentas-contables-descripcion-sumarizadora"
+                            data-lookup-url="{{ url_for('contabilidad.buscar_cuenta_contable_para_sumarizadora', cuenta_contable_codigo='__CUENTA_CONTABLE__') }}"
                             name="sumarizadora"
                             type="text"
                             class="form-control"
@@ -174,6 +176,7 @@
                             id="cc-descripcion-sumarizadora"
                             data-table="cuentas_contables"
                             data-field="descripcion_sumarizadora"
+                            data-lookup-result="cuentas-contables-descripcion-sumarizadora"
                             type="text"
                             class="form-control"
                             value="{{ cuenta_contable.get('descripcion_sumarizadora') or '' }}"
@@ -201,4 +204,5 @@
     </div>
 </section>
 <script src="{{ url_for('static', filename='js/cuentas_contables_form_validacion_cuenta.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cuentas_contables_form_lookup_sumarizadora.js') }}"></script>
 {% endblock %}

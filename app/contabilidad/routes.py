@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
 from app.contabilidad.cuentas_contables_service import (
     actualizar_cuenta_contable_desde_formulario,
@@ -186,6 +186,42 @@ def actualizar_cuenta_contable_existente(cuenta_contable_codigo):
             "contabilidad.ver_listado_cuentas_contables",
             cuenta=cuenta_contable["cuenta"],
         )
+    )
+
+
+
+@bp.get("/cuentas-contables/lookup-sumarizadora/<cuenta_contable_codigo>/")
+def buscar_cuenta_contable_para_sumarizadora(cuenta_contable_codigo):
+    """
+    Devuelve descripcion de cuenta contable para lookup de sumarizadora.
+
+    Esta route no ejecuta SQL directo. Consulta por service y responde JSON
+    para completar el campo visual descripcion_sumarizadora.
+    """
+    try:
+        contexto_detalle = obtener_contexto_detalle_cuenta_contable(
+            cuenta_contable_codigo
+        )
+    except ValueError:
+        return (
+            jsonify(
+                {
+                    "encontrada": False,
+                    "cuenta": cuenta_contable_codigo,
+                    "descripcion": "",
+                }
+            ),
+            404,
+        )
+
+    cuenta_contable = contexto_detalle["cuenta_contable"]
+
+    return jsonify(
+        {
+            "encontrada": True,
+            "cuenta": cuenta_contable["cuenta"],
+            "descripcion": cuenta_contable["descripcion"],
+        }
     )
 
 
