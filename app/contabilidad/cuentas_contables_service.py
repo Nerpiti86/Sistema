@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.contabilidad.cuentas_contables_repository import (
+    actualizar_cuenta_contable_por_cuenta,
     crear_cuenta_contable,
     listar_cuentas_contables,
     obtener_cuenta_contable_por_cuenta,
@@ -55,7 +56,39 @@ def crear_cuenta_contable_desde_formulario(formulario: dict[str, Any]) -> dict[s
     El service no ejecuta SQL directo. Normaliza la entrada de pantalla y
     delega la persistencia al repository de cuentas_contables.
     """
-    datos_cuenta_contable = {
+    datos_cuenta_contable = _normalizar_datos_cuenta_contable_formulario(formulario)
+
+    return crear_cuenta_contable(datos_cuenta_contable)
+
+
+def _obtener_valor_formulario(formulario: dict[str, Any], campo: str) -> str:
+    """Lee valor de formulario y devuelve texto recortado."""
+    return str(formulario.get(campo, "") or "").strip()
+
+
+def actualizar_cuenta_contable_desde_formulario(
+    cuenta_contable_codigo: str,
+    formulario: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Actualiza una cuenta contable desde datos de formulario.
+
+    El service no ejecuta SQL directo. Normaliza la entrada de pantalla y
+    delega la persistencia al repository de cuentas_contables.
+    """
+    datos_cuenta_contable = _normalizar_datos_cuenta_contable_formulario(formulario)
+
+    return actualizar_cuenta_contable_por_cuenta(
+        cuenta_contable_codigo,
+        datos_cuenta_contable,
+    )
+
+
+def _normalizar_datos_cuenta_contable_formulario(
+    formulario: dict[str, Any],
+) -> dict[str, str]:
+    """Normaliza campos de formulario de cuentas_contables."""
+    return {
         "cuenta": _obtener_valor_formulario(formulario, "cuenta"),
         "descripcion": _obtener_valor_formulario(formulario, "descripcion"),
         "saldo_habitual": _obtener_valor_formulario(formulario, "saldo_habitual"),
@@ -64,10 +97,3 @@ def crear_cuenta_contable_desde_formulario(formulario: dict[str, Any]) -> dict[s
         "monetaria": _obtener_valor_formulario(formulario, "monetaria"),
         "sumarizadora": _obtener_valor_formulario(formulario, "sumarizadora"),
     }
-
-    return crear_cuenta_contable(datos_cuenta_contable)
-
-
-def _obtener_valor_formulario(formulario: dict[str, Any], campo: str) -> str:
-    """Lee valor de formulario y devuelve texto recortado."""
-    return str(formulario.get(campo, "") or "").strip()
