@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any
 
 from app.contabilidad.ejercicios_contables_repository import (
+    actualizar_ejercicio_contable_por_codigo,
     crear_ejercicio_contable,
     listar_ejercicios_contables,
     obtener_ejercicio_contable_activo,
@@ -83,6 +84,37 @@ def crear_ejercicio_contable_desde_formulario(
     return crear_ejercicio_contable(datos_ejercicio_contable)
 
 
+def actualizar_ejercicio_contable_desde_formulario(
+    ejercicio_contable_codigo: str,
+    formulario_ejercicio_contable,
+) -> dict[str, Any]:
+    """
+    Actualiza un ejercicio contable desde datos tipo formulario.
+
+    Este service no ejecuta SQL directo. Normaliza los campos mutables, conserva
+    el codigo como identificador estable y delega el UPDATE en repository.
+    """
+    codigo_normalizado = str(ejercicio_contable_codigo or "").strip()
+
+    if not codigo_normalizado:
+        raise ValueError("El codigo de ejercicio contable es obligatorio.")
+
+    ejercicio_contable_actual = obtener_ejercicio_contable_por_codigo(codigo_normalizado)
+
+    if ejercicio_contable_actual is None:
+        raise ValueError("No existe el ejercicio contable informado.")
+
+    datos_ejercicio_contable = _normalizar_formulario_actualizar_ejercicio_contable(
+        formulario_ejercicio_contable,
+        ejercicio_contable_actual,
+    )
+
+    return actualizar_ejercicio_contable_por_codigo(
+        codigo_normalizado,
+        datos_ejercicio_contable,
+    )
+
+
 def obtener_contexto_detalle_ejercicio_contable(
     ejercicio_contable_codigo: str,
 ) -> dict[str, Any]:
@@ -152,6 +184,86 @@ def obtener_contexto_listado_ejercicios_contables() -> dict[str, Any]:
         "ejercicio_contable_activo": ejercicio_contable_activo,
     }
 
+
+
+def _normalizar_formulario_actualizar_ejercicio_contable(
+    formulario_ejercicio_contable,
+    ejercicio_contable_actual: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Normaliza campos mutables para update de ejercicios_contables.
+
+    La fecha de bloqueo se conserva si el ejercicio ya estaba bloqueado; se
+    genera solo cuando el formulario deja el ejercicio bloqueado sin fecha previa.
+    """
+    nombre = _normalizar_texto_obligatorio_ejercicio_contable(
+        formulario_ejercicio_contable.get("nombre", ""),
+        "El nombre de ejercicio contable es obligatorio.",
+    )
+    fecha_desde = _normalizar_fecha_iso_obligatoria_ejercicio_contable(
+        formulario_ejercicio_contable.get("fecha_desde", ""),
+        "La fecha desde de ejercicio contable es obligatoria.",
+    )
+    fecha_hasta = _normalizar_fecha_iso_obligatoria_ejercicio_contable(
+        formulario_ejercicio_contable.get("fecha_hasta", ""),
+        "La fecha hasta de ejercicio contable es obligatoria.",
+    )
+
+    if fecha_hasta < fecha_desde:
+        raise ValueError("La fecha hasta no puede ser anterior a la fecha desde.")
+
+    estado = _normalizar_opcion_ejercicio_contable(
+        formulario_ejercicio_contable.get("estado", "ABIERTO"),
+        _ESTADOS_EJERCICIO_CONTABLE,
+        "El estado de ejercicio contable no es valido.",
+    )
+    fase_cierre = _normalizar_opcion_ejercicio_contable(
+        formulario_ejercicio_contable.get("fase_cierre", "ABIERTO"),
+        _FASES_CIERRE_EJERCICIO_CONTABLE,
+        "La fase de cierre de ejercicio contable no es valida.",
+    )
+
+    activo = _normalizar_checkbox_ejercicio_contable(
+        formulario_ejercicio_contable.get("activo")
+    )
+    bloqueado = _normalizar_checkbox_ejercicio_contable(
+        formulario_ejercicio_contable.get("bloqueado")
+    )
+    es_primer_ejercicio = _normalizar_checkbox_ejercicio_contable(
+        formulario_ejercicio_contable.get("es_primer_ejercicio")
+    )
+
+    if fase_cierre == "BLOQUEADO":
+        bloqueado = True
+
+    if bloqueado:
+        fase_cierre = "BLOQUEADO"
+
+    bloqueado_en = None
+    if bloqueado:
+        bloqueado_en = None
+        if ejercicio_contable_actual.get("esta_bloqueado"):
+            bloqueado_en = ejercicio_contable_actual.get("bloqueado_en")
+
+        if not bloqueado_en:
+            bloqueado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+
+    observaciones_cierre = str(
+        formulario_ejercicio_contable.get("observaciones_cierre", "") or ""
+    ).strip()
+
+    return {
+        "nombre": nombre,
+        "fecha_desde": fecha_desde,
+        "fecha_hasta": fecha_hasta,
+        "estado": estado,
+        "activo": activo,
+        "fase_cierre": fase_cierre,
+        "bloqueado": bloqueado,
+        "bloqueado_en": bloqueado_en,
+        "observaciones_cierre": observaciones_cierre or None,
+        "es_primer_ejercicio": es_primer_ejercicio,
+    }
 
 
 def _normalizar_formulario_crear_ejercicio_contable(
