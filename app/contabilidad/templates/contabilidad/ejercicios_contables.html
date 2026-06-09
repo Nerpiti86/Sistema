@@ -97,6 +97,7 @@
                                 <th data-field="fase_cierre">Fase cierre</th>
                                 <th data-field="activo" class="text-center">Activo</th>
                                 <th data-field="bloqueado" class="text-center">Bloqueado</th>
+                                <th data-field="es_primer_ejercicio" class="text-center">Es primer ejercicio</th>
                                 <th data-field="acciones" class="text-end">Acciones</th>
                             </tr>
                         </thead>
@@ -140,6 +141,13 @@
                                             No
                                         {% endif %}
                                     </td>
+                                    <td data-field="es_primer_ejercicio" class="text-center">
+                                        {% if ejercicio_contable.es_primer_ejercicio_bool %}
+                                            Si
+                                        {% else %}
+                                            No
+                                        {% endif %}
+                                    </td>
                                     <td data-field="acciones" class="text-end">
                                         <a
                                             id="ec-detalle-{{ ejercicio_contable.codigo|lower }}"
@@ -161,7 +169,7 @@
                                 >
                                     <td
                                         id="ec-mensaje-sin-datos"
-                                        colspan="9"
+                                        colspan="10"
                                         class="text-center text-muted py-4"
                                     >
                                         No hay ejercicios contables cargados.
