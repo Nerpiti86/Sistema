@@ -1,4 +1,4 @@
-from app.ui.routes import bp
+from app.contabilidad.routes import bp
 
 
 def register(app):

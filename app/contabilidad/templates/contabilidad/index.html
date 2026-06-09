@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% call card("Contabilidad", "Modulo base registrado") %}
+            <p class="mb-3">
+                Base del modulo contable creada correctamente.
+            </p>
+
+            {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+        {% endcall %}
+    </div>
+</div>
+{% endblock %}
