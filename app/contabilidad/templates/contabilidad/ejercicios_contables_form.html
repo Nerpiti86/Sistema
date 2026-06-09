@@ -3,19 +3,19 @@
 
 {% block content %}
 <section
-    id="ec-form-crear"
+    id="{{ form_section_id|default('ec-form-crear') }}"
     data-table="ejercicios_contables"
-    data-action="crear_ejercicio_contable"
+    data-action="{{ form_data_action|default('crear_ejercicio_contable') }}"
     class="row g-3"
 >
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
                 <h1 id="ec-form-titulo" class="h3 mb-1">
-                    Crear ejercicio contable
+                    {{ form_titulo|default('Crear ejercicio contable') }}
                 </h1>
                 <p id="ec-form-descripcion" class="text-muted mb-0">
-                    Alta de registro en ejercicios_contables.
+                    {{ form_descripcion|default('Alta de registro en ejercicios_contables.') }}
                 </p>
             </div>
             <div id="ec-form-acciones-superiores">
@@ -35,9 +35,9 @@
             <form
                 id="ec-form"
                 data-table="ejercicios_contables"
-                data-action="crear_ejercicio_contable"
+                data-action="{{ form_data_action|default('crear_ejercicio_contable') }}"
                 method="post"
-                action="{{ url_for('contabilidad.crear_ejercicio_contable') }}"
+                action="{{ form_action_url|default(url_for('contabilidad.crear_ejercicio_contable')) }}"
             >
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -50,6 +50,7 @@
                             type="text"
                             class="form-control"
                             value="{{ ejercicio_contable_form.codigo }}"
+                            {% if codigo_solo_lectura|default(false) %}readonly{% endif %}
                             required
                         >
                     </div>
@@ -212,11 +213,11 @@
                             type="submit"
                             class="btn btn-primary"
                         >
-                            Guardar
+                            {{ form_submit_label|default('Guardar') }}
                         </button>
                         <a
                             id="ec-cancelar"
-                            href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
+                            href="{{ form_cancelar_url|default(url_for('contabilidad.ver_listado_ejercicios_contables')) }}"
                             class="btn btn-secondary"
                         >
                             Cancelar

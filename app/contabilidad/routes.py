@@ -1,6 +1,7 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.contabilidad.ejercicios_contables_service import (
+    actualizar_ejercicio_contable_desde_formulario,
     crear_ejercicio_contable_desde_formulario,
     obtener_contexto_detalle_ejercicio_contable,
     obtener_contexto_listado_ejercicios_contables,
@@ -76,6 +77,84 @@ def crear_ejercicio_contable():
 
     flash("Ejercicio contable creado correctamente.", "success")
     return redirect(url_for("contabilidad.ver_listado_ejercicios_contables"))
+
+
+@bp.get("/ejercicios-contables/<codigo>/editar/")
+def ver_formulario_editar_ejercicio_contable(codigo):
+    """
+    Muestra formulario de edicion de un ejercicio contable.
+
+    Esta route no ejecuta SQL directo. Obtiene el ejercicio desde service y
+    renderiza el mismo form que usa el alta, en modo edicion.
+    """
+    try:
+        contexto_detalle = obtener_contexto_detalle_ejercicio_contable(codigo)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("contabilidad.ver_listado_ejercicios_contables"))
+
+    ejercicio_contable = contexto_detalle["ejercicio_contable"]
+
+    return render_template(
+        "contabilidad/ejercicios_contables_form.html",
+        page_title=f"Editar ejercicio contable {ejercicio_contable['codigo']}",
+        ejercicio_contable_form={
+            "codigo": ejercicio_contable["codigo"],
+            "nombre": ejercicio_contable["nombre"],
+            "fecha_desde": ejercicio_contable["fecha_desde"],
+            "fecha_hasta": ejercicio_contable["fecha_hasta"],
+            "estado": ejercicio_contable["estado_codigo"],
+            "fase_cierre": ejercicio_contable["fase_cierre_codigo"],
+            "activo": ejercicio_contable["es_activo"],
+            "bloqueado": ejercicio_contable["esta_bloqueado"],
+            "es_primer_ejercicio": ejercicio_contable["es_primer_ejercicio_bool"],
+            "observaciones_cierre": ejercicio_contable["observaciones_cierre"] or "",
+        },
+        estados_ejercicio_contable=("ABIERTO", "CERRADO"),
+        fases_cierre_ejercicio_contable=("ABIERTO", "EN_CIERRE", "BLOQUEADO"),
+        form_section_id="ec-form-editar",
+        form_titulo=f"Editar ejercicio contable {ejercicio_contable['codigo']}",
+        form_descripcion="Edicion de campos mutables de ejercicios_contables.",
+        form_data_action="editar_ejercicio_contable",
+        form_action_url=url_for(
+            "contabilidad.actualizar_ejercicio_contable",
+            codigo=ejercicio_contable["codigo"],
+        ),
+        form_submit_label="Guardar cambios",
+        form_cancelar_url=url_for(
+            "contabilidad.ver_detalle_ejercicio_contable",
+            codigo=ejercicio_contable["codigo"],
+        ),
+        codigo_solo_lectura=True,
+    )
+
+
+@bp.post("/ejercicios-contables/<codigo>/editar/")
+def actualizar_ejercicio_contable(codigo):
+    """
+    Actualiza un ejercicio contable y vuelve al detalle.
+
+    Esta route no ejecuta SQL directo. La normalizacion queda en service y la
+    persistencia queda en repository.
+    """
+    try:
+        ejercicio_contable_actualizado = actualizar_ejercicio_contable_desde_formulario(
+            codigo,
+            request.form,
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(
+            url_for("contabilidad.ver_formulario_editar_ejercicio_contable", codigo=codigo)
+        )
+
+    flash("Ejercicio contable actualizado correctamente.", "success")
+    return redirect(
+        url_for(
+            "contabilidad.ver_detalle_ejercicio_contable",
+            codigo=ejercicio_contable_actualizado["codigo"],
+        )
+    )
 
 @bp.get("/ejercicios-contables/<codigo>/")
 def ver_detalle_ejercicio_contable(codigo):
