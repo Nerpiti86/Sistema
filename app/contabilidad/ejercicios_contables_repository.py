@@ -205,6 +205,91 @@ def crear_ejercicio_contable(
     return ejercicio_contable_creado
 
 
+def actualizar_ejercicio_contable_por_codigo(
+    ejercicio_contable_codigo: str,
+    datos_ejercicio_contable: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Actualiza campos mutables de un ejercicio contable y devuelve la fila final.
+
+    Este repository ejecuta SQL directo. No cambia el codigo del ejercicio
+    porque el codigo es identificador funcional usado por pantallas y futuros
+    movimientos contables.
+    """
+    ejercicio_contable_codigo_validado = _validar_codigo_ejercicio_contable(
+        ejercicio_contable_codigo
+    )
+
+    if obtener_ejercicio_contable_por_codigo(ejercicio_contable_codigo_validado) is None:
+        raise ValueError("No existe el ejercicio contable informado.")
+
+    ejercicio_contable_nombre = _validar_nombre_ejercicio_contable(
+        datos_ejercicio_contable["nombre"]
+    )
+    ejercicio_contable_fecha_desde = _validar_fecha_iso_ejercicio_contable(
+        datos_ejercicio_contable["fecha_desde"]
+    )
+    ejercicio_contable_fecha_hasta = _validar_fecha_iso_ejercicio_contable(
+        datos_ejercicio_contable["fecha_hasta"]
+    )
+
+    if ejercicio_contable_fecha_hasta < ejercicio_contable_fecha_desde:
+        raise ValueError("La fecha hasta no puede ser anterior a la fecha desde.")
+
+    actualizado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+
+    db = get_db()
+
+    try:
+        with db:
+            cursor = db.execute(
+                """
+                UPDATE ejercicios_contables
+                SET
+                    nombre = ?,
+                    fecha_desde = ?,
+                    fecha_hasta = ?,
+                    estado = ?,
+                    activo = ?,
+                    actualizado_en = ?,
+                    fase_cierre = ?,
+                    bloqueado = ?,
+                    bloqueado_en = ?,
+                    observaciones_cierre = ?,
+                    es_primer_ejercicio = ?
+                WHERE codigo = ?
+                """,
+                (
+                    ejercicio_contable_nombre,
+                    ejercicio_contable_fecha_desde,
+                    ejercicio_contable_fecha_hasta,
+                    datos_ejercicio_contable["estado"],
+                    int(datos_ejercicio_contable["activo"]),
+                    actualizado_en,
+                    datos_ejercicio_contable["fase_cierre"],
+                    int(datos_ejercicio_contable["bloqueado"]),
+                    datos_ejercicio_contable["bloqueado_en"],
+                    datos_ejercicio_contable["observaciones_cierre"],
+                    int(datos_ejercicio_contable["es_primer_ejercicio"]),
+                    ejercicio_contable_codigo_validado,
+                ),
+            )
+    except sqlite3.IntegrityError as exc:
+        raise ValueError("No se pudo actualizar el ejercicio contable.") from exc
+
+    if cursor.rowcount != 1:
+        raise ValueError("No se pudo actualizar el ejercicio contable.")
+
+    ejercicio_contable_actualizado = obtener_ejercicio_contable_por_codigo(
+        ejercicio_contable_codigo_validado
+    )
+
+    if ejercicio_contable_actualizado is None:
+        raise ValueError("No se pudo recuperar el ejercicio contable actualizado.")
+
+    return ejercicio_contable_actualizado
+
+
 def validar_fecha_dentro_de_ejercicio_contable(
     fecha_operacion_iso: str,
     ejercicio_contable_codigo: str,
