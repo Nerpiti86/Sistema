@@ -1,0 +1,7 @@
+{% macro main_navbar(brand) %}
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('ui.dashboard') }}">{{ brand }}</a>
+    </div>
+</nav>
+{% endmacro %}

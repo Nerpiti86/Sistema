@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_link %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% call card("Base minima", "Flask modular - SQLite - Bootstrap original - Jinja macros") %}
+            <p class="mb-3">
+                NeriSoft Sistema iniciado correctamente.
+            </p>
+
+            {{ primary_link("Verificar inicio", url_for("ui.dashboard")) }}
+        {% endcall %}
+    </div>
+</div>
+{% endblock %}

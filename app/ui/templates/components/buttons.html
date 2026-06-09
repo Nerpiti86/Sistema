@@ -1,0 +1,23 @@
+{% macro primary_button(text, type="submit") %}
+<button type="{{ type }}" class="btn btn-primary">
+    {{ text }}
+</button>
+{% endmacro %}
+
+{% macro secondary_button(text, type="button") %}
+<button type="{{ type }}" class="btn btn-secondary">
+    {{ text }}
+</button>
+{% endmacro %}
+
+{% macro primary_link(text, href) %}
+<a href="{{ href }}" class="btn btn-primary">
+    {{ text }}
+</a>
+{% endmacro %}
+
+{% macro secondary_link(text, href) %}
+<a href="{{ href }}" class="btn btn-secondary">
+    {{ text }}
+</a>
+{% endmacro %}
