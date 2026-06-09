@@ -1,6 +1,7 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.contabilidad.cuentas_contables_service import (
+    crear_cuenta_contable_desde_formulario,
     obtener_contexto_listado_cuentas_contables,
 )
 
@@ -42,6 +43,55 @@ def ver_listado_cuentas_contables():
         "contabilidad/cuentas_contables.html",
         page_title="Cuentas contables",
         **contexto_cuentas_contables,
+    )
+
+
+@bp.get("/cuentas-contables/nueva/")
+def ver_formulario_nueva_cuenta_contable():
+    """
+    Muestra formulario de alta de cuentas contables.
+
+    Esta route no ejecuta SQL directo. El POST delega validacion y persistencia
+    al service de cuentas_contables.
+    """
+    return render_template(
+        "contabilidad/cuentas_contables_form.html",
+        page_title="Nueva cuenta contable",
+        modo_formulario="alta",
+        cuenta_contable={},
+        action_url=url_for("contabilidad.crear_cuenta_contable_nueva"),
+    )
+
+
+@bp.post("/cuentas-contables/nueva/")
+def crear_cuenta_contable_nueva():
+    """
+    Crea una cuenta contable desde formulario.
+
+    Esta route no ejecuta SQL directo. El service normaliza datos de pantalla y
+    delega persistencia al repository.
+    """
+    try:
+        cuenta_contable = crear_cuenta_contable_desde_formulario(request.form)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return (
+            render_template(
+                "contabilidad/cuentas_contables_form.html",
+                page_title="Nueva cuenta contable",
+                modo_formulario="alta",
+                cuenta_contable=request.form,
+                action_url=url_for("contabilidad.crear_cuenta_contable_nueva"),
+            ),
+            400,
+        )
+
+    flash("Cuenta contable creada correctamente.", "success")
+    return redirect(
+        url_for(
+            "contabilidad.ver_listado_cuentas_contables",
+            cuenta=cuenta_contable["cuenta"],
+        )
     )
 
 

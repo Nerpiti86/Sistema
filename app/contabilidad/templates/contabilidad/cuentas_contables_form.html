@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section
+    id="cc-form"
+    data-table="cuentas_contables"
+    data-action="crear_cuenta_contable"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="cc-form-titulo" class="h3 mb-1">
+                    Nueva cuenta contable
+                </h1>
+                <p id="cc-form-descripcion" class="text-muted mb-0">
+                    Alta del maestro de cuentas contables.
+                </p>
+            </div>
+            <div id="cc-form-acciones">
+                {{ secondary_link("Volver al listado", url_for("contabilidad.ver_listado_cuentas_contables")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        {% call card("Datos de la cuenta", "cuentas_contables") %}
+            <form
+                id="cc-formulario"
+                data-table="cuentas_contables"
+                data-action="crear_cuenta_contable"
+                method="post"
+                action="{{ action_url }}"
+                novalidate
+            >
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="cc-cuenta" class="form-label">Cuenta</label>
+                        <input
+                            id="cc-cuenta"
+                            data-table="cuentas_contables"
+                            data-field="cuenta"
+                            name="cuenta"
+                            type="text"
+                            class="form-control"
+                            value="{{ cuenta_contable.get('cuenta', '') }}"
+                            placeholder="1.1.01.01.001"
+                            autocomplete="off"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-8">
+                        <label for="cc-descripcion-input" class="form-label">Descripcion</label>
+                        <input
+                            id="cc-descripcion-input"
+                            data-table="cuentas_contables"
+                            data-field="descripcion"
+                            name="descripcion"
+                            type="text"
+                            class="form-control"
+                            value="{{ cuenta_contable.get('descripcion', '') }}"
+                            autocomplete="off"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="cc-saldo-habitual" class="form-label">Saldo habitual</label>
+                        <select
+                            id="cc-saldo-habitual"
+                            data-table="cuentas_contables"
+                            data-field="saldo_habitual"
+                            name="saldo_habitual"
+                            class="form-select"
+                            required
+                        >
+                            {% set saldo_habitual = cuenta_contable.get('saldo_habitual', '') %}
+                            <option value="">Seleccionar...</option>
+                            <option value="DEBE" {% if saldo_habitual == "DEBE" %}selected{% endif %}>DEBE</option>
+                            <option value="HABER" {% if saldo_habitual == "HABER" %}selected{% endif %}>HABER</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="cc-naturaleza" class="form-label">Naturaleza</label>
+                        <select
+                            id="cc-naturaleza"
+                            data-table="cuentas_contables"
+                            data-field="naturaleza"
+                            name="naturaleza"
+                            class="form-select"
+                            required
+                        >
+                            {% set naturaleza = cuenta_contable.get('naturaleza', '') %}
+                            <option value="">Seleccionar...</option>
+                            <option value="PATRIMONIAL" {% if naturaleza == "PATRIMONIAL" %}selected{% endif %}>PATRIMONIAL</option>
+                            <option value="RESULTADO" {% if naturaleza == "RESULTADO" %}selected{% endif %}>RESULTADO</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="cc-imputable" class="form-label">Imputable</label>
+                        <select
+                            id="cc-imputable"
+                            data-table="cuentas_contables"
+                            data-field="imputable"
+                            name="imputable"
+                            class="form-select"
+                            required
+                        >
+                            {% set imputable = cuenta_contable.get('imputable', '') %}
+                            <option value="">Seleccionar...</option>
+                            <option value="SI" {% if imputable == "SI" %}selected{% endif %}>SI</option>
+                            <option value="NO" {% if imputable == "NO" %}selected{% endif %}>NO</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label for="cc-monetaria" class="form-label">Monetaria</label>
+                        <select
+                            id="cc-monetaria"
+                            data-table="cuentas_contables"
+                            data-field="monetaria"
+                            name="monetaria"
+                            class="form-select"
+                            required
+                        >
+                            {% set monetaria = cuenta_contable.get('monetaria', '') %}
+                            <option value="">Seleccionar...</option>
+                            <option value="SI" {% if monetaria == "SI" %}selected{% endif %}>SI</option>
+                            <option value="NO" {% if monetaria == "NO" %}selected{% endif %}>NO</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="cc-sumarizadora" class="form-label">Sumarizadora</label>
+                        <input
+                            id="cc-sumarizadora"
+                            data-table="cuentas_contables"
+                            data-field="sumarizadora"
+                            name="sumarizadora"
+                            type="text"
+                            class="form-control"
+                            value="{{ cuenta_contable.get('sumarizadora', '') }}"
+                            placeholder="Codigo de cuenta padre"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="col-12 d-flex gap-2">
+                        <button
+                            id="cc-guardar"
+                            data-table="cuentas_contables"
+                            data-action="crear_cuenta_contable"
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Guardar
+                        </button>
+                        {{ secondary_link("Cancelar", url_for("contabilidad.ver_listado_cuentas_contables")) }}
+                    </div>
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+</section>
+{% endblock %}
