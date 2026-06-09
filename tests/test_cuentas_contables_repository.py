@@ -4,6 +4,7 @@ from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.contabilidad.cuentas_contables_repository import (
+    actualizar_cuenta_contable_por_cuenta,
     crear_cuenta_contable,
     listar_cuentas_contables,
     listar_cuentas_contables_por_sumarizadora,
@@ -235,6 +236,149 @@ def test_crear_cuenta_contable_rechaza_cuenta_duplicada():
 
         with pytest.raises(ValueError, match="No se pudo crear"):
             crear_cuenta_contable(datos_cuenta_contable)
+
+
+def test_actualizar_cuenta_contable_por_cuenta_actualiza_campos_mutables():
+    """Valida edicion repository sin modificar el codigo de cuenta."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_jerarquia_caja_ars_para_test(db)
+
+        cuenta_actualizada = actualizar_cuenta_contable_por_cuenta(
+            "1.1.01.01.001",
+            {
+                "descripcion": "CAJA PESOS",
+                "saldo_habitual": "DEBE",
+                "naturaleza": "PATRIMONIAL",
+                "imputable": "SI",
+                "monetaria": "NO",
+                "sumarizadora": "1.1.01.01.000",
+            },
+        )
+
+    assert cuenta_actualizada["cuenta"] == "1.1.01.01.001"
+    assert cuenta_actualizada["descripcion"] == "CAJA PESOS"
+    assert cuenta_actualizada["saldo_habitual"] == "DEBE"
+    assert cuenta_actualizada["naturaleza"] == "PATRIMONIAL"
+    assert cuenta_actualizada["imputable"] == "SI"
+    assert cuenta_actualizada["monetaria"] == "NO"
+    assert cuenta_actualizada["sumarizadora"] == "1.1.01.01.000"
+    assert cuenta_actualizada["es_imputable"] is True
+    assert cuenta_actualizada["es_monetaria"] is False
+    assert cuenta_actualizada["actualizado_en"] is not None
+
+
+def test_actualizar_cuenta_contable_por_cuenta_permite_quitar_sumarizadora():
+    """Valida edicion de sumarizadora nullable."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_jerarquia_caja_ars_para_test(db)
+
+        cuenta_actualizada = actualizar_cuenta_contable_por_cuenta(
+            "1.1.01.01.001",
+            {
+                "descripcion": "CAJA ARS",
+                "saldo_habitual": "DEBE",
+                "naturaleza": "PATRIMONIAL",
+                "imputable": "SI",
+                "monetaria": "SI",
+                "sumarizadora": "",
+            },
+        )
+
+    assert cuenta_actualizada["sumarizadora"] is None
+    assert cuenta_actualizada["tiene_sumarizadora"] is False
+
+
+def test_actualizar_cuenta_contable_por_cuenta_rechaza_inexistente():
+    """Valida que no se actualice una cuenta contable inexistente."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        with pytest.raises(ValueError, match="No existe la cuenta contable"):
+            actualizar_cuenta_contable_por_cuenta(
+                "9.9.99.99.999",
+                {
+                    "descripcion": "NO EXISTE",
+                    "saldo_habitual": "DEBE",
+                    "naturaleza": "PATRIMONIAL",
+                    "imputable": "SI",
+                    "monetaria": "SI",
+                    "sumarizadora": "",
+                },
+            )
+
+
+def test_actualizar_cuenta_contable_por_cuenta_rechaza_sumarizadora_inexistente():
+    """Valida que la edicion respete la FK de sumarizadora por codigo."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        crear_cuenta_contable(
+            {
+                "cuenta": "1.1.01.01.001",
+                "descripcion": "CAJA ARS",
+                "saldo_habitual": "DEBE",
+                "naturaleza": "PATRIMONIAL",
+                "imputable": "SI",
+                "monetaria": "SI",
+                "sumarizadora": None,
+            }
+        )
+
+        with pytest.raises(ValueError, match="No se pudo actualizar"):
+            actualizar_cuenta_contable_por_cuenta(
+                "1.1.01.01.001",
+                {
+                    "descripcion": "CAJA ARS",
+                    "saldo_habitual": "DEBE",
+                    "naturaleza": "PATRIMONIAL",
+                    "imputable": "SI",
+                    "monetaria": "SI",
+                    "sumarizadora": "1.1.01.01.000",
+                },
+            )
+
+
+def test_actualizar_cuenta_contable_por_cuenta_rechaza_sumarizadora_igual():
+    """Valida que una cuenta no pueda sumarizarse a si misma."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        crear_cuenta_contable(
+            {
+                "cuenta": "1.1.01.01.001",
+                "descripcion": "CAJA ARS",
+                "saldo_habitual": "DEBE",
+                "naturaleza": "PATRIMONIAL",
+                "imputable": "SI",
+                "monetaria": "SI",
+                "sumarizadora": None,
+            }
+        )
+
+        with pytest.raises(ValueError, match="sumarizarse a si misma"):
+            actualizar_cuenta_contable_por_cuenta(
+                "1.1.01.01.001",
+                {
+                    "descripcion": "CAJA ARS",
+                    "saldo_habitual": "DEBE",
+                    "naturaleza": "PATRIMONIAL",
+                    "imputable": "SI",
+                    "monetaria": "SI",
+                    "sumarizadora": "1.1.01.01.001",
+                },
+            )
 
 
 def test_listar_cuentas_contables_devuelve_filas_normalizadas():

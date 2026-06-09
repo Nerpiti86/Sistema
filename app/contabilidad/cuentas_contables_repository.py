@@ -1,5 +1,6 @@
 import re
 import sqlite3
+from datetime import datetime
 from typing import Any
 
 from app.db import get_db
@@ -139,6 +140,99 @@ def crear_cuenta_contable(datos_cuenta_contable: dict[str, Any]) -> dict[str, An
         raise ValueError("No se pudo recuperar la cuenta contable creada.")
 
     return cuenta_contable_creada
+
+
+def actualizar_cuenta_contable_por_cuenta(
+    cuenta_contable_codigo: str,
+    datos_cuenta_contable: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Actualiza campos mutables de una cuenta contable y devuelve la fila final.
+
+    Este repository ejecuta SQL directo. No cambia el codigo de cuenta porque
+    es identificador funcional usado por pantallas y futuros movimientos
+    contables.
+    """
+    cuenta_contable_codigo_validado = _validar_cuenta_contable(cuenta_contable_codigo)
+
+    if obtener_cuenta_contable_por_cuenta(cuenta_contable_codigo_validado) is None:
+        raise ValueError("No existe la cuenta contable informada.")
+
+    descripcion = _validar_texto_obligatorio(
+        datos_cuenta_contable["descripcion"],
+        "La descripcion de la cuenta contable es obligatoria.",
+    )
+    saldo_habitual = _validar_opcion_cuenta_contable(
+        datos_cuenta_contable["saldo_habitual"],
+        {"DEBE", "HABER"},
+        "El saldo habitual de la cuenta contable es invalido.",
+    )
+    naturaleza = _validar_opcion_cuenta_contable(
+        datos_cuenta_contable["naturaleza"],
+        {"PATRIMONIAL", "RESULTADO"},
+        "La naturaleza de la cuenta contable es invalida.",
+    )
+    imputable = _validar_opcion_cuenta_contable(
+        datos_cuenta_contable["imputable"],
+        {"SI", "NO"},
+        "El valor imputable de la cuenta contable es invalido.",
+    )
+    monetaria = _validar_opcion_cuenta_contable(
+        datos_cuenta_contable["monetaria"],
+        {"SI", "NO"},
+        "El valor monetario de la cuenta contable es invalido.",
+    )
+    sumarizadora = _normalizar_sumarizadora_cuenta_contable(
+        datos_cuenta_contable.get("sumarizadora")
+    )
+
+    if sumarizadora == cuenta_contable_codigo_validado:
+        raise ValueError("La cuenta contable no puede sumarizarse a si misma.")
+
+    actualizado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+
+    db = get_db()
+
+    try:
+        with db:
+            cursor = db.execute(
+                """
+                UPDATE cuentas_contables
+                SET
+                    descripcion = ?,
+                    saldo_habitual = ?,
+                    naturaleza = ?,
+                    imputable = ?,
+                    monetaria = ?,
+                    sumarizadora = ?,
+                    actualizado_en = ?
+                WHERE cuenta = ?
+                """,
+                (
+                    descripcion,
+                    saldo_habitual,
+                    naturaleza,
+                    imputable,
+                    monetaria,
+                    sumarizadora,
+                    actualizado_en,
+                    cuenta_contable_codigo_validado,
+                ),
+            )
+    except sqlite3.IntegrityError as exc:
+        raise ValueError("No se pudo actualizar la cuenta contable.") from exc
+
+    if cursor.rowcount != 1:
+        raise ValueError("No se pudo actualizar la cuenta contable.")
+
+    cuenta_contable_actualizada = obtener_cuenta_contable_por_cuenta(
+        cuenta_contable_codigo_validado
+    )
+
+    if cuenta_contable_actualizada is None:
+        raise ValueError("No se pudo recuperar la cuenta contable actualizada.")
+
+    return cuenta_contable_actualizada
 
 
 def listar_cuentas_contables_por_sumarizadora(
