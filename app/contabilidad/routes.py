@@ -304,8 +304,8 @@ def ver_formulario_editar_ejercicio_contable(codigo):
         ejercicio_contable_form={
             "codigo": ejercicio_contable["codigo"],
             "nombre": ejercicio_contable["nombre"],
-            "fecha_desde": ejercicio_contable["fecha_desde"],
-            "fecha_hasta": ejercicio_contable["fecha_hasta"],
+            "fecha_desde": ejercicio_contable["fecha_desde_argentina"],
+            "fecha_hasta": ejercicio_contable["fecha_hasta_argentina"],
             "estado": ejercicio_contable["estado_codigo"],
             "fase_cierre": ejercicio_contable["fase_cierre_codigo"],
             "activo": ejercicio_contable["es_activo"],

@@ -44,4 +44,20 @@ def test_obtener_contexto_listado_ejercicios_contables_devuelve_contexto_chico()
 
     assert contexto_listado["cantidad_ejercicios_contables"] == 1
     assert contexto_listado["ejercicio_contable_activo"]["codigo"] == "EJ2026"
+    assert (
+        contexto_listado["ejercicio_contable_activo"]["fecha_desde_argentina"]
+        == "01/01/2026"
+    )
+    assert (
+        contexto_listado["ejercicio_contable_activo"]["fecha_hasta_argentina"]
+        == "31/12/2026"
+    )
     assert contexto_listado["ejercicios_contables"][0]["codigo"] == "EJ2026"
+    assert (
+        contexto_listado["ejercicios_contables"][0]["fecha_desde"]
+        == "2026-01-01"
+    )
+    assert (
+        contexto_listado["ejercicios_contables"][0]["fecha_desde_argentina"]
+        == "01/01/2026"
+    )

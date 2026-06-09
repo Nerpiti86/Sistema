@@ -24,8 +24,8 @@ def test_post_crear_ejercicio_contable_crea_registro_y_redirige_al_listado():
             data={
                 "codigo": "EJ2026",
                 "nombre": "Ejercicio 2026",
-                "fecha_desde": "2026-01-01",
-                "fecha_hasta": "2026-12-31",
+                "fecha_desde": "01/01/2026",
+                "fecha_hasta": "31/12/2026",
                 "estado": "ABIERTO",
                 "activo": "1",
                 "fase_cierre": "ABIERTO",
@@ -44,6 +44,8 @@ def test_post_crear_ejercicio_contable_crea_registro_y_redirige_al_listado():
     assert ejercicio_contable is not None
     assert ejercicio_contable["codigo"] == "EJ2026"
     assert ejercicio_contable["nombre"] == "Ejercicio 2026"
+    assert ejercicio_contable["fecha_desde"] == "2026-01-01"
+    assert ejercicio_contable["fecha_hasta"] == "2026-12-31"
     assert ejercicio_contable["es_activo"] is True
     assert ejercicio_contable["observaciones_cierre"] == "Alta desde route"
     assert ejercicio_contable["es_primer_ejercicio_bool"] is True
@@ -67,8 +69,8 @@ def test_post_crear_ejercicio_contable_invalido_redirige_sin_crear_registro():
             data={
                 "codigo": "",
                 "nombre": "Ejercicio sin codigo",
-                "fecha_desde": "2026-01-01",
-                "fecha_hasta": "2026-12-31",
+                "fecha_desde": "01/01/2026",
+                "fecha_hasta": "31/12/2026",
             },
             follow_redirects=False,
         )
@@ -100,8 +102,8 @@ def test_post_crear_ejercicio_contable_no_rompe_listado_con_follow_redirects():
             data={
                 "codigo": "EJ2026",
                 "nombre": "Ejercicio 2026",
-                "fecha_desde": "2026-01-01",
-                "fecha_hasta": "2026-12-31",
+                "fecha_desde": "01/01/2026",
+                "fecha_hasta": "31/12/2026",
                 "estado": "ABIERTO",
                 "fase_cierre": "ABIERTO",
             },

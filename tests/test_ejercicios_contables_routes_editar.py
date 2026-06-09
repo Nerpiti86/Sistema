@@ -73,8 +73,8 @@ def test_get_formulario_editar_muestra_datos_actuales():
     assert b'value="EJ2026"' in response.data
     assert b"readonly" in response.data
     assert b'value="Ejercicio 2026"' in response.data
-    assert b'value="2026-01-01"' in response.data
-    assert b'value="2026-12-31"' in response.data
+    assert b'value="01/01/2026"' in response.data
+    assert b'value="31/12/2026"' in response.data
     assert b"Original" in response.data
     assert b"Guardar cambios" in response.data
 
@@ -97,8 +97,8 @@ def test_post_editar_actualiza_ejercicio_contable_y_redirige_al_detalle():
             "/contabilidad/ejercicios-contables/EJ2026/editar/",
             data={
                 "nombre": "Ejercicio 2026 editado",
-                "fecha_desde": "2026-02-01",
-                "fecha_hasta": "2026-11-30",
+                "fecha_desde": "01/02/2026",
+                "fecha_hasta": "30/11/2026",
                 "estado": "CERRADO",
                 "fase_cierre": "ABIERTO",
                 "observaciones_cierre": "Editado desde route",
@@ -140,8 +140,8 @@ def test_post_editar_invalido_redirige_a_formulario_y_no_actualiza():
             "/contabilidad/ejercicios-contables/EJ2026/editar/",
             data={
                 "nombre": "No debe persistir",
-                "fecha_desde": "2026-12-31",
-                "fecha_hasta": "2026-01-01",
+                "fecha_desde": "31/12/2026",
+                "fecha_hasta": "01/01/2026",
                 "estado": "ABIERTO",
                 "fase_cierre": "ABIERTO",
             },

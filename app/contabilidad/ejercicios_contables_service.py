@@ -1,6 +1,11 @@
 from datetime import datetime
 from typing import Any
 
+from app.shared.formatos import (
+    formatear_fecha_iso_a_argentina,
+    normalizar_fecha_argentina_a_iso,
+)
+
 from app.contabilidad.ejercicios_contables_repository import (
     actualizar_ejercicio_contable_por_codigo,
     crear_ejercicio_contable,
@@ -135,7 +140,9 @@ def obtener_contexto_detalle_ejercicio_contable(
         raise ValueError("No existe el ejercicio contable informado.")
 
     return {
-        "ejercicio_contable": ejercicio_contable,
+        "ejercicio_contable": _preparar_ejercicio_contable_para_pantalla(
+            ejercicio_contable
+        ),
     }
 
 
@@ -170,7 +177,10 @@ def obtener_contexto_listado_ejercicios_contables() -> dict[str, Any]:
     La consulta base es listar_ejercicios_contables(). La tabla es chica y de
     contexto; no se cargan asientos, comprobantes ni movimientos asociados.
     """
-    ejercicios_contables = listar_ejercicios_contables()
+    ejercicios_contables = [
+        _preparar_ejercicio_contable_para_pantalla(ejercicio_contable)
+        for ejercicio_contable in listar_ejercicios_contables()
+    ]
 
     ejercicio_contable_activo = None
     for ejercicio_contable in ejercicios_contables:
@@ -184,6 +194,27 @@ def obtener_contexto_listado_ejercicios_contables() -> dict[str, Any]:
         "ejercicio_contable_activo": ejercicio_contable_activo,
     }
 
+
+
+
+def _preparar_ejercicio_contable_para_pantalla(
+    ejercicio_contable: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Agrega campos de presentacion sin modificar el contrato ISO de BD.
+
+    Repository conserva fecha_desde/fecha_hasta en YYYY-MM-DD. Las pantallas
+    consumen los campos *_argentina para mostrar DD/MM/YYYY.
+    """
+    ejercicio_contable_pantalla = dict(ejercicio_contable)
+    ejercicio_contable_pantalla["fecha_desde_argentina"] = (
+        formatear_fecha_iso_a_argentina(ejercicio_contable["fecha_desde"])
+    )
+    ejercicio_contable_pantalla["fecha_hasta_argentina"] = (
+        formatear_fecha_iso_a_argentina(ejercicio_contable["fecha_hasta"])
+    )
+
+    return ejercicio_contable_pantalla
 
 
 def _normalizar_formulario_actualizar_ejercicio_contable(
@@ -200,11 +231,11 @@ def _normalizar_formulario_actualizar_ejercicio_contable(
         formulario_ejercicio_contable.get("nombre", ""),
         "El nombre de ejercicio contable es obligatorio.",
     )
-    fecha_desde = _normalizar_fecha_iso_obligatoria_ejercicio_contable(
+    fecha_desde = _normalizar_fecha_argentina_obligatoria_ejercicio_contable(
         formulario_ejercicio_contable.get("fecha_desde", ""),
         "La fecha desde de ejercicio contable es obligatoria.",
     )
-    fecha_hasta = _normalizar_fecha_iso_obligatoria_ejercicio_contable(
+    fecha_hasta = _normalizar_fecha_argentina_obligatoria_ejercicio_contable(
         formulario_ejercicio_contable.get("fecha_hasta", ""),
         "La fecha hasta de ejercicio contable es obligatoria.",
     )
@@ -277,11 +308,11 @@ def _normalizar_formulario_crear_ejercicio_contable(
         formulario_ejercicio_contable.get("nombre", ""),
         "El nombre de ejercicio contable es obligatorio.",
     )
-    fecha_desde = _normalizar_fecha_iso_obligatoria_ejercicio_contable(
+    fecha_desde = _normalizar_fecha_argentina_obligatoria_ejercicio_contable(
         formulario_ejercicio_contable.get("fecha_desde", ""),
         "La fecha desde de ejercicio contable es obligatoria.",
     )
-    fecha_hasta = _normalizar_fecha_iso_obligatoria_ejercicio_contable(
+    fecha_hasta = _normalizar_fecha_argentina_obligatoria_ejercicio_contable(
         formulario_ejercicio_contable.get("fecha_hasta", ""),
         "La fecha hasta de ejercicio contable es obligatoria.",
     )
@@ -351,21 +382,19 @@ def _normalizar_texto_obligatorio_ejercicio_contable(
     return valor_normalizado
 
 
-def _normalizar_fecha_iso_obligatoria_ejercicio_contable(
+def _normalizar_fecha_argentina_obligatoria_ejercicio_contable(
     valor,
     mensaje_error: str,
 ) -> str:
-    fecha_normalizada = _normalizar_texto_obligatorio_ejercicio_contable(
+    fecha_argentina = _normalizar_texto_obligatorio_ejercicio_contable(
         valor,
         mensaje_error,
     )
 
     try:
-        datetime.strptime(fecha_normalizada, "%Y-%m-%d")
+        return normalizar_fecha_argentina_a_iso(fecha_argentina)
     except ValueError as exc:
-        raise ValueError("La fecha debe tener formato YYYY-MM-DD.") from exc
-
-    return fecha_normalizada
+        raise ValueError("La fecha debe tener formato DD/MM/YYYY.") from exc
 
 
 def _normalizar_opcion_ejercicio_contable(

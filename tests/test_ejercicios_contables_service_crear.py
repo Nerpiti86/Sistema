@@ -27,8 +27,8 @@ def test_crear_ejercicio_contable_desde_formulario_persiste_campos_reales():
             {
                 "codigo": " EJ2026 ",
                 "nombre": " Ejercicio 2026 ",
-                "fecha_desde": "2026-01-01",
-                "fecha_hasta": "2026-12-31",
+                "fecha_desde": "01/01/2026",
+                "fecha_hasta": "31/12/2026",
                 "estado": "ABIERTO",
                 "activo": "1",
                 "fase_cierre": "ABIERTO",
@@ -42,6 +42,8 @@ def test_crear_ejercicio_contable_desde_formulario_persiste_campos_reales():
 
     assert ejercicio_contable_creado["codigo"] == "EJ2026"
     assert ejercicio_contable["nombre"] == "Ejercicio 2026"
+    assert ejercicio_contable["fecha_desde"] == "2026-01-01"
+    assert ejercicio_contable["fecha_hasta"] == "2026-12-31"
     assert ejercicio_contable["es_activo"] is True
     assert ejercicio_contable["esta_bloqueado"] is False
     assert ejercicio_contable["observaciones_cierre"] == "Alta desde service"
@@ -63,8 +65,8 @@ def test_crear_ejercicio_contable_desde_formulario_aplica_defaults_sanos():
             {
                 "codigo": "EJ2026",
                 "nombre": "Ejercicio 2026",
-                "fecha_desde": "2026-01-01",
-                "fecha_hasta": "2026-12-31",
+                "fecha_desde": "01/01/2026",
+                "fecha_hasta": "31/12/2026",
             }
         )
 
@@ -94,8 +96,8 @@ def test_crear_ejercicio_contable_desde_formulario_bloquea_por_fase_bloqueado():
             {
                 "codigo": "EJ2026",
                 "nombre": "Ejercicio 2026",
-                "fecha_desde": "2026-01-01",
-                "fecha_hasta": "2026-12-31",
+                "fecha_desde": "01/01/2026",
+                "fecha_hasta": "31/12/2026",
                 "fase_cierre": "BLOQUEADO",
             }
         )
@@ -123,8 +125,8 @@ def test_crear_ejercicio_contable_desde_formulario_rechaza_fechas_invertidas():
                 {
                     "codigo": "EJ2026",
                     "nombre": "Ejercicio 2026",
-                    "fecha_desde": "2026-12-31",
-                    "fecha_hasta": "2026-01-01",
+                    "fecha_desde": "31/12/2026",
+                    "fecha_hasta": "01/01/2026",
                 }
             )
 
@@ -145,8 +147,8 @@ def test_crear_ejercicio_contable_desde_formulario_rechaza_estado_invalido():
                 {
                     "codigo": "EJ2026",
                     "nombre": "Ejercicio 2026",
-                    "fecha_desde": "2026-01-01",
-                    "fecha_hasta": "2026-12-31",
+                    "fecha_desde": "01/01/2026",
+                    "fecha_hasta": "31/12/2026",
                     "estado": "INVALIDO",
                 }
             )

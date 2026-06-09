@@ -44,6 +44,8 @@ def test_get_formulario_crear_ejercicio_contable_muestra_campos_reales():
     assert b'id="ec-nombre"' in response.data
     assert b'id="ec-fecha-desde"' in response.data
     assert b'id="ec-fecha-hasta"' in response.data
+    assert b'placeholder="DD/MM/AAAA"' in response.data
+    assert b'type="date"' not in response.data
     assert b'id="ec-estado"' in response.data
     assert b'id="ec-fase-cierre"' in response.data
     assert b'id="ec-activo"' in response.data
@@ -71,8 +73,8 @@ def test_post_desde_formulario_crear_ejercicio_contable_crea_y_vuelve_al_listado
             data={
                 "codigo": "EJ2026",
                 "nombre": "Ejercicio 2026",
-                "fecha_desde": "2026-01-01",
-                "fecha_hasta": "2026-12-31",
+                "fecha_desde": "01/01/2026",
+                "fecha_hasta": "31/12/2026",
                 "estado": "ABIERTO",
                 "fase_cierre": "ABIERTO",
                 "activo": "1",

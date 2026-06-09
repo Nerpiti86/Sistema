@@ -68,8 +68,10 @@ def test_get_detalle_ejercicio_contable_muestra_datos_reales():
     assert b'data-row-codigo="EJ2026"' in response.data
     assert b"EJ2026" in response.data
     assert b"Ejercicio 2026" in response.data
-    assert b"2026-01-01" in response.data
-    assert b"2026-12-31" in response.data
+    assert b"01/01/2026" in response.data
+    assert b"31/12/2026" in response.data
+    assert b"2026-01-01" not in response.data
+    assert b"2026-12-31" not in response.data
     assert b"ABIERTO" in response.data
     assert b"Detalle de prueba" in response.data
     assert b'data-field="es_primer_ejercicio"' in response.data

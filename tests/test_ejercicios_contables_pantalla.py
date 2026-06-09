@@ -79,6 +79,10 @@ def test_pantalla_ejercicios_contables_muestra_ejercicio_activo_con_ids_cortos()
     assert b'id="ec-row-ej2026"' in response.data
     assert b'data-row-codigo="EJ2026"' in response.data
     assert b'data-field="fecha_desde"' in response.data
+    assert b"01/01/2026" in response.data
+    assert b"31/12/2026" in response.data
+    assert b"2026-01-01" not in response.data
+    assert b"2026-12-31" not in response.data
     assert b'data-field="es_primer_ejercicio"' in response.data
     assert b"Es primer ejercicio" in response.data
     assert b'id="ec-activo-resumen"' in response.data
