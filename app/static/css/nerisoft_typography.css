@@ -1,0 +1,34 @@
+:root {
+    --ns-font-sans: "Inter";
+    --ns-font-numeric: "Inter";
+}
+
+html,
+body {
+    font-family: var(--ns-font-sans);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+input,
+select,
+textarea,
+button,
+.table,
+.form-control,
+.form-select,
+.btn {
+    font-family: inherit;
+}
+
+[data-field],
+[data-row-codigo],
+.ns-tabular-num,
+.ns-numero,
+.ns-codigo,
+.text-end,
+.table td,
+.table th {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+}
