@@ -36,7 +36,7 @@
                 novalidate
             >
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-12">
                         <label for="cc-cuenta" class="form-label">Cuenta</label>
                         <input
                             id="cc-cuenta"
@@ -52,7 +52,7 @@
                         >
                     </div>
 
-                    <div class="col-md-8">
+                    <div class="col-12">
                         <label for="cc-descripcion-input" class="form-label">Descripcion</label>
                         <input
                             id="cc-descripcion-input"
@@ -67,7 +67,7 @@
                         >
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="cc-saldo-habitual" class="form-label">Saldo habitual</label>
                         <select
                             id="cc-saldo-habitual"
@@ -84,7 +84,7 @@
                         </select>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="cc-naturaleza" class="form-label">Naturaleza</label>
                         <select
                             id="cc-naturaleza"
@@ -101,7 +101,7 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-3 d-flex align-items-end">
                         <div class="form-check mb-2">
                             {% set imputable = cuenta_contable.get('imputable', 0) %}
                             <input
@@ -120,7 +120,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-3 d-flex align-items-end">
                         <div class="form-check mb-2">
                             {% set monetaria = cuenta_contable.get('monetaria', 0) %}
                             <input
@@ -151,6 +151,23 @@
                             value="{{ cuenta_contable.get('sumarizadora', '') }}"
                             placeholder="Codigo de cuenta padre"
                             autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="col-md-8">
+                        <label for="cc-descripcion-sumarizadora" class="form-label">
+                            Descripcion sumarizadora
+                        </label>
+                        <input
+                            id="cc-descripcion-sumarizadora"
+                            data-table="cuentas_contables"
+                            data-field="descripcion_sumarizadora"
+                            type="text"
+                            class="form-control"
+                            value="{{ cuenta_contable.get('descripcion_sumarizadora', '') }}"
+                            placeholder="Descripcion de la cuenta padre"
+                            autocomplete="off"
+                            readonly
                         >
                     </div>
 

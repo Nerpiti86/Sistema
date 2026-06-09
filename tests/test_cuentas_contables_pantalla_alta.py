@@ -150,3 +150,43 @@ def test_formulario_cuenta_contable_muestra_flags_como_checkbox():
     assert 'data-field="monetaria"' in html
     assert '<select\n                            id="cc-imputable"' not in html
     assert '<select\n                            id="cc-monetaria"' not in html
+
+
+def test_formulario_cuenta_contable_respeta_disposicion_de_componentes():
+    """
+    Valida disposicion visual base del formulario de cuentas_contables.
+
+    La pantalla agrupa los componentes en el orden funcional definido:
+    cuenta, descripcion, atributos contables y sumarizadora.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        response = client.get("/contabilidad/cuentas-contables/nueva/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+
+    cuenta_pos = html.index('id="cc-cuenta"')
+    descripcion_pos = html.index('id="cc-descripcion-input"')
+    saldo_pos = html.index('id="cc-saldo-habitual"')
+    naturaleza_pos = html.index('id="cc-naturaleza"')
+    imputable_pos = html.index('id="cc-imputable"')
+    monetaria_pos = html.index('id="cc-monetaria"')
+    sumarizadora_pos = html.index('id="cc-sumarizadora"')
+    descripcion_sumarizadora_pos = html.index('id="cc-descripcion-sumarizadora"')
+
+    assert cuenta_pos < descripcion_pos
+    assert descripcion_pos < saldo_pos
+    assert saldo_pos < naturaleza_pos
+    assert naturaleza_pos < imputable_pos
+    assert imputable_pos < monetaria_pos
+    assert monetaria_pos < sumarizadora_pos
+    assert sumarizadora_pos < descripcion_sumarizadora_pos
+
+    assert 'data-field="descripcion_sumarizadora"' in html
+    assert 'placeholder="Descripcion de la cuenta padre"' in html
+    assert 'readonly' in html
