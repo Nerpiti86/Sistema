@@ -23,6 +23,21 @@ def index():
     )
 
 
+
+@bp.get("/cuentas-contables/")
+def ver_listado_cuentas_contables():
+    """
+    Muestra pantalla base de cuentas contables.
+
+    Esta route no ejecuta SQL directo. El alta/listado real queda para pasos
+    posteriores con repository y service propios.
+    """
+    return render_template(
+        "contabilidad/cuentas_contables.html",
+        page_title="Cuentas contables",
+    )
+
+
 @bp.get("/ejercicios-contables/")
 def ver_listado_ejercicios_contables():
     contexto_ejercicios_contables = obtener_contexto_listado_ejercicios_contables()

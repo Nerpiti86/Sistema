@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section
+    id="cc-listado"
+    data-table="cuentas_contables"
+    data-query="listar_cuentas_contables"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="cc-titulo" class="h3 mb-1">
+                    Cuentas contables
+                </h1>
+                <p id="cc-descripcion" class="text-muted mb-0">
+                    Pantalla base del maestro de cuentas contables.
+                </p>
+            </div>
+            <div id="cc-acciones-listado">
+                {{ secondary_link("Volver a contabilidad", url_for("contabilidad.index")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="cc-contenedor"
+            data-table="cuentas_contables"
+            data-query="listar_cuentas_contables"
+        >
+            {% call card("Listado", "cuentas_contables") %}
+                <p
+                    id="cc-mensaje-pendiente"
+                    data-table="cuentas_contables"
+                    data-query="listar_cuentas_contables"
+                    class="text-muted mb-0"
+                >
+                    El listado de cuentas contables se implementara en el proximo paso.
+                </p>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
