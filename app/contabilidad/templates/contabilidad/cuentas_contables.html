@@ -16,7 +16,7 @@
                     Cuentas contables
                 </h1>
                 <p id="cc-descripcion" class="text-muted mb-0">
-                    Pantalla base del maestro de cuentas contables.
+                    Maestro de cuentas contables.
                 </p>
             </div>
             <div id="cc-acciones-listado">
@@ -27,19 +27,104 @@
 
     <div class="col-12">
         <div
-            id="cc-contenedor"
+            id="cc-resumen"
+            data-table="cuentas_contables"
+            data-query="obtener_contexto_listado_cuentas_contables"
+        >
+            {% call card("Resumen", "Contexto contable") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd
+                        id="cc-cantidad"
+                        data-table="cuentas_contables"
+                        data-query="obtener_contexto_listado_cuentas_contables"
+                        data-field="cantidad_cuentas_contables"
+                        class="col-sm-9"
+                    >
+                        {{ cantidad_cuentas_contables }}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="cc-contenedor-tabla"
             data-table="cuentas_contables"
             data-query="listar_cuentas_contables"
         >
             {% call card("Listado", "cuentas_contables") %}
-                <p
-                    id="cc-mensaje-pendiente"
-                    data-table="cuentas_contables"
-                    data-query="listar_cuentas_contables"
-                    class="text-muted mb-0"
-                >
-                    El listado de cuentas contables se implementara en el proximo paso.
-                </p>
+                <div class="table-responsive">
+                    <table
+                        id="cc-tabla"
+                        data-table="cuentas_contables"
+                        data-query="listar_cuentas_contables"
+                        class="table table-sm table-striped align-middle mb-0"
+                    >
+                        <thead>
+                            <tr>
+                                <th data-field="cuenta">Cuenta</th>
+                                <th data-field="descripcion">Descripcion</th>
+                                <th data-field="saldo_habitual">Saldo habitual</th>
+                                <th data-field="naturaleza">Naturaleza</th>
+                                <th data-field="imputable" class="text-center">Imputable</th>
+                                <th data-field="monetaria" class="text-center">Monetaria</th>
+                                <th data-field="sumarizadora">Sumarizadora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cc-tbody">
+                            {% for cuenta_contable in cuentas_contables %}
+                                <tr
+                                    id="cc-row-{{ cuenta_contable.cuenta|replace('.', '-') }}"
+                                    data-table="cuentas_contables"
+                                    data-query="listar_cuentas_contables"
+                                    data-row-codigo="{{ cuenta_contable.cuenta }}"
+                                >
+                                    <td data-field="cuenta" class="fw-semibold">
+                                        {{ cuenta_contable.cuenta }}
+                                    </td>
+                                    <td data-field="descripcion">
+                                        {{ cuenta_contable.descripcion }}
+                                    </td>
+                                    <td data-field="saldo_habitual">
+                                        {{ cuenta_contable.saldo_habitual }}
+                                    </td>
+                                    <td data-field="naturaleza">
+                                        {{ cuenta_contable.naturaleza }}
+                                    </td>
+                                    <td data-field="imputable" class="text-center">
+                                        {{ cuenta_contable.imputable }}
+                                    </td>
+                                    <td data-field="monetaria" class="text-center">
+                                        {{ cuenta_contable.monetaria }}
+                                    </td>
+                                    <td data-field="sumarizadora">
+                                        {% if cuenta_contable.sumarizadora %}
+                                            {{ cuenta_contable.sumarizadora }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr
+                                    id="cc-row-sin-datos"
+                                    data-table="cuentas_contables"
+                                    data-query="listar_cuentas_contables"
+                                >
+                                    <td
+                                        id="cc-mensaje-sin-datos"
+                                        colspan="7"
+                                        class="text-center text-muted py-4"
+                                    >
+                                        No hay cuentas contables cargadas.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% endcall %}
         </div>
     </div>

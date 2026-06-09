@@ -1,5 +1,9 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
+from app.contabilidad.cuentas_contables_service import (
+    obtener_contexto_listado_cuentas_contables,
+)
+
 from app.contabilidad.ejercicios_contables_service import (
     actualizar_ejercicio_contable_desde_formulario,
     crear_ejercicio_contable_desde_formulario,
@@ -27,14 +31,17 @@ def index():
 @bp.get("/cuentas-contables/")
 def ver_listado_cuentas_contables():
     """
-    Muestra pantalla base de cuentas contables.
+    Muestra listado de cuentas contables.
 
-    Esta route no ejecuta SQL directo. El alta/listado real queda para pasos
-    posteriores con repository y service propios.
+    Esta route no ejecuta SQL directo. El contexto de pantalla queda delegado
+    al service de cuentas_contables.
     """
+    contexto_cuentas_contables = obtener_contexto_listado_cuentas_contables()
+
     return render_template(
         "contabilidad/cuentas_contables.html",
         page_title="Cuentas contables",
+        **contexto_cuentas_contables,
     )
 
 
