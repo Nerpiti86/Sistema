@@ -4,6 +4,7 @@ from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.contabilidad.cuentas_contables_repository import (
+    crear_cuenta_contable,
     listar_cuentas_contables,
     listar_cuentas_contables_por_sumarizadora,
     obtener_cuenta_contable_por_cuenta,
@@ -77,6 +78,163 @@ def _insertar_jerarquia_caja_ars_para_test(db):
         imputable="SI",
         sumarizadora="1.1.01.01.000",
     )
+
+
+def test_crear_cuenta_contable_inserta_y_devuelve_fila_normalizada():
+    """Valida alta repository y retorno normalizado de la cuenta creada."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+
+        cuenta_padre = crear_cuenta_contable(
+            {
+                "cuenta": "1.1.01.01.000",
+                "descripcion": "CAJAS",
+                "saldo_habitual": "DEBE",
+                "naturaleza": "PATRIMONIAL",
+                "imputable": "NO",
+                "monetaria": "SI",
+                "sumarizadora": None,
+            }
+        )
+        cuenta_hija = crear_cuenta_contable(
+            {
+                "cuenta": "1.1.01.01.001",
+                "descripcion": "CAJA ARS",
+                "saldo_habitual": "DEBE",
+                "naturaleza": "PATRIMONIAL",
+                "imputable": "SI",
+                "monetaria": "SI",
+                "sumarizadora": cuenta_padre["cuenta"],
+            }
+        )
+
+    assert cuenta_hija["cuenta"] == "1.1.01.01.001"
+    assert cuenta_hija["descripcion"] == "CAJA ARS"
+    assert cuenta_hija["saldo_habitual"] == "DEBE"
+    assert cuenta_hija["naturaleza"] == "PATRIMONIAL"
+    assert cuenta_hija["imputable"] == "SI"
+    assert cuenta_hija["monetaria"] == "SI"
+    assert cuenta_hija["sumarizadora"] == "1.1.01.01.000"
+    assert cuenta_hija["es_imputable"] is True
+    assert cuenta_hija["es_monetaria"] is True
+    assert cuenta_hija["tiene_sumarizadora"] is True
+
+
+def test_crear_cuenta_contable_normaliza_espacios_y_opciones():
+    """Valida normalizacion minima del repository antes del INSERT."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        cuenta_contable = crear_cuenta_contable(
+            {
+                "cuenta": " 1.1.01.01.001 ",
+                "descripcion": "  CAJA ARS  ",
+                "saldo_habitual": " debe ",
+                "naturaleza": " patrimonial ",
+                "imputable": " si ",
+                "monetaria": " si ",
+                "sumarizadora": "",
+            }
+        )
+
+    assert cuenta_contable["cuenta"] == "1.1.01.01.001"
+    assert cuenta_contable["descripcion"] == "CAJA ARS"
+    assert cuenta_contable["saldo_habitual"] == "DEBE"
+    assert cuenta_contable["naturaleza"] == "PATRIMONIAL"
+    assert cuenta_contable["imputable"] == "SI"
+    assert cuenta_contable["monetaria"] == "SI"
+    assert cuenta_contable["sumarizadora"] is None
+
+
+def test_crear_cuenta_contable_rechaza_descripcion_vacia():
+    """Valida que no se inserte cuenta contable sin descripcion."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        with pytest.raises(ValueError, match="descripcion"):
+            crear_cuenta_contable(
+                {
+                    "cuenta": "1.1.01.01.001",
+                    "descripcion": " ",
+                    "saldo_habitual": "DEBE",
+                    "naturaleza": "PATRIMONIAL",
+                    "imputable": "SI",
+                    "monetaria": "SI",
+                    "sumarizadora": None,
+                }
+            )
+
+
+def test_crear_cuenta_contable_rechaza_saldo_habitual_invalido():
+    """Valida opcion cerrada de saldo habitual antes del INSERT."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        with pytest.raises(ValueError, match="saldo habitual"):
+            crear_cuenta_contable(
+                {
+                    "cuenta": "1.1.01.01.001",
+                    "descripcion": "CAJA ARS",
+                    "saldo_habitual": "AMBOS",
+                    "naturaleza": "PATRIMONIAL",
+                    "imputable": "SI",
+                    "monetaria": "SI",
+                    "sumarizadora": None,
+                }
+            )
+
+
+def test_crear_cuenta_contable_rechaza_sumarizadora_inexistente():
+    """Valida que el alta respete la FK de sumarizadora por codigo."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        with pytest.raises(ValueError, match="No se pudo crear"):
+            crear_cuenta_contable(
+                {
+                    "cuenta": "1.1.01.01.001",
+                    "descripcion": "CAJA ARS",
+                    "saldo_habitual": "DEBE",
+                    "naturaleza": "PATRIMONIAL",
+                    "imputable": "SI",
+                    "monetaria": "SI",
+                    "sumarizadora": "1.1.01.01.000",
+                }
+            )
+
+
+def test_crear_cuenta_contable_rechaza_cuenta_duplicada():
+    """Valida que el alta respete cuenta como codigo unico."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        datos_cuenta_contable = {
+            "cuenta": "1.1.01.01.001",
+            "descripcion": "CAJA ARS",
+            "saldo_habitual": "DEBE",
+            "naturaleza": "PATRIMONIAL",
+            "imputable": "SI",
+            "monetaria": "SI",
+            "sumarizadora": None,
+        }
+
+        crear_cuenta_contable(datos_cuenta_contable)
+
+        with pytest.raises(ValueError, match="No se pudo crear"):
+            crear_cuenta_contable(datos_cuenta_contable)
 
 
 def test_listar_cuentas_contables_devuelve_filas_normalizadas():

@@ -1,4 +1,5 @@
 import re
+import sqlite3
 from typing import Any
 
 from app.db import get_db
@@ -62,6 +63,84 @@ def obtener_cuenta_contable_por_cuenta(
     return _normalizar_fila_cuenta_contable(fila_cuenta_contable)
 
 
+def crear_cuenta_contable(datos_cuenta_contable: dict[str, Any]) -> dict[str, Any]:
+    """
+    Inserta un registro en cuentas_contables y devuelve la fila creada.
+
+    Este repository ejecuta SQL directo. No resuelve reglas de formulario,
+    rutas ni pantalla. La tabla mantiene sus propias restricciones, incluida
+    la cuenta unica y la sumarizadora como codigo de cuenta padre.
+    """
+    cuenta_contable = _validar_cuenta_contable(datos_cuenta_contable["cuenta"])
+    descripcion = _validar_texto_obligatorio(
+        datos_cuenta_contable["descripcion"],
+        "La descripcion de la cuenta contable es obligatoria.",
+    )
+    saldo_habitual = _validar_opcion_cuenta_contable(
+        datos_cuenta_contable["saldo_habitual"],
+        {"DEBE", "HABER"},
+        "El saldo habitual de la cuenta contable es invalido.",
+    )
+    naturaleza = _validar_opcion_cuenta_contable(
+        datos_cuenta_contable["naturaleza"],
+        {"PATRIMONIAL", "RESULTADO"},
+        "La naturaleza de la cuenta contable es invalida.",
+    )
+    imputable = _validar_opcion_cuenta_contable(
+        datos_cuenta_contable["imputable"],
+        {"SI", "NO"},
+        "El valor imputable de la cuenta contable es invalido.",
+    )
+    monetaria = _validar_opcion_cuenta_contable(
+        datos_cuenta_contable["monetaria"],
+        {"SI", "NO"},
+        "El valor monetario de la cuenta contable es invalido.",
+    )
+    sumarizadora = _normalizar_sumarizadora_cuenta_contable(
+        datos_cuenta_contable.get("sumarizadora")
+    )
+
+    if sumarizadora == cuenta_contable:
+        raise ValueError("La cuenta contable no puede sumarizarse a si misma.")
+
+    db = get_db()
+
+    try:
+        with db:
+            db.execute(
+                """
+                INSERT INTO cuentas_contables (
+                    cuenta,
+                    descripcion,
+                    saldo_habitual,
+                    naturaleza,
+                    imputable,
+                    monetaria,
+                    sumarizadora
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    cuenta_contable,
+                    descripcion,
+                    saldo_habitual,
+                    naturaleza,
+                    imputable,
+                    monetaria,
+                    sumarizadora,
+                ),
+            )
+    except sqlite3.IntegrityError as exc:
+        raise ValueError("No se pudo crear la cuenta contable.") from exc
+
+    cuenta_contable_creada = obtener_cuenta_contable_por_cuenta(cuenta_contable)
+
+    if cuenta_contable_creada is None:
+        raise ValueError("No se pudo recuperar la cuenta contable creada.")
+
+    return cuenta_contable_creada
+
+
 def listar_cuentas_contables_por_sumarizadora(
     cuenta_sumarizadora: str,
 ) -> list[dict[str, Any]]:
@@ -114,6 +193,43 @@ def _normalizar_fila_cuenta_contable(fila_cuenta_contable) -> dict[str, Any]:
     cuenta_contable["tiene_sumarizadora"] = cuenta_contable["sumarizadora"] is not None
 
     return cuenta_contable
+
+
+def _normalizar_sumarizadora_cuenta_contable(sumarizadora: Any) -> str | None:
+    """Normaliza sumarizadora nullable como codigo de cuenta padre."""
+    if sumarizadora is None:
+        return None
+
+    sumarizadora_normalizada = str(sumarizadora).strip()
+
+    if not sumarizadora_normalizada:
+        return None
+
+    return _validar_cuenta_contable(sumarizadora_normalizada)
+
+
+def _validar_opcion_cuenta_contable(
+    valor: Any,
+    opciones_validas: set[str],
+    mensaje_error: str,
+) -> str:
+    """Valida opciones cerradas del contrato de cuentas_contables."""
+    valor_normalizado = str(valor or "").strip().upper()
+
+    if valor_normalizado not in opciones_validas:
+        raise ValueError(mensaje_error)
+
+    return valor_normalizado
+
+
+def _validar_texto_obligatorio(valor: Any, mensaje_error: str) -> str:
+    """Valida texto obligatorio y devuelve version recortada."""
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        raise ValueError(mensaje_error)
+
+    return valor_normalizado
 
 
 def _validar_cuenta_contable(cuenta_contable: str) -> str:
