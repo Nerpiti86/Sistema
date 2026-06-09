@@ -245,3 +245,61 @@ def test_formulario_edicion_cuenta_contable_carga_js_validacion_cuenta():
     assert 'data-validation="cuentas-contables-formato-cuenta"' in html
     assert "readonly" in html
     assert "js/cuentas_contables_form_validacion_cuenta.js" in html
+
+
+def test_actualizar_cuenta_contable_raiz_desde_pantalla_no_rechaza_formato():
+    """
+    Reproduce edicion de cuenta raiz 1.0.00.00.000.
+
+    La cuenta raiz no tiene sumarizadora. El formato 1.0.00.00.000 debe ser
+    aceptado tanto por la URL como por el formulario readonly.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+
+        _insertar_cuenta_contable_para_test(
+            db,
+            "1.0.00.00.000",
+            "ACTIVO",
+            saldo_habitual="DEBE",
+            naturaleza="PATRIMONIAL",
+            imputable=0,
+            monetaria=0,
+            sumarizadora=None,
+        )
+
+        response = client.post(
+            "/contabilidad/cuentas-contables/1.0.00.00.000/editar/",
+            data={
+                "cuenta": "1.0.00.00.000",
+                "descripcion": "ACTIVO",
+                "saldo_habitual": "DEBE",
+                "naturaleza": "PATRIMONIAL",
+                "sumarizadora": "",
+            },
+            follow_redirects=False,
+        )
+
+        cuenta_actualizada = db.execute(
+            """
+            SELECT cuenta, descripcion, imputable, monetaria, sumarizadora
+            FROM cuentas_contables
+            WHERE cuenta = ?
+            LIMIT 1
+            """,
+            ("1.0.00.00.000",),
+        ).fetchone()
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 302, html
+    assert cuenta_actualizada is not None
+    assert cuenta_actualizada["cuenta"] == "1.0.00.00.000"
+    assert cuenta_actualizada["descripcion"] == "ACTIVO"
+    assert cuenta_actualizada["imputable"] == 0
+    assert cuenta_actualizada["monetaria"] == 0
+    assert cuenta_actualizada["sumarizadora"] is None
