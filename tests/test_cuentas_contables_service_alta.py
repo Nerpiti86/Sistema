@@ -29,8 +29,8 @@ def test_crear_cuenta_contable_desde_formulario_crea_cuenta_normalizada():
                 "descripcion": "  CAJA ARS ",
                 "saldo_habitual": " debe ",
                 "naturaleza": " patrimonial ",
-                "imputable": " si ",
-                "monetaria": " si ",
+                "imputable": "1",
+                "monetaria": "1",
                 "sumarizadora": "",
             }
         )
@@ -41,8 +41,8 @@ def test_crear_cuenta_contable_desde_formulario_crea_cuenta_normalizada():
     assert cuenta_contable["descripcion"] == "CAJA ARS"
     assert cuenta_contable["saldo_habitual"] == "DEBE"
     assert cuenta_contable["naturaleza"] == "PATRIMONIAL"
-    assert cuenta_contable["imputable"] == "SI"
-    assert cuenta_contable["monetaria"] == "SI"
+    assert cuenta_contable["imputable"] == 1
+    assert cuenta_contable["monetaria"] == 1
     assert cuenta_contable["sumarizadora"] is None
     assert cuenta_persistida is not None
     assert cuenta_persistida["cuenta"] == "1.1.01.01.001"
@@ -62,8 +62,8 @@ def test_crear_cuenta_contable_desde_formulario_rechaza_descripcion_vacia():
                     "descripcion": "",
                     "saldo_habitual": "DEBE",
                     "naturaleza": "PATRIMONIAL",
-                    "imputable": "SI",
-                    "monetaria": "SI",
+                    "imputable": "1",
+                    "monetaria": "1",
                     "sumarizadora": "",
                 }
             )
@@ -83,8 +83,36 @@ def test_crear_cuenta_contable_desde_formulario_rechaza_formato_cuenta_invalido(
                     "descripcion": "CAJA ARS",
                     "saldo_habitual": "DEBE",
                     "naturaleza": "PATRIMONIAL",
-                    "imputable": "SI",
-                    "monetaria": "SI",
+                    "imputable": "1",
+                    "monetaria": "1",
                     "sumarizadora": "",
                 }
             )
+
+
+def test_crear_cuenta_contable_desde_formulario_checkbox_ausente_normaliza_0():
+    """
+    Valida contrato de checkbox HTML ausente.
+
+    Cuando imputable o monetaria no vienen en el formulario, el service debe
+    convertirlos a 0 antes de delegar al repository.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        cuenta_contable = crear_cuenta_contable_desde_formulario(
+            {
+                "cuenta": "1.1.01.01.001",
+                "descripcion": "CAJA ARS",
+                "saldo_habitual": "DEBE",
+                "naturaleza": "PATRIMONIAL",
+                "sumarizadora": "",
+            }
+        )
+
+    assert cuenta_contable["imputable"] == 0
+    assert cuenta_contable["monetaria"] == 0
+    assert cuenta_contable["es_imputable"] is False
+    assert cuenta_contable["es_monetaria"] is False

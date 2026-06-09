@@ -101,38 +101,42 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
-                        <label for="cc-imputable" class="form-label">Imputable</label>
-                        <select
-                            id="cc-imputable"
-                            data-table="cuentas_contables"
-                            data-field="imputable"
-                            name="imputable"
-                            class="form-select"
-                            required
-                        >
-                            {% set imputable = cuenta_contable.get('imputable', '') %}
-                            <option value="">Seleccionar...</option>
-                            <option value="SI" {% if imputable == "SI" %}selected{% endif %}>SI</option>
-                            <option value="NO" {% if imputable == "NO" %}selected{% endif %}>NO</option>
-                        </select>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            {% set imputable = cuenta_contable.get('imputable', 0) %}
+                            <input
+                                id="cc-imputable"
+                                data-table="cuentas_contables"
+                                data-field="imputable"
+                                name="imputable"
+                                value="1"
+                                type="checkbox"
+                                class="form-check-input"
+                                {% if imputable == 1 or imputable == "1" or imputable == true %}checked{% endif %}
+                            >
+                            <label for="cc-imputable" class="form-check-label">
+                                Imputable
+                            </label>
+                        </div>
                     </div>
 
-                    <div class="col-md-2">
-                        <label for="cc-monetaria" class="form-label">Monetaria</label>
-                        <select
-                            id="cc-monetaria"
-                            data-table="cuentas_contables"
-                            data-field="monetaria"
-                            name="monetaria"
-                            class="form-select"
-                            required
-                        >
-                            {% set monetaria = cuenta_contable.get('monetaria', '') %}
-                            <option value="">Seleccionar...</option>
-                            <option value="SI" {% if monetaria == "SI" %}selected{% endif %}>SI</option>
-                            <option value="NO" {% if monetaria == "NO" %}selected{% endif %}>NO</option>
-                        </select>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            {% set monetaria = cuenta_contable.get('monetaria', 0) %}
+                            <input
+                                id="cc-monetaria"
+                                data-table="cuentas_contables"
+                                data-field="monetaria"
+                                name="monetaria"
+                                value="1"
+                                type="checkbox"
+                                class="form-check-input"
+                                {% if monetaria == 1 or monetaria == "1" or monetaria == true %}checked{% endif %}
+                            >
+                            <label for="cc-monetaria" class="form-check-label">
+                                Monetaria
+                            </label>
+                        </div>
                     </div>
 
                     <div class="col-md-4">

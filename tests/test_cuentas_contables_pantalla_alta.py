@@ -53,8 +53,8 @@ def test_crear_cuenta_contable_desde_pantalla_redirige_a_listado():
                 "descripcion": "CAJA ARS",
                 "saldo_habitual": "DEBE",
                 "naturaleza": "PATRIMONIAL",
-                "imputable": "SI",
-                "monetaria": "SI",
+                "imputable": "1",
+                "monetaria": "1",
                 "sumarizadora": "",
             },
             follow_redirects=False,
@@ -97,8 +97,8 @@ def test_crear_cuenta_contable_desde_pantalla_muestra_error_validacion():
                 "descripcion": "CAJA ARS",
                 "saldo_habitual": "DEBE",
                 "naturaleza": "PATRIMONIAL",
-                "imputable": "SI",
-                "monetaria": "SI",
+                "imputable": "1",
+                "monetaria": "1",
                 "sumarizadora": "",
             },
         )
@@ -121,3 +121,32 @@ def test_listado_cuentas_contables_tiene_boton_nueva():
     assert b'id="cc-nueva"' in response.data
     assert b"/contabilidad/cuentas-contables/nueva/" in response.data
     assert b'data-action="crear_cuenta_contable"' in response.data
+
+
+def test_formulario_cuenta_contable_muestra_flags_como_checkbox():
+    """
+    Valida contrato visual de flags booleanos de cuentas_contables.
+
+    Imputable y monetaria se editan como checkbox HTML y se persisten como
+    INTEGER 0/1 en SQLite.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        response = client.get("/contabilidad/cuentas-contables/nueva/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'id="cc-imputable"' in html
+    assert 'name="imputable"' in html
+    assert 'data-field="imputable"' in html
+    assert 'type="checkbox"' in html
+    assert 'value="1"' in html
+    assert 'id="cc-monetaria"' in html
+    assert 'name="monetaria"' in html
+    assert 'data-field="monetaria"' in html
+    assert '<select\n                            id="cc-imputable"' not in html
+    assert '<select\n                            id="cc-monetaria"' not in html

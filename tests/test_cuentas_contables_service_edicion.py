@@ -29,8 +29,8 @@ def test_actualizar_cuenta_contable_desde_formulario_actualiza_normalizado():
                 "descripcion": "CAJA ARS",
                 "saldo_habitual": "DEBE",
                 "naturaleza": "PATRIMONIAL",
-                "imputable": "SI",
-                "monetaria": "SI",
+                "imputable": "1",
+                "monetaria": "1",
                 "sumarizadora": None,
             }
         )
@@ -42,7 +42,7 @@ def test_actualizar_cuenta_contable_desde_formulario_actualiza_normalizado():
                 "descripcion": "  CAJA PESOS ",
                 "saldo_habitual": " debe ",
                 "naturaleza": " patrimonial ",
-                "imputable": " si ",
+                "imputable": "1",
                 "monetaria": " no ",
                 "sumarizadora": "",
             },
@@ -55,8 +55,8 @@ def test_actualizar_cuenta_contable_desde_formulario_actualiza_normalizado():
     assert cuenta_contable["descripcion"] == "CAJA PESOS"
     assert cuenta_contable["saldo_habitual"] == "DEBE"
     assert cuenta_contable["naturaleza"] == "PATRIMONIAL"
-    assert cuenta_contable["imputable"] == "SI"
-    assert cuenta_contable["monetaria"] == "NO"
+    assert cuenta_contable["imputable"] == 1
+    assert cuenta_contable["monetaria"] == 0
     assert cuenta_contable["sumarizadora"] is None
     assert cuenta_persistida is not None
     assert cuenta_persistida["descripcion"] == "CAJA PESOS"
@@ -77,8 +77,8 @@ def test_actualizar_cuenta_contable_desde_formulario_rechaza_inexistente():
                     "descripcion": "NO EXISTE",
                     "saldo_habitual": "DEBE",
                     "naturaleza": "PATRIMONIAL",
-                    "imputable": "SI",
-                    "monetaria": "SI",
+                    "imputable": "1",
+                    "monetaria": "1",
                     "sumarizadora": "",
                 },
             )
@@ -96,8 +96,8 @@ def test_actualizar_cuenta_contable_desde_formulario_rechaza_descripcion_vacia()
                 "descripcion": "CAJA ARS",
                 "saldo_habitual": "DEBE",
                 "naturaleza": "PATRIMONIAL",
-                "imputable": "SI",
-                "monetaria": "SI",
+                "imputable": "1",
+                "monetaria": "1",
                 "sumarizadora": None,
             }
         )
@@ -109,8 +109,8 @@ def test_actualizar_cuenta_contable_desde_formulario_rechaza_descripcion_vacia()
                     "descripcion": "",
                     "saldo_habitual": "DEBE",
                     "naturaleza": "PATRIMONIAL",
-                    "imputable": "SI",
-                    "monetaria": "SI",
+                    "imputable": "1",
+                    "monetaria": "1",
                     "sumarizadora": "",
                 },
             )

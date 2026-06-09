@@ -66,6 +66,25 @@ def _obtener_valor_formulario(formulario: dict[str, Any], campo: str) -> str:
     return str(formulario.get(campo, "") or "").strip()
 
 
+def _obtener_valor_checkbox_0_1(formulario: dict[str, Any], campo: str) -> int:
+    """
+    Normaliza checkbox HTML al contrato SQLite 0/1.
+
+    Si el navegador no envia el campo, el checkbox esta destildado.
+    """
+    valor = formulario.get(campo)
+
+    if valor is None:
+        return 0
+
+    valor_normalizado = str(valor or "").strip().upper()
+
+    if valor_normalizado in {"", "0", "NO", "FALSE", "OFF"}:
+        return 0
+
+    return 1
+
+
 def actualizar_cuenta_contable_desde_formulario(
     cuenta_contable_codigo: str,
     formulario: dict[str, Any],
@@ -86,14 +105,14 @@ def actualizar_cuenta_contable_desde_formulario(
 
 def _normalizar_datos_cuenta_contable_formulario(
     formulario: dict[str, Any],
-) -> dict[str, str]:
+) -> dict[str, Any]:
     """Normaliza campos de formulario de cuentas_contables."""
     return {
         "cuenta": _obtener_valor_formulario(formulario, "cuenta"),
         "descripcion": _obtener_valor_formulario(formulario, "descripcion"),
         "saldo_habitual": _obtener_valor_formulario(formulario, "saldo_habitual"),
         "naturaleza": _obtener_valor_formulario(formulario, "naturaleza"),
-        "imputable": _obtener_valor_formulario(formulario, "imputable"),
-        "monetaria": _obtener_valor_formulario(formulario, "monetaria"),
+        "imputable": _obtener_valor_checkbox_0_1(formulario, "imputable"),
+        "monetaria": _obtener_valor_checkbox_0_1(formulario, "monetaria"),
         "sumarizadora": _obtener_valor_formulario(formulario, "sumarizadora"),
     }

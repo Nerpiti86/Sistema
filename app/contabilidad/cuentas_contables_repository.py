@@ -87,14 +87,12 @@ def crear_cuenta_contable(datos_cuenta_contable: dict[str, Any]) -> dict[str, An
         {"PATRIMONIAL", "RESULTADO"},
         "La naturaleza de la cuenta contable es invalida.",
     )
-    imputable = _validar_opcion_cuenta_contable(
+    imputable = _validar_booleano_cuenta_contable(
         datos_cuenta_contable["imputable"],
-        {"SI", "NO"},
         "El valor imputable de la cuenta contable es invalido.",
     )
-    monetaria = _validar_opcion_cuenta_contable(
+    monetaria = _validar_booleano_cuenta_contable(
         datos_cuenta_contable["monetaria"],
-        {"SI", "NO"},
         "El valor monetario de la cuenta contable es invalido.",
     )
     sumarizadora = _normalizar_sumarizadora_cuenta_contable(
@@ -172,14 +170,12 @@ def actualizar_cuenta_contable_por_cuenta(
         {"PATRIMONIAL", "RESULTADO"},
         "La naturaleza de la cuenta contable es invalida.",
     )
-    imputable = _validar_opcion_cuenta_contable(
+    imputable = _validar_booleano_cuenta_contable(
         datos_cuenta_contable["imputable"],
-        {"SI", "NO"},
         "El valor imputable de la cuenta contable es invalido.",
     )
-    monetaria = _validar_opcion_cuenta_contable(
+    monetaria = _validar_booleano_cuenta_contable(
         datos_cuenta_contable["monetaria"],
-        {"SI", "NO"},
         "El valor monetario de la cuenta contable es invalido.",
     )
     sumarizadora = _normalizar_sumarizadora_cuenta_contable(
@@ -266,7 +262,7 @@ def validar_cuenta_contable_imputable(cuenta_contable: str) -> bool:
         SELECT 1
         FROM cuentas_contables
         WHERE cuenta = ?
-          AND imputable = 'SI'
+          AND imputable = 1
         LIMIT 1
         """,
         (cuenta_contable_validada,),
@@ -282,8 +278,10 @@ def _normalizar_fila_cuenta_contable(fila_cuenta_contable) -> dict[str, Any]:
     """Convierte una fila SQLite de cuentas_contables en dict explicito."""
     cuenta_contable = dict(fila_cuenta_contable)
 
-    cuenta_contable["es_imputable"] = cuenta_contable["imputable"] == "SI"
-    cuenta_contable["es_monetaria"] = cuenta_contable["monetaria"] == "SI"
+    cuenta_contable["imputable"] = int(cuenta_contable["imputable"])
+    cuenta_contable["monetaria"] = int(cuenta_contable["monetaria"])
+    cuenta_contable["es_imputable"] = cuenta_contable["imputable"] == 1
+    cuenta_contable["es_monetaria"] = cuenta_contable["monetaria"] == 1
     cuenta_contable["tiene_sumarizadora"] = cuenta_contable["sumarizadora"] is not None
 
     return cuenta_contable
@@ -300,6 +298,22 @@ def _normalizar_sumarizadora_cuenta_contable(sumarizadora: Any) -> str | None:
         return None
 
     return _validar_cuenta_contable(sumarizadora_normalizada)
+
+
+def _validar_booleano_cuenta_contable(valor: Any, mensaje_error: str) -> int:
+    """Valida booleano SQLite 0/1 del contrato de cuentas_contables."""
+    if isinstance(valor, bool):
+        return 1 if valor else 0
+
+    if isinstance(valor, int) and valor in (0, 1):
+        return valor
+
+    valor_normalizado = str(valor or "").strip()
+
+    if valor_normalizado in {"0", "1"}:
+        return int(valor_normalizado)
+
+    raise ValueError(mensaje_error)
 
 
 def _validar_opcion_cuenta_contable(

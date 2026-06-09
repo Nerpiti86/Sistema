@@ -103,10 +103,18 @@
                                         {{ cuenta_contable.naturaleza }}
                                     </td>
                                     <td data-field="imputable" class="text-center">
-                                        {{ cuenta_contable.imputable }}
+                                        {% if cuenta_contable.es_imputable %}
+                                            Si
+                                        {% else %}
+                                            No
+                                        {% endif %}
                                     </td>
                                     <td data-field="monetaria" class="text-center">
-                                        {{ cuenta_contable.monetaria }}
+                                        {% if cuenta_contable.es_monetaria %}
+                                            Si
+                                        {% else %}
+                                            No
+                                        {% endif %}
                                     </td>
                                     <td data-field="sumarizadora">
                                         {% if cuenta_contable.sumarizadora %}

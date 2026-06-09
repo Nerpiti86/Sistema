@@ -9,8 +9,8 @@ def _insertar_cuenta_contable_para_test(
     descripcion,
     saldo_habitual="DEBE",
     naturaleza="PATRIMONIAL",
-    imputable="NO",
-    monetaria="SI",
+    imputable=0,
+    monetaria=1,
     sumarizadora=None,
 ):
     db.execute(
@@ -66,7 +66,7 @@ def _insertar_jerarquia_caja_ars_para_test(db):
         db,
         "1.1.01.01.001",
         "CAJA ARS",
-        imputable="SI",
+        imputable=1,
         sumarizadora="1.1.01.01.000",
     )
 
@@ -117,7 +117,7 @@ def test_pantalla_cuentas_contables_muestra_listado_real():
     assert b"CAJA ARS" in response.data
     assert b"DEBE" in response.data
     assert b"PATRIMONIAL" in response.data
-    assert b"SI" in response.data
+    assert b"Si" in response.data
     assert b'id="cc-row-1-1-01-01-001"' in response.data
     assert b'data-row-codigo="1.1.01.01.001"' in response.data
     assert b'data-field="sumarizadora"' in response.data

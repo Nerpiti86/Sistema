@@ -15,8 +15,8 @@ def _insertar_cuenta_contable_para_test(
     descripcion,
     saldo_habitual="DEBE",
     naturaleza="PATRIMONIAL",
-    imputable="NO",
-    monetaria="SI",
+    imputable=0,
+    monetaria=1,
     sumarizadora=None,
 ):
     db.execute(
@@ -72,7 +72,7 @@ def _insertar_jerarquia_caja_ars_para_test(db):
         db,
         "1.1.01.01.001",
         "CAJA ARS",
-        imputable="SI",
+        imputable=1,
         sumarizadora="1.1.01.01.000",
     )
 
@@ -110,7 +110,7 @@ def test_obtener_contexto_detalle_cuenta_contable_devuelve_contexto_chico():
 
     assert cuenta_contable["cuenta"] == "1.1.01.01.001"
     assert cuenta_contable["descripcion"] == "CAJA ARS"
-    assert cuenta_contable["imputable"] == "SI"
+    assert cuenta_contable["imputable"] == 1
     assert cuenta_contable["sumarizadora"] == "1.1.01.01.000"
 
 
