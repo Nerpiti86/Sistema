@@ -42,15 +42,26 @@
                             id="cc-cuenta"
                             data-table="cuentas_contables"
                             data-field="cuenta"
+                            data-validation="cuentas-contables-formato-cuenta"
                             name="cuenta"
                             type="text"
                             class="form-control"
                             value="{{ cuenta_contable.get('cuenta', '') }}"
                             placeholder="1.1.01.01.001"
+                            pattern="\d\.\d\.\d{2}\.\d{2}\.\d{3}"
+                            maxlength="14"
+                            inputmode="numeric"
+                            aria-describedby="cc-cuenta-ayuda cc-cuenta-error"
                             autocomplete="off"
                             {% if cuenta_solo_lectura|default(false) %}readonly{% endif %}
                             required
                         >
+                        <div id="cc-cuenta-ayuda" class="form-text">
+                            Formato esperado: 9.9.99.99.999
+                        </div>
+                        <div id="cc-cuenta-error" class="invalid-feedback">
+                            La cuenta debe respetar el formato 9.9.99.99.999.
+                        </div>
                     </div>
 
                     <div class="col-12">
@@ -189,4 +200,5 @@
         {% endcall %}
     </div>
 </section>
+<script src="{{ url_for('static', filename='js/cuentas_contables_form_validacion_cuenta.js') }}"></script>
 {% endblock %}

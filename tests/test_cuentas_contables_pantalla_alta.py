@@ -190,3 +190,32 @@ def test_formulario_cuenta_contable_respeta_disposicion_de_componentes():
     assert 'data-field="descripcion_sumarizadora"' in html
     assert 'placeholder="Descripcion de la cuenta padre"' in html
     assert 'readonly' in html
+
+
+def test_formulario_cuenta_contable_valida_cuenta_al_vuelo_con_js_separado():
+    """
+    Valida contrato de validacion al vuelo del campo cuenta.
+
+    El template declara atributos y data-hooks. El comportamiento vive en un
+    archivo JS separado con nombres identificables.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        response = client.get("/contabilidad/cuentas-contables/nueva/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'id="cc-cuenta"' in html
+    assert 'data-validation="cuentas-contables-formato-cuenta"' in html
+    assert 'pattern="\\d\\.\\d\\.\\d{2}\\.\\d{2}\\.\\d{3}"' in html
+    assert 'maxlength="14"' in html
+    assert 'inputmode="numeric"' in html
+    assert 'aria-describedby="cc-cuenta-ayuda cc-cuenta-error"' in html
+    assert 'id="cc-cuenta-ayuda"' in html
+    assert 'id="cc-cuenta-error"' in html
+    assert "js/cuentas_contables_form_validacion_cuenta.js" in html
+    assert "cc-validacion-cuenta-script" not in html

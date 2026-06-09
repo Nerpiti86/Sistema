@@ -217,3 +217,31 @@ def test_listado_cuentas_contables_tiene_accion_editar():
     assert 'data-action="editar_cuenta_contable"' in html
     assert 'data-row-codigo="1.1.01.01.001"' in html
     assert "/contabilidad/cuentas-contables/1.1.01.01.001/editar/" in html
+
+
+def test_formulario_edicion_cuenta_contable_carga_js_validacion_cuenta():
+    """
+    Valida que edicion reutiliza la validacion al vuelo de cuenta.
+
+    Aunque la cuenta sea readonly en edicion, el formulario conserva el mismo
+    contrato visual y el mismo archivo JS separado.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_jerarquia_caja_ars_para_test(db)
+
+        response = client.get(
+            "/contabilidad/cuentas-contables/1.1.01.01.001/editar/"
+        )
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'id="cc-cuenta"' in html
+    assert 'data-validation="cuentas-contables-formato-cuenta"' in html
+    assert "readonly" in html
+    assert "js/cuentas_contables_form_validacion_cuenta.js" in html
