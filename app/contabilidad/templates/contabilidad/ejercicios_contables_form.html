@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+
+{% block content %}
+<section
+    id="ec-form-crear"
+    data-table="ejercicios_contables"
+    data-action="crear_ejercicio_contable"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="ec-form-titulo" class="h3 mb-1">
+                    Crear ejercicio contable
+                </h1>
+                <p id="ec-form-descripcion" class="text-muted mb-0">
+                    Alta de registro en ejercicios_contables.
+                </p>
+            </div>
+            <div id="ec-form-acciones-superiores">
+                <a
+                    id="ec-volver-listado"
+                    href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
+                    class="btn btn-secondary"
+                >
+                    Volver al listado
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        {% call card("Datos del ejercicio", "ejercicios_contables") %}
+            <form
+                id="ec-form"
+                data-table="ejercicios_contables"
+                data-action="crear_ejercicio_contable"
+                method="post"
+                action="{{ url_for('contabilidad.crear_ejercicio_contable') }}"
+            >
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="ec-codigo" class="form-label">Codigo</label>
+                        <input
+                            id="ec-codigo"
+                            name="codigo"
+                            data-table="ejercicios_contables"
+                            data-field="codigo"
+                            type="text"
+                            class="form-control"
+                            value="{{ ejercicio_contable_form.codigo }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-8">
+                        <label for="ec-nombre" class="form-label">Nombre</label>
+                        <input
+                            id="ec-nombre"
+                            name="nombre"
+                            data-table="ejercicios_contables"
+                            data-field="nombre"
+                            type="text"
+                            class="form-control"
+                            value="{{ ejercicio_contable_form.nombre }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="ec-fecha-desde" class="form-label">Fecha desde</label>
+                        <input
+                            id="ec-fecha-desde"
+                            name="fecha_desde"
+                            data-table="ejercicios_contables"
+                            data-field="fecha_desde"
+                            type="date"
+                            class="form-control"
+                            value="{{ ejercicio_contable_form.fecha_desde }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="ec-fecha-hasta" class="form-label">Fecha hasta</label>
+                        <input
+                            id="ec-fecha-hasta"
+                            name="fecha_hasta"
+                            data-table="ejercicios_contables"
+                            data-field="fecha_hasta"
+                            type="date"
+                            class="form-control"
+                            value="{{ ejercicio_contable_form.fecha_hasta }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="ec-estado" class="form-label">Estado</label>
+                        <select
+                            id="ec-estado"
+                            name="estado"
+                            data-table="ejercicios_contables"
+                            data-field="estado"
+                            class="form-select"
+                            required
+                        >
+                            {% for estado_ejercicio_contable in estados_ejercicio_contable %}
+                                <option
+                                    value="{{ estado_ejercicio_contable }}"
+                                    {% if ejercicio_contable_form.estado == estado_ejercicio_contable %}selected{% endif %}
+                                >
+                                    {{ estado_ejercicio_contable }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="ec-fase-cierre" class="form-label">Fase cierre</label>
+                        <select
+                            id="ec-fase-cierre"
+                            name="fase_cierre"
+                            data-table="ejercicios_contables"
+                            data-field="fase_cierre"
+                            class="form-select"
+                            required
+                        >
+                            {% for fase_cierre_ejercicio_contable in fases_cierre_ejercicio_contable %}
+                                <option
+                                    value="{{ fase_cierre_ejercicio_contable }}"
+                                    {% if ejercicio_contable_form.fase_cierre == fase_cierre_ejercicio_contable %}selected{% endif %}
+                                >
+                                    {{ fase_cierre_ejercicio_contable }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <div id="ec-checks" class="d-flex flex-wrap gap-4">
+                            <div class="form-check">
+                                <input
+                                    id="ec-activo"
+                                    name="activo"
+                                    data-table="ejercicios_contables"
+                                    data-field="activo"
+                                    value="1"
+                                    type="checkbox"
+                                    class="form-check-input"
+                                    {% if ejercicio_contable_form.activo %}checked{% endif %}
+                                >
+                                <label for="ec-activo" class="form-check-label">
+                                    Activo
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input
+                                    id="ec-bloqueado"
+                                    name="bloqueado"
+                                    data-table="ejercicios_contables"
+                                    data-field="bloqueado"
+                                    value="1"
+                                    type="checkbox"
+                                    class="form-check-input"
+                                    {% if ejercicio_contable_form.bloqueado %}checked{% endif %}
+                                >
+                                <label for="ec-bloqueado" class="form-check-label">
+                                    Bloqueado
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input
+                                    id="ec-es-primer-ejercicio"
+                                    name="es_primer_ejercicio"
+                                    data-table="ejercicios_contables"
+                                    data-field="es_primer_ejercicio"
+                                    value="1"
+                                    type="checkbox"
+                                    class="form-check-input"
+                                    {% if ejercicio_contable_form.es_primer_ejercicio %}checked{% endif %}
+                                >
+                                <label for="ec-es-primer-ejercicio" class="form-check-label">
+                                    Es primer ejercicio
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="ec-observaciones-cierre" class="form-label">
+                            Observaciones cierre
+                        </label>
+                        <textarea
+                            id="ec-observaciones-cierre"
+                            name="observaciones_cierre"
+                            data-table="ejercicios_contables"
+                            data-field="observaciones_cierre"
+                            class="form-control"
+                            rows="3"
+                        >{{ ejercicio_contable_form.observaciones_cierre }}</textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <button
+                            id="ec-guardar"
+                            data-table="ejercicios_contables"
+                            data-action="crear_ejercicio_contable"
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Guardar
+                        </button>
+                        <a
+                            id="ec-cancelar"
+                            href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
+                            class="btn btn-secondary"
+                        >
+                            Cancelar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+</section>
+{% endblock %}

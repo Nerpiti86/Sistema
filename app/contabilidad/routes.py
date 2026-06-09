@@ -31,6 +31,34 @@ def ver_listado_ejercicios_contables():
         **contexto_ejercicios_contables,
     )
 
+
+@bp.get("/ejercicios-contables/nuevo/")
+def ver_formulario_crear_ejercicio_contable():
+    """
+    Muestra formulario de alta de ejercicios_contables.
+
+    Esta route no ejecuta SQL directo. Solo prepara contexto visual minimo
+    para el template de alta.
+    """
+    return render_template(
+        "contabilidad/ejercicios_contables_form.html",
+        page_title="Crear ejercicio contable",
+        ejercicio_contable_form={
+            "codigo": "",
+            "nombre": "",
+            "fecha_desde": "",
+            "fecha_hasta": "",
+            "estado": "ABIERTO",
+            "fase_cierre": "ABIERTO",
+            "activo": False,
+            "bloqueado": False,
+            "es_primer_ejercicio": False,
+            "observaciones_cierre": "",
+        },
+        estados_ejercicio_contable=("ABIERTO", "CERRADO"),
+        fases_cierre_ejercicio_contable=("ABIERTO", "EN_CIERRE", "BLOQUEADO"),
+    )
+
 @bp.post("/ejercicios-contables/nuevo/")
 def crear_ejercicio_contable():
     """
