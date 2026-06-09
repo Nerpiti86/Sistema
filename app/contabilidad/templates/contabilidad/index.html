@@ -3,14 +3,17 @@
 {% from "components/buttons.html" import secondary_link %}
 
 {% block content %}
-<div class="row">
+<div class="row g-3">
     <div class="col-12">
         {% call card("Contabilidad", "Modulo base registrado") %}
             <p class="mb-3">
                 Base del modulo contable creada correctamente.
             </p>
 
-            {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            <div id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__acceso">
+                {{ secondary_link("Ejercicios contables", url_for("contabilidad.ver_listado_ejercicios_contables")) }}
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
         {% endcall %}
     </div>
 </div>

@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.contabilidad.ejercicios_contables_repository import (
+    listar_ejercicios_contables,
     obtener_ejercicio_contable_activo,
     obtener_ejercicio_contable_por_codigo,
     obtener_ejercicio_contable_por_fecha,
@@ -82,6 +83,28 @@ def obtener_contexto_ejercicio_contable_activo() -> dict[str, Any]:
         "ejercicio_contable_bloqueado": ejercicio_contable_activo[
             "esta_bloqueado"
         ],
+    }
+
+
+def obtener_contexto_listado_ejercicios_contables() -> dict[str, Any]:
+    """
+    Devuelve contexto chico para pantalla de ejercicios_contables.
+
+    La consulta base es listar_ejercicios_contables(). La tabla es chica y de
+    contexto; no se cargan asientos, comprobantes ni movimientos asociados.
+    """
+    ejercicios_contables = listar_ejercicios_contables()
+
+    ejercicio_contable_activo = None
+    for ejercicio_contable in ejercicios_contables:
+        if ejercicio_contable["es_activo"]:
+            ejercicio_contable_activo = ejercicio_contable
+            break
+
+    return {
+        "ejercicios_contables": ejercicios_contables,
+        "cantidad_ejercicios_contables": len(ejercicios_contables),
+        "ejercicio_contable_activo": ejercicio_contable_activo,
     }
 
 

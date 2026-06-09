@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section
+    id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__seccion"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div
+            id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__encabezado"
+            class="d-flex justify-content-between align-items-start gap-3 mb-3"
+        >
+            <div>
+                <h1
+                    id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__titulo"
+                    class="h3 mb-1"
+                >
+                    Ejercicios contables
+                </h1>
+                <p
+                    id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__descripcion"
+                    class="text-muted mb-0"
+                >
+                    Listado de solo lectura. No carga asientos ni comprobantes.
+                </p>
+            </div>
+            <div id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__acciones">
+                {{ secondary_link("Volver a contabilidad", url_for("contabilidad.index")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__resumen">
+            {% call card("Resumen", "Contexto contable") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd
+                        id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__cantidad"
+                        class="col-sm-9"
+                    >
+                        {{ cantidad_ejercicios_contables }}
+                    </dd>
+
+                    <dt class="col-sm-3">Activo</dt>
+                    <dd
+                        id="ejercicios_contables__obtener_contexto_listado_ejercicios_contables__activo"
+                        class="col-sm-9"
+                    >
+                        {% if ejercicio_contable_activo %}
+                            {{ ejercicio_contable_activo.codigo }}
+                            - {{ ejercicio_contable_activo.nombre }}
+                        {% else %}
+                            Sin ejercicio activo
+                        {% endif %}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="ejercicios_contables__listar_ejercicios_contables__contenedor">
+            {% call card("Listado", "ejercicios_contables") %}
+                <div class="table-responsive">
+                    <table
+                        id="ejercicios_contables__listar_ejercicios_contables__tabla"
+                        class="table table-sm table-striped align-middle mb-0"
+                    >
+                        <thead id="ejercicios_contables__listar_ejercicios_contables__thead">
+                            <tr>
+                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_codigo">Codigo</th>
+                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_nombre">Nombre</th>
+                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_fecha_desde">Desde</th>
+                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_fecha_hasta">Hasta</th>
+                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_estado">Estado</th>
+                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_fase_cierre">Fase cierre</th>
+                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_activo" class="text-center">Activo</th>
+                                <th id="ejercicios_contables__listar_ejercicios_contables__columna_bloqueado" class="text-center">Bloqueado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ejercicios_contables__listar_ejercicios_contables__tbody">
+                            {% for ejercicio_contable in ejercicios_contables %}
+                                <tr id="ejercicios_contables__listar_ejercicios_contables__fila__{{ ejercicio_contable.codigo|lower }}">
+                                    <td
+                                        id="ejercicios_contables__listar_ejercicios_contables__campo_codigo__{{ ejercicio_contable.codigo|lower }}"
+                                        class="fw-semibold"
+                                    >
+                                        {{ ejercicio_contable.codigo }}
+                                    </td>
+                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_nombre__{{ ejercicio_contable.codigo|lower }}">
+                                        {{ ejercicio_contable.nombre }}
+                                    </td>
+                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_fecha_desde__{{ ejercicio_contable.codigo|lower }}">
+                                        {{ ejercicio_contable.fecha_desde }}
+                                    </td>
+                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_fecha_hasta__{{ ejercicio_contable.codigo|lower }}">
+                                        {{ ejercicio_contable.fecha_hasta }}
+                                    </td>
+                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_estado__{{ ejercicio_contable.codigo|lower }}">
+                                        {{ ejercicio_contable.estado_codigo }}
+                                    </td>
+                                    <td id="ejercicios_contables__listar_ejercicios_contables__campo_fase_cierre__{{ ejercicio_contable.codigo|lower }}">
+                                        {{ ejercicio_contable.fase_cierre_codigo }}
+                                    </td>
+                                    <td
+                                        id="ejercicios_contables__listar_ejercicios_contables__campo_activo__{{ ejercicio_contable.codigo|lower }}"
+                                        class="text-center"
+                                    >
+                                        {% if ejercicio_contable.es_activo %}
+                                            Si
+                                        {% else %}
+                                            No
+                                        {% endif %}
+                                    </td>
+                                    <td
+                                        id="ejercicios_contables__listar_ejercicios_contables__campo_bloqueado__{{ ejercicio_contable.codigo|lower }}"
+                                        class="text-center"
+                                    >
+                                        {% if ejercicio_contable.esta_bloqueado %}
+                                            Si
+                                        {% else %}
+                                            No
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="ejercicios_contables__listar_ejercicios_contables__fila_sin_datos">
+                                    <td
+                                        id="ejercicios_contables__listar_ejercicios_contables__mensaje_sin_datos"
+                                        colspan="8"
+                                        class="text-center text-muted py-4"
+                                    >
+                                        No hay ejercicios contables cargados.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
