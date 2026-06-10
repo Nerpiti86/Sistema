@@ -1,7 +1,197 @@
 {% macro main_navbar(brand) %}
-<nav class="navbar navbar-expand-lg bg-body-tertiary">
+{% set endpoint_actual = request.endpoint or "" %}
+{% set es_inicio = endpoint_actual == "ui.dashboard" %}
+{% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
+{% set es_cuentas = endpoint_actual in [
+    "contabilidad.ver_formulario_nueva_cuenta_contable",
+    "contabilidad.crear_cuenta_contable_nueva",
+    "contabilidad.ver_listado_cuentas_contables",
+    "contabilidad.ver_formulario_editar_cuenta_contable",
+    "contabilidad.actualizar_cuenta_contable_existente",
+    "contabilidad.buscar_cuenta_contable_para_sumarizadora",
+] %}
+{% set es_ejercicios = endpoint_actual in [
+    "contabilidad.ver_listado_ejercicios_contables",
+    "contabilidad.ver_formulario_crear_ejercicio_contable",
+    "contabilidad.crear_ejercicio_contable",
+    "contabilidad.ver_detalle_ejercicio_contable",
+    "contabilidad.ver_formulario_editar_ejercicio_contable",
+    "contabilidad.actualizar_ejercicio_contable",
+    "contabilidad.generar_coeficientes_inflacion_para_ejercicio",
+    "contabilidad.ver_indices_inflacion",
+    "contabilidad.guardar_indice_inflacion_mensual",
+] %}
+<nav
+    id="ns-navbar"
+    class="navbar navbar-expand-lg bg-body-tertiary border-bottom shadow-sm sticky-top ns-navbar"
+    data-component="navbar"
+>
     <div class="container">
-        <a class="navbar-brand" href="{{ url_for('ui.dashboard') }}">{{ brand }}</a>
+        <a
+            id="ns-navbar-brand"
+            class="navbar-brand fw-bold"
+            href="{{ url_for('ui.dashboard') }}"
+            data-component="navbar"
+            data-action="navegar"
+            data-endpoint="ui.dashboard"
+        >
+            {{ brand }}
+        </a>
+
+        <button
+            id="ns-navbar-toggle"
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#ns-navbar-content"
+            aria-controls="ns-navbar-content"
+            aria-expanded="false"
+            aria-label="Abrir navegacion"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div id="ns-navbar-content" class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a
+                        id="ns-nav-inicio"
+                        class="nav-link {% if es_inicio %}active{% endif %}"
+                        href="{{ url_for('ui.dashboard') }}"
+                        data-component="navbar"
+                        data-action="navegar"
+                        data-endpoint="ui.dashboard"
+                        {% if es_inicio %}aria-current="page"{% endif %}
+                    >
+                        Inicio
+                    </a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a
+                        id="ns-nav-contabilidad"
+                        class="nav-link dropdown-toggle {% if es_contabilidad %}active{% endif %}"
+                        href="#"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        data-component="navbar"
+                        data-action="abrir_menu"
+                        data-module="contabilidad"
+                        aria-expanded="false"
+                    >
+                        Contabilidad
+                    </a>
+
+                    <ul class="dropdown-menu ns-dropdown-menu" aria-labelledby="ns-nav-contabilidad">
+                        <li class="dropdown-submenu ns-dropdown-submenu">
+                            <a
+                                id="ns-nav-cuentas"
+                                class="dropdown-item dropdown-toggle {% if es_cuentas %}active{% endif %}"
+                                href="#"
+                                role="button"
+                                data-component="navbar"
+                                data-action="abrir_submenu"
+                                data-module="cuentas"
+                                aria-expanded="false"
+                            >
+                                Cuentas
+                            </a>
+
+                            <ul class="dropdown-menu ns-dropdown-submenu-menu" aria-labelledby="ns-nav-cuentas">
+                                <li>
+                                    <a
+                                        id="ns-nav-cuentas-contables"
+                                        class="dropdown-item {% if endpoint_actual in [
+                                            'contabilidad.ver_formulario_nueva_cuenta_contable',
+                                            'contabilidad.crear_cuenta_contable_nueva'
+                                        ] %}active{% endif %}"
+                                        href="{{ url_for('contabilidad.ver_formulario_nueva_cuenta_contable') }}"
+                                        data-component="navbar"
+                                        data-action="navegar"
+                                        data-module="cuentas"
+                                        data-endpoint="contabilidad.ver_formulario_nueva_cuenta_contable"
+                                    >
+                                        Cuentas contables
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        id="ns-nav-listado-cuentas-contables"
+                                        class="dropdown-item {% if endpoint_actual in [
+                                            'contabilidad.ver_listado_cuentas_contables',
+                                            'contabilidad.ver_formulario_editar_cuenta_contable',
+                                            'contabilidad.actualizar_cuenta_contable_existente'
+                                        ] %}active{% endif %}"
+                                        href="{{ url_for('contabilidad.ver_listado_cuentas_contables') }}"
+                                        data-component="navbar"
+                                        data-action="navegar"
+                                        data-module="cuentas"
+                                        data-endpoint="contabilidad.ver_listado_cuentas_contables"
+                                    >
+                                        Listado cuentas contables
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="dropdown-submenu ns-dropdown-submenu">
+                            <a
+                                id="ns-nav-ejercicios"
+                                class="dropdown-item dropdown-toggle {% if es_ejercicios %}active{% endif %}"
+                                href="#"
+                                role="button"
+                                data-component="navbar"
+                                data-action="abrir_submenu"
+                                data-module="ejercicios"
+                                aria-expanded="false"
+                            >
+                                Ejercicios
+                            </a>
+
+                            <ul class="dropdown-menu ns-dropdown-submenu-menu" aria-labelledby="ns-nav-ejercicios">
+                                <li>
+                                    <a
+                                        id="ns-nav-ejercicio"
+                                        class="dropdown-item {% if endpoint_actual in [
+                                            'contabilidad.ver_listado_ejercicios_contables',
+                                            'contabilidad.ver_formulario_crear_ejercicio_contable',
+                                            'contabilidad.crear_ejercicio_contable',
+                                            'contabilidad.ver_detalle_ejercicio_contable',
+                                            'contabilidad.ver_formulario_editar_ejercicio_contable',
+                                            'contabilidad.actualizar_ejercicio_contable',
+                                            'contabilidad.generar_coeficientes_inflacion_para_ejercicio'
+                                        ] %}active{% endif %}"
+                                        href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
+                                        data-component="navbar"
+                                        data-action="navegar"
+                                        data-module="ejercicios"
+                                        data-endpoint="contabilidad.ver_listado_ejercicios_contables"
+                                    >
+                                        Ejercicio
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        id="ns-nav-indices"
+                                        class="dropdown-item {% if endpoint_actual in [
+                                            'contabilidad.ver_indices_inflacion',
+                                            'contabilidad.guardar_indice_inflacion_mensual'
+                                        ] %}active{% endif %}"
+                                        href="{{ url_for('contabilidad.ver_indices_inflacion') }}"
+                                        data-component="navbar"
+                                        data-action="navegar"
+                                        data-module="ejercicios"
+                                        data-endpoint="contabilidad.ver_indices_inflacion"
+                                    >
+                                        Índices
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
     </div>
 </nav>
 {% endmacro %}
