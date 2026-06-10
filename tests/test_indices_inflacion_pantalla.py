@@ -31,6 +31,8 @@ def test_get_indices_inflacion_muestra_formulario_y_estado_vacio():
     assert b'type="month"' not in response.data
     assert b'id="ec-indice-valor"' in response.data
     assert b'name="indice"' in response.data
+    assert b'data-decimal="argentino"' in response.data
+    assert b'inputmode="decimal"' in response.data
     assert b'id="ec-indices-vacio"' in response.data
 
 
