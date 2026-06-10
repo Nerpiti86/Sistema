@@ -2,7 +2,9 @@ from datetime import date
 from typing import Any
 
 from app.contabilidad.coeficientes_inflacion_repository import (
+    guardar_indice_inflacion,
     listar_coeficientes_inflacion_por_ejercicio_id,
+    listar_indices_inflacion,
     obtener_indice_inflacion,
     obtener_ultimo_indice_inflacion,
     reemplazar_coeficientes_inflacion_ejercicio,
@@ -14,9 +16,92 @@ from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
     formatear_fecha_hora_sql_a_argentina,
     formatear_periodo_yyyymm_a_argentina,
+    normalizar_decimal_argentino_a_entero_escala,
+    normalizar_periodo_argentino_a_yyyymm,
 )
 
 _ESCALA_COEFICIENTE_INFLACION = 1_000_000_000_000
+
+
+def guardar_indice_inflacion_desde_formulario(
+    formulario_indice_inflacion,
+) -> dict[str, Any]:
+    """
+    Guarda un indice de inflacion desde datos tipo formulario.
+
+    El service normaliza periodo argentino e indice decimal visible a enteros.
+    La persistencia queda delegada al repository.
+    """
+    periodo_argentino = _normalizar_texto_obligatorio_indice_inflacion(
+        formulario_indice_inflacion.get("periodo", ""),
+        "El periodo de indice de inflacion es obligatorio.",
+    )
+    indice_argentino = _normalizar_texto_obligatorio_indice_inflacion(
+        formulario_indice_inflacion.get("indice", ""),
+        "El indice de inflacion es obligatorio.",
+    )
+
+    periodo_yyyymm = normalizar_periodo_argentino_a_yyyymm(periodo_argentino)
+    indice_10000 = normalizar_decimal_argentino_a_entero_escala(
+        indice_argentino,
+        4,
+    )
+
+    indice_guardado = guardar_indice_inflacion(
+        periodo_yyyymm,
+        indice_10000,
+    )
+
+    return preparar_indice_inflacion_para_pantalla(indice_guardado)
+
+
+def obtener_contexto_indices_inflacion() -> dict[str, Any]:
+    """
+    Devuelve contexto para pantalla de carga y listado de indices.
+
+    El template recibe periodos e indices ya formateados para no transformar
+    valores de negocio ni formatos argentinos.
+    """
+    indices_inflacion = [
+        preparar_indice_inflacion_para_pantalla(indice_inflacion)
+        for indice_inflacion in listar_indices_inflacion()
+    ]
+
+    return {
+        "indices_inflacion": indices_inflacion,
+        "cantidad_indices_inflacion": len(indices_inflacion),
+        "tiene_indices_inflacion": bool(indices_inflacion),
+        "indice_inflacion_form": {
+            "periodo": "",
+            "indice": "",
+        },
+    }
+
+
+def preparar_indice_inflacion_para_pantalla(
+    indice_inflacion: dict[str, Any],
+) -> dict[str, Any]:
+    """Agrega campos argentinos visibles al indice mensual de inflacion."""
+    indice_pantalla = dict(indice_inflacion)
+    indice_pantalla["periodo_argentina"] = formatear_periodo_yyyymm_a_argentina(
+        indice_inflacion["periodo_yyyymm"]
+    )
+    indice_pantalla["indice_argentina"] = formatear_entero_escala_a_decimal_argentino(
+        indice_inflacion["indice_10000"],
+        4,
+    )
+    indice_pantalla["creado_en_argentina"] = (
+        formatear_fecha_hora_sql_a_argentina(indice_inflacion["creado_en"])
+        if indice_inflacion.get("creado_en")
+        else None
+    )
+    indice_pantalla["actualizado_en_argentina"] = (
+        formatear_fecha_hora_sql_a_argentina(indice_inflacion["actualizado_en"])
+        if indice_inflacion.get("actualizado_en")
+        else None
+    )
+
+    return indice_pantalla
 
 
 def generar_coeficientes_inflacion_ejercicio(
@@ -211,6 +296,18 @@ def preparar_coeficiente_inflacion_para_pantalla(
 
     return coeficiente_pantalla
 
+
+
+def _normalizar_texto_obligatorio_indice_inflacion(
+    valor: str,
+    mensaje_error: str,
+) -> str:
+    texto = str(valor or "").strip()
+
+    if not texto:
+        raise ValueError(mensaje_error)
+
+    return texto
 
 def _obtener_ejercicio_contable_existente(
     ejercicio_contable_codigo: str,

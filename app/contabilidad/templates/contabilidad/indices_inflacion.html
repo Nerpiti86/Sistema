@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+
+{% block content %}
+<section
+    id="ec-indices"
+    data-table="indices_inflacion"
+    data-query="obtener_contexto_indices_inflacion"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="ec-indices-titulo" class="h3 mb-1">
+                    Índices de inflación
+                </h1>
+                <p id="ec-indices-descripcion" class="text-muted mb-0">
+                    Carga mensual de índices para coeficientes de inflación.
+                </p>
+            </div>
+            <div id="ec-indices-acciones">
+                <a
+                    id="ec-volver-listado"
+                    href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
+                    class="btn btn-secondary"
+                >
+                    Volver a ejercicios
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        {% call card("Cargar índice", "indices_inflacion") %}
+            <form
+                id="ec-indice-form"
+                data-table="indices_inflacion"
+                data-action="guardar_indice_inflacion"
+                method="post"
+                action="{{ url_for('contabilidad.guardar_indice_inflacion_mensual') }}"
+            >
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-12">
+                        <label for="ec-indice-periodo" class="form-label">Período</label>
+                        <input
+                            id="ec-indice-periodo"
+                            name="periodo"
+                            data-table="indices_inflacion"
+                            data-field="periodo"
+                            type="text"
+                            inputmode="numeric"
+                            placeholder="MM/AAAA"
+                            pattern="\d{2}/\d{4}"
+                            title="Ingresar período con formato MM/AAAA"
+                            class="form-control"
+                            value="{{ indice_inflacion_form.periodo }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-6 col-lg-12">
+                        <label for="ec-indice-valor" class="form-label">Índice</label>
+                        <input
+                            id="ec-indice-valor"
+                            name="indice"
+                            data-table="indices_inflacion"
+                            data-field="indice"
+                            type="text"
+                            inputmode="decimal"
+                            placeholder="0,0000"
+                            title="Ingresar índice con 4 decimales"
+                            class="form-control text-end"
+                            value="{{ indice_inflacion_form.indice }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-12">
+                        <button
+                            id="ec-indice-guardar"
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Guardar índice
+                        </button>
+                    </div>
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+
+    <div class="col-12 col-lg-7">
+        <div
+            id="ec-indices-card"
+            data-table="indices_inflacion"
+            data-query="obtener_contexto_indices_inflacion"
+        >
+            {% call card("Índices cargados", "indices_inflacion") %}
+                {% if tiene_indices_inflacion %}
+                    <div class="table-responsive">
+                        <table
+                            id="ec-indices-tabla"
+                            data-table="indices_inflacion"
+                            class="table table-sm align-middle mb-0"
+                        >
+                            <thead>
+                                <tr>
+                                    <th scope="col">Período</th>
+                                    <th scope="col" class="text-end">Índice</th>
+                                    <th scope="col">Creado en</th>
+                                    <th scope="col">Actualizado en</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for indice in indices_inflacion %}
+                                    <tr data-row-periodo="{{ indice.periodo_yyyymm }}">
+                                        <td data-field="periodo">
+                                            {{ indice.periodo_argentina }}
+                                        </td>
+                                        <td data-field="indice" class="text-end">
+                                            {{ indice.indice_argentina }}
+                                        </td>
+                                        <td data-field="creado_en">
+                                            {{ indice.creado_en_argentina or "Sin crear" }}
+                                        </td>
+                                        <td data-field="actualizado_en">
+                                            {{ indice.actualizado_en_argentina or "Sin actualizar" }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p id="ec-indices-vacio" class="text-muted mb-0">
+                        Sin índices cargados.
+                    </p>
+                {% endif %}
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
