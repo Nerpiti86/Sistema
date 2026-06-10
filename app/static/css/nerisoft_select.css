@@ -27,12 +27,25 @@
     color: var(--bs-body-color);
     font: inherit;
     text-align: left;
+    transition:
+        border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out,
+        background-color 0.15s ease-in-out;
+}
+
+.ns-select__control:hover {
+    background: var(--bs-tertiary-bg);
 }
 
 .ns-select__control:focus {
     border-color: var(--bs-primary);
     box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
     outline: 0;
+}
+
+.ns-select--open .ns-select__control {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.18);
 }
 
 .ns-select__label {
@@ -50,6 +63,11 @@
     flex: 0 0 auto;
     color: var(--bs-secondary-color);
     font-size: 0.75rem;
+    transition: transform 0.15s ease-in-out;
+}
+
+.ns-select--open .ns-select__arrow {
+    transform: rotate(180deg);
 }
 
 .ns-select__panel {
@@ -104,15 +122,24 @@
     color: var(--bs-body-color);
     font: inherit;
     text-align: left;
+    transition:
+        background-color 0.12s ease-in-out,
+        color 0.12s ease-in-out;
 }
 
 .ns-select__option:hover,
-.ns-select__option:focus {
+.ns-select__option:focus,
+.ns-select__option--active {
     background: var(--bs-tertiary-bg);
     outline: 0;
 }
 
 .ns-select__option--selected {
+    background: var(--bs-primary);
+    color: var(--bs-white);
+}
+
+.ns-select__option--selected.ns-select__option--active {
     background: var(--bs-primary);
     color: var(--bs-white);
 }

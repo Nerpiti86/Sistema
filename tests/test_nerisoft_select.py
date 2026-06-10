@@ -81,11 +81,31 @@ def test_js_select_soporta_modo_normal_y_search_sin_innerhtml():
     assert "dispatchEvent(new Event(\"change\"" in contenido
 
 
-def test_css_select_define_clases_para_normal_y_search():
+def test_js_select_tiene_interaccion_por_teclado_y_busqueda_rapida():
+    """
+    Contrato: el select propio se puede usar con teclado.
+
+    Flechas, Home/End, Enter, Escape y busqueda rapida no dependen del mouse.
+    """
+    contenido = Path("app/static/js/nerisoft_select.js").read_text(encoding="utf-8")
+
+    assert "ArrowDown" in contenido
+    assert "ArrowUp" in contenido
+    assert "Home" in contenido
+    assert "End" in contenido
+    assert "buscarPorTecladoRapido" in contenido
+    assert "estado.busquedaRapida ||" in contenido
+    assert "pintarOpciones(estado)" in contenido
+    assert "seleccionarOpcionActiva" in contenido
+    assert "scrollIntoView" in contenido
+    assert "aria-activedescendant" in contenido
+
+
+def test_css_select_define_clases_para_normal_search_y_estado_interactivo():
     """
     Contrato: la apariencia del select vive en CSS propio.
 
-    El JS solo crea estructura y alterna estado abierto/cerrado.
+    Tambien define estado abierto, opcion activa y microinteracciones.
     """
     contenido = Path("app/static/css/nerisoft_select.css").read_text(encoding="utf-8")
 
@@ -94,3 +114,6 @@ def test_css_select_define_clases_para_normal_y_search():
     assert ".ns-select__panel" in contenido
     assert ".ns-select__search" in contenido
     assert ".ns-select__option--selected" in contenido
+    assert ".ns-select--open" in contenido
+    assert ".ns-select__option--active" in contenido
+    assert "transform: rotate(180deg)" in contenido

@@ -3,6 +3,10 @@
 
     const SELECTOR = "select[data-ns-select]";
     const CLASE_NATIVA = "ns-select-native";
+    const CLASE_ABIERTO = "ns-select--open";
+    const CLASE_ACTIVA = "ns-select__option--active";
+    const CLASE_SELECCIONADA = "ns-select__option--selected";
+    const TECLAS_NAVEGACION = ["ArrowDown", "ArrowUp", "Home", "End"];
 
     let selectAbierto = null;
 
@@ -45,9 +49,51 @@
         return elemento;
     };
 
+    const obtenerBotonesVisibles = (estado) => (
+        Array.from(estado.options.querySelectorAll("[data-ns-select-option-index]"))
+    );
+
+    const obtenerIndiceSeleccionadoVisible = (estado) => {
+        const botones = obtenerBotonesVisibles(estado);
+        const seleccionado = botones.find((boton) => (
+            Number(boton.dataset.nsSelectOptionIndex) === estado.select.selectedIndex
+        ));
+
+        if (seleccionado) {
+            return botones.indexOf(seleccionado);
+        }
+
+        return botones.length > 0 ? 0 : -1;
+    };
+
+    const marcarOpcionActiva = (estado, indiceVisible) => {
+        const botones = obtenerBotonesVisibles(estado);
+
+        if (botones.length === 0) {
+            estado.indiceActivo = -1;
+            estado.control.removeAttribute("aria-activedescendant");
+            return;
+        }
+
+        const indiceSeguro = Math.max(0, Math.min(indiceVisible, botones.length - 1));
+        estado.indiceActivo = indiceSeguro;
+
+        botones.forEach((boton, indice) => {
+            const activa = indice === indiceSeguro;
+            boton.classList.toggle(CLASE_ACTIVA, activa);
+
+            if (activa) {
+                estado.control.setAttribute("aria-activedescendant", boton.id);
+                boton.scrollIntoView({ block: "nearest" });
+            }
+        });
+    };
+
     const cerrarSelect = (estado) => {
         estado.panel.hidden = true;
+        estado.contenedor.classList.remove(CLASE_ABIERTO);
         estado.control.setAttribute("aria-expanded", "false");
+        estado.control.removeAttribute("aria-activedescendant");
 
         if (selectAbierto === estado) {
             selectAbierto = null;
@@ -79,8 +125,21 @@
         estado.control.focus();
     };
 
+    const seleccionarOpcionActiva = (estado) => {
+        const botones = obtenerBotonesVisibles(estado);
+        const boton = botones[estado.indiceActivo];
+
+        if (!boton) {
+            return;
+        }
+
+        seleccionarOpcion(estado, Number(boton.dataset.nsSelectOptionIndex));
+    };
+
     const pintarOpciones = (estado) => {
-        const filtro = estado.search ? normalizarTexto(estado.search.value) : "";
+        const filtro = estado.search
+            ? normalizarTexto(estado.search.value)
+            : normalizarTexto(estado.busquedaRapida || "");
         const opciones = obtenerOpciones(estado.select);
         let cantidadVisible = 0;
 
@@ -97,12 +156,13 @@
 
             const boton = crearElemento("button", "ns-select__option", option.text);
             boton.type = "button";
+            boton.id = `${estado.select.id || "ns-select"}-option-${option.indice}`;
             boton.dataset.nsSelectOptionIndex = String(option.indice);
             boton.setAttribute("role", "option");
             boton.setAttribute("aria-selected", option.selected ? "true" : "false");
 
             if (option.selected) {
-                boton.classList.add("ns-select__option--selected");
+                boton.classList.add(CLASE_SELECCIONADA);
             }
 
             estado.options.appendChild(boton);
@@ -113,7 +173,11 @@
             estado.options.appendChild(
                 crearElemento("div", "ns-select__empty", "Sin resultados")
             );
+            marcarOpcionActiva(estado, -1);
+            return;
         }
+
+        marcarOpcionActiva(estado, obtenerIndiceSeleccionadoVisible(estado));
     };
 
     const abrirSelect = (estado) => {
@@ -122,6 +186,7 @@
         }
 
         estado.panel.hidden = false;
+        estado.contenedor.classList.add(CLASE_ABIERTO);
         estado.control.setAttribute("aria-expanded", "true");
         selectAbierto = estado;
         pintarOpciones(estado);
@@ -139,6 +204,123 @@
         }
 
         cerrarSelect(estado);
+    };
+
+    const moverOpcionActiva = (estado, direccion) => {
+        const botones = obtenerBotonesVisibles(estado);
+
+        if (botones.length === 0) {
+            return;
+        }
+
+        const indiceBase = estado.indiceActivo < 0 ? 0 : estado.indiceActivo;
+        const siguiente = direccion === "abajo" ? indiceBase + 1 : indiceBase - 1;
+
+        marcarOpcionActiva(
+            estado,
+            Math.max(0, Math.min(siguiente, botones.length - 1))
+        );
+    };
+
+    const irAlExtremo = (estado, extremo) => {
+        const botones = obtenerBotonesVisibles(estado);
+
+        if (botones.length === 0) {
+            return;
+        }
+
+        marcarOpcionActiva(estado, extremo === "inicio" ? 0 : botones.length - 1);
+    };
+
+    const manejarNavegacion = (estado, evento) => {
+        if (TECLAS_NAVEGACION.includes(evento.key)) {
+            evento.preventDefault();
+
+            if (estado.panel.hidden) {
+                abrirSelect(estado);
+            }
+
+            if (evento.key === "ArrowDown") {
+                moverOpcionActiva(estado, "abajo");
+            }
+
+            if (evento.key === "ArrowUp") {
+                moverOpcionActiva(estado, "arriba");
+            }
+
+            if (evento.key === "Home") {
+                irAlExtremo(estado, "inicio");
+            }
+
+            if (evento.key === "End") {
+                irAlExtremo(estado, "fin");
+            }
+
+            return true;
+        }
+
+        if (evento.key === "Enter") {
+            evento.preventDefault();
+
+            if (estado.panel.hidden) {
+                abrirSelect(estado);
+                return true;
+            }
+
+            seleccionarOpcionActiva(estado);
+            return true;
+        }
+
+        if (evento.key === "Escape") {
+            cerrarSelect(estado);
+            estado.control.focus();
+            return true;
+        }
+
+        return false;
+    };
+
+    const buscarPorTecladoRapido = (estado, evento) => {
+        if (
+            estado.search ||
+            evento.key.length !== 1 ||
+            evento.ctrlKey ||
+            evento.altKey ||
+            evento.metaKey
+        ) {
+            return false;
+        }
+
+        evento.preventDefault();
+
+        window.clearTimeout(estado.busquedaRapidaTimer);
+        estado.busquedaRapida = `${estado.busquedaRapida || ""}${evento.key}`;
+        estado.busquedaRapidaTimer = window.setTimeout(() => {
+            estado.busquedaRapida = "";
+
+            if (!estado.search && !estado.panel.hidden) {
+                pintarOpciones(estado);
+            }
+        }, 1000);
+
+        if (estado.panel.hidden) {
+            abrirSelect(estado);
+        } else {
+            pintarOpciones(estado);
+        }
+
+        const textoBuscado = normalizarTexto(estado.busquedaRapida);
+        const botones = obtenerBotonesVisibles(estado);
+        const indiceEncontrado = botones.findIndex((boton) => (
+            normalizarTexto(boton.textContent).startsWith(textoBuscado)
+        ));
+
+        if (indiceEncontrado >= 0) {
+            marcarOpcionActiva(estado, indiceEncontrado);
+            return true;
+        }
+
+        return false;
     };
 
     const construirSelect = (select) => {
@@ -187,6 +369,9 @@
             panel,
             options,
             search,
+            indiceActivo: -1,
+            busquedaRapida: "",
+            busquedaRapidaTimer: null,
         };
 
         pintarEtiqueta(estado);
@@ -194,14 +379,17 @@
         control.addEventListener("click", () => alternarSelect(estado));
 
         control.addEventListener("keydown", (evento) => {
-            if (evento.key === "Enter" || evento.key === " ") {
-                evento.preventDefault();
-                alternarSelect(estado);
+            if (manejarNavegacion(estado, evento)) {
+                return;
             }
 
-            if (evento.key === "Escape") {
-                cerrarSelect(estado);
+            if (evento.key === " ") {
+                evento.preventDefault();
+                alternarSelect(estado);
+                return;
             }
+
+            buscarPorTecladoRapido(estado, evento);
         });
 
         panel.addEventListener("mousedown", (evento) => {
@@ -218,13 +406,23 @@
             seleccionarOpcion(estado, Number(boton.dataset.nsSelectOptionIndex));
         });
 
+        options.addEventListener("mousemove", (evento) => {
+            const boton = evento.target.closest("[data-ns-select-option-index]");
+
+            if (!boton) {
+                return;
+            }
+
+            const botones = obtenerBotonesVisibles(estado);
+            marcarOpcionActiva(estado, botones.indexOf(boton));
+        });
+
         if (search) {
             search.addEventListener("input", () => pintarOpciones(estado));
 
             search.addEventListener("keydown", (evento) => {
-                if (evento.key === "Escape") {
-                    cerrarSelect(estado);
-                    control.focus();
+                if (manejarNavegacion(estado, evento)) {
+                    return;
                 }
             });
         }
