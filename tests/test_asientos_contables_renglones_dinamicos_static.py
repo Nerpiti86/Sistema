@@ -21,3 +21,6 @@ def test_js_renglones_dinamicos_nuevo_asiento_tiene_contrato_identificable():
     assert "reemplazarIndiceRenglon" in contenido
     assert "detalles\\[\\d+\\]" in contenido
     assert "actualizarEstadoBotonesQuitarRenglon" in contenido
+    assert "ASIENTOS_SELECTOR_CANTIDAD_RENGLONES" in contenido
+    assert "actualizarCantidadRenglonesAsiento" in contenido
+    assert "textContent = String(obtenerRenglonesAsiento().length)" in contenido

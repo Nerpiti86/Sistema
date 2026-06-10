@@ -10,6 +10,8 @@
         '[data-action="agregar-renglon"]';
     const ASIENTOS_SELECTOR_QUITAR_RENGLON =
         '[data-action="quitar-renglon"]';
+    const ASIENTOS_SELECTOR_CANTIDAD_RENGLONES =
+        '[data-role="asiento-renglones-cantidad"]';
 
     const ASIENTOS_MENSAJE_LOOKUP_CUENTA_ERROR =
         "No se pudo buscar la cuenta contable.";
@@ -283,6 +285,19 @@
         });
     }
 
+
+    function actualizarCantidadRenglonesAsiento() {
+        const contadorRenglones = document.querySelector(
+            ASIENTOS_SELECTOR_CANTIDAD_RENGLONES
+        );
+
+        if (!contadorRenglones) {
+            return;
+        }
+
+        contadorRenglones.textContent = String(obtenerRenglonesAsiento().length);
+    }
+
     function actualizarEstadoBotonesQuitarRenglon() {
         const renglonesAsiento = obtenerRenglonesAsiento();
         const debeBloquearQuitar =
@@ -309,6 +324,7 @@
         });
 
         actualizarEstadoBotonesQuitarRenglon();
+        actualizarCantidadRenglonesAsiento();
     }
 
     function agregarRenglonAsiento() {
