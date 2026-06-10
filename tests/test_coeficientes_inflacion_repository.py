@@ -212,9 +212,10 @@ def _crear_ejercicio_contable():
             estado,
             activo,
             fase_cierre,
-            bloqueado
+            bloqueado,
+            creado_en
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             "EJ2025",
@@ -225,6 +226,7 @@ def _crear_ejercicio_contable():
             1,
             "ABIERTO",
             0,
+            "2026-01-01 10:00:00",
         ),
     )
 

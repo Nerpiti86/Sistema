@@ -15,9 +15,10 @@ def _insertar_ejercicio_contable_pantalla_para_test(db):
             activo,
             fase_cierre,
             bloqueado,
-            es_primer_ejercicio
+            es_primer_ejercicio,
+            creado_en
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             "EJ2026",
@@ -29,6 +30,7 @@ def _insertar_ejercicio_contable_pantalla_para_test(db):
             "ABIERTO",
             0,
             1,
+            "2026-01-01 10:00:00",
         ),
     )
 

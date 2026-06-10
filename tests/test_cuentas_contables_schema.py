@@ -98,11 +98,15 @@ def test_cuentas_contables_permite_jerarquia_caja_ars():
                 naturaleza,
                 imputable,
                 monetaria,
-                sumarizadora
+                sumarizadora,
+                creado_en
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            cuentas,
+            [
+                (*cuenta, "2026-01-01 10:00:00")
+                for cuenta in cuentas
+            ],
         )
 
         row = db.execute(
@@ -148,11 +152,12 @@ def test_cuentas_contables_rechaza_cuenta_duplicada():
                 saldo_habitual,
                 naturaleza,
                 imputable,
-                monetaria
+                monetaria,
+                creado_en
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            ("1.1.01.01.001", "CAJA ARS", "DEBE", "PATRIMONIAL", 1, 1),
+            ("1.1.01.01.001", "CAJA ARS", "DEBE", "PATRIMONIAL", 1, 1, "2026-01-01 10:00:00"),
         )
 
         with pytest.raises(sqlite3.IntegrityError):

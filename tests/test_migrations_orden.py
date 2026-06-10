@@ -1,0 +1,66 @@
+from pathlib import Path
+
+
+def test_migrations_tienen_prefijo_numerico_unico_y_ordenado():
+    """
+    Contrato: las migraciones tienen un prefijo numerico unico y ordenado.
+
+    Evita que dos archivos compitan por el mismo numero logico de version.
+    """
+    migrations = sorted(Path("migrations").glob("*.sql"))
+    nombres = [migration.name for migration in migrations]
+    prefijos = [nombre.split("_", maxsplit=1)[0] for nombre in nombres]
+
+    assert nombres == [
+        "001_schema_inicial.sql",
+        "002_ejercicios_contables.sql",
+        "003_cuentas_contables.sql",
+        "004_coeficientes_inflacion.sql",
+    ]
+    assert prefijos == ["001", "002", "003", "004"]
+    assert len(prefijos) == len(set(prefijos))
+
+
+def test_migrations_no_usan_current_timestamp_de_sqlite():
+    """
+    Contrato: las migraciones no definen CURRENT_TIMESTAMP.
+
+    Los timestamps visibles/de usuario se cargan desde Python con datetime.now
+    local, no desde SQLite UTC.
+    """
+    for migration in sorted(Path("migrations").glob("*.sql")):
+        contenido = migration.read_text(encoding="utf-8")
+        assert "CURRENT_TIMESTAMP" not in contenido
+
+
+def test_migration_cuentas_ya_nace_con_booleanos_enteros():
+    """
+    Contrato: cuentas_contables nace con flags booleanos enteros.
+
+    No debe existir una migracion posterior que pise la tabla para convertir
+    SI/NO a 0/1.
+    """
+    contenido = Path("migrations/003_cuentas_contables.sql").read_text(
+        encoding="utf-8"
+    )
+
+    assert "imputable INTEGER NOT NULL DEFAULT 0" in contenido
+    assert "monetaria INTEGER NOT NULL DEFAULT 0" in contenido
+    assert "imputable TEXT" not in contenido
+    assert "monetaria TEXT" not in contenido
+    assert "cuentas_contables_text_flags_backup" not in contenido
+    assert "ALTER TABLE cuentas_contables RENAME" not in contenido
+
+
+def test_migrador_registra_applied_at_con_datetime_now_local():
+    """
+    Contrato: schema_migrations tambien evita CURRENT_TIMESTAMP de SQLite.
+
+    El timestamp de aplicacion se registra explicitamente desde Python.
+    """
+    contenido = Path("app/db.py").read_text(encoding="utf-8")
+
+    assert "CURRENT_TIMESTAMP" not in contenido
+    assert "from datetime import datetime" in contenido
+    assert 'datetime.now().replace(microsecond=0).isoformat(sep=" ")' in contenido
+    assert "INSERT INTO schema_migrations (filename, applied_at) VALUES (?, ?)" in contenido

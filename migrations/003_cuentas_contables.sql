@@ -4,18 +4,18 @@ CREATE TABLE IF NOT EXISTS cuentas_contables (
     descripcion TEXT NOT NULL,
     saldo_habitual TEXT NOT NULL,
     naturaleza TEXT NOT NULL,
-    imputable TEXT NOT NULL,
-    monetaria TEXT NOT NULL,
+    imputable INTEGER NOT NULL DEFAULT 0,
+    monetaria INTEGER NOT NULL DEFAULT 0,
     sumarizadora TEXT,
-    creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    creado_en TEXT NOT NULL,
     actualizado_en TEXT,
 
     CHECK (cuenta GLOB '[0-9].[0-9].[0-9][0-9].[0-9][0-9].[0-9][0-9][0-9]'),
     CHECK (length(trim(descripcion)) > 0),
     CHECK (saldo_habitual IN ('DEBE', 'HABER')),
     CHECK (naturaleza IN ('PATRIMONIAL', 'RESULTADO')),
-    CHECK (imputable IN ('SI', 'NO')),
-    CHECK (monetaria IN ('SI', 'NO')),
+    CHECK (imputable IN (0, 1)),
+    CHECK (monetaria IN (0, 1)),
     CHECK (sumarizadora IS NULL OR sumarizadora != cuenta),
 
     FOREIGN KEY (sumarizadora)

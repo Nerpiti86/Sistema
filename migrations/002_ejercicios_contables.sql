@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS ejercicios_contables (
     fecha_hasta TEXT NOT NULL,
     estado TEXT NOT NULL DEFAULT 'ABIERTO',
     activo INTEGER NOT NULL DEFAULT 0,
-    creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    creado_en TEXT NOT NULL,
     actualizado_en TEXT,
     fase_cierre TEXT NOT NULL DEFAULT 'ABIERTO',
     bloqueado INTEGER NOT NULL DEFAULT 0,

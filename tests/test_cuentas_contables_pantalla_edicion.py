@@ -22,9 +22,10 @@ def _insertar_cuenta_contable_para_test(
             naturaleza,
             imputable,
             monetaria,
-            sumarizadora
+            sumarizadora,
+            creado_en
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             cuenta,
@@ -34,6 +35,7 @@ def _insertar_cuenta_contable_para_test(
             imputable,
             monetaria,
             sumarizadora,
+            "2026-01-01 10:00:00",
         ),
     )
 

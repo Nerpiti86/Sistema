@@ -53,9 +53,10 @@ def test_ejercicios_contables_permite_un_solo_activo():
                 fecha_desde,
                 fecha_hasta,
                 estado,
-                activo
+                activo,
+                creado_en
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 "EJ2026",
@@ -64,6 +65,7 @@ def test_ejercicios_contables_permite_un_solo_activo():
                 "2026-12-31",
                 "ABIERTO",
                 1,
+                "2026-01-01 10:00:00",
             ),
         )
 
@@ -167,9 +169,10 @@ def test_ejercicios_contables_define_condicion_operable():
                 estado,
                 activo,
                 fase_cierre,
-                bloqueado
+                bloqueado,
+                creado_en
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 "EJ2026",
@@ -180,6 +183,7 @@ def test_ejercicios_contables_define_condicion_operable():
                 1,
                 "ABIERTO",
                 0,
+                "2026-01-01 10:00:00",
             ),
         )
 

@@ -33,9 +33,10 @@ def _insertar_ejercicio_contable_service_para_test(
             activo,
             fase_cierre,
             bloqueado,
-            es_primer_ejercicio
+            es_primer_ejercicio,
+            creado_en
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             codigo,
@@ -47,6 +48,7 @@ def _insertar_ejercicio_contable_service_para_test(
             fase_cierre,
             bloqueado,
             es_primer_ejercicio,
+            "2026-01-01 10:00:00",
         ),
     )
 

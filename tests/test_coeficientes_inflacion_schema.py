@@ -59,11 +59,12 @@ def test_indices_inflacion_rechaza_periodo_invalido():
                 """
                 INSERT INTO indices_inflacion (
                     periodo_yyyymm,
-                    indice_10000
+                    indice_10000,
+                    creado_en
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?)
                 """,
-                (202613, 74914514),
+                (202613, 74914514, "2026-01-01 10:00:00"),
             )
 
 
@@ -79,11 +80,12 @@ def test_indices_inflacion_rechaza_indice_no_positivo():
                 """
                 INSERT INTO indices_inflacion (
                     periodo_yyyymm,
-                    indice_10000
+                    indice_10000,
+                    creado_en
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?)
                 """,
-                (202501, 0),
+                (202501, 0, "2026-01-01 10:00:00"),
             )
 
 
@@ -99,11 +101,12 @@ def test_indices_inflacion_periodo_es_unico():
             """
             INSERT INTO indices_inflacion (
                 periodo_yyyymm,
-                indice_10000
+                indice_10000,
+                creado_en
             )
-            VALUES (?, ?)
+            VALUES (?, ?, ?)
             """,
-            (202501, 78641257),
+            (202501, 78641257, "2026-01-01 10:00:00"),
         )
 
         with pytest.raises(sqlite3.IntegrityError):
@@ -111,11 +114,12 @@ def test_indices_inflacion_periodo_es_unico():
                 """
                 INSERT INTO indices_inflacion (
                     periodo_yyyymm,
-                    indice_10000
+                    indice_10000,
+                    creado_en
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?)
                 """,
-                (202501, 78641258),
+                (202501, 78641258, "2026-01-01 10:00:00"),
             )
 
 
@@ -135,9 +139,10 @@ def test_coeficientes_inflacion_requiere_ejercicio_existente():
                     indice_inicio_10000,
                     indice_cierre_periodo_yyyymm,
                     indice_cierre_10000,
-                    coeficiente_1000000000000
+                    coeficiente_1000000000000,
+                    calculado_en
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     999,
@@ -146,6 +151,7 @@ def test_coeficientes_inflacion_requiere_ejercicio_existente():
                     202512,
                     101213715,
                     1287030737568,
+                    "2026-01-01 10:00:00",
                 ),
             )
 
@@ -168,9 +174,10 @@ def test_coeficientes_inflacion_periodo_es_unico_por_ejercicio():
                 indice_inicio_10000,
                 indice_cierre_periodo_yyyymm,
                 indice_cierre_10000,
-                coeficiente_1000000000000
+                coeficiente_1000000000000,
+                calculado_en
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 ejercicio_id,
@@ -179,6 +186,7 @@ def test_coeficientes_inflacion_periodo_es_unico_por_ejercicio():
                 202512,
                 101213715,
                 1287030737568,
+                "2026-01-01 10:00:00",
             ),
         )
 
@@ -191,9 +199,10 @@ def test_coeficientes_inflacion_periodo_es_unico_por_ejercicio():
                     indice_inicio_10000,
                     indice_cierre_periodo_yyyymm,
                     indice_cierre_10000,
-                    coeficiente_1000000000000
+                    coeficiente_1000000000000,
+                    calculado_en
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ejercicio_id,
@@ -202,6 +211,7 @@ def test_coeficientes_inflacion_periodo_es_unico_por_ejercicio():
                     202512,
                     101213715,
                     1287030737568,
+                    "2026-01-01 10:00:00",
                 ),
             )
 
@@ -224,9 +234,10 @@ def test_coeficientes_inflacion_cascade_al_borrar_ejercicio():
                 indice_inicio_10000,
                 indice_cierre_periodo_yyyymm,
                 indice_cierre_10000,
-                coeficiente_1000000000000
+                coeficiente_1000000000000,
+                calculado_en
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 ejercicio_id,
@@ -235,6 +246,7 @@ def test_coeficientes_inflacion_cascade_al_borrar_ejercicio():
                 202512,
                 101213715,
                 1287030737568,
+                "2026-01-01 10:00:00",
             ),
         )
 
@@ -266,9 +278,10 @@ def _crear_ejercicio_contable(db):
             estado,
             activo,
             fase_cierre,
-            bloqueado
+            bloqueado,
+            creado_en
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             "EJ2025",
@@ -279,6 +292,7 @@ def _crear_ejercicio_contable(db):
             1,
             "ABIERTO",
             0,
+            "2026-01-01 10:00:00",
         ),
     )
 
