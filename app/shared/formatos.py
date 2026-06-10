@@ -6,6 +6,9 @@ from datetime import date, datetime
 
 _FECHA_ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _FECHA_ARGENTINA_RE = re.compile(r"^\d{2}/\d{2}/\d{4}$")
+_FECHA_HORA_SQL_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$"
+)
 _PERIODO_YYYYMM_RE = re.compile(r"^\d{6}$")
 _PERIODO_ARGENTINO_RE = re.compile(r"^\d{2}/\d{4}$")
 _PERIODO_ARGENTINO_FECHA_RE = re.compile(r"^\d{2}/\d{2}/\d{4}$")
@@ -36,6 +39,27 @@ def normalizar_fecha_argentina_a_iso(fecha_argentina: str) -> str:
         raise ValueError("La fecha argentina no es valida.") from exc
 
     return fecha.isoformat()
+
+
+def formatear_fecha_hora_sql_a_argentina(fecha_hora_sql: str) -> str:
+    if not isinstance(fecha_hora_sql, str):
+        raise ValueError("La fecha y hora SQL debe ser texto.")
+
+    fecha_hora_normalizada = fecha_hora_sql.strip()
+
+    if not _FECHA_HORA_SQL_RE.fullmatch(fecha_hora_normalizada):
+        raise ValueError(
+            "La fecha y hora SQL debe tener formato YYYY-MM-DD HH:MM:SS."
+        )
+
+    fecha_hora_normalizada = fecha_hora_normalizada.replace("T", " ")
+
+    try:
+        fecha_hora = datetime.strptime(fecha_hora_normalizada, "%Y-%m-%d %H:%M:%S")
+    except ValueError as exc:
+        raise ValueError("La fecha y hora SQL no es valida.") from exc
+
+    return fecha_hora.strftime("%d/%m/%Y %H:%M:%S")
 
 
 def formatear_periodo_yyyymm_a_argentina(

@@ -1,11 +1,11 @@
 from app import create_app
 from app.config import TestConfig
-from app.db import apply_migrations
+from app.db import apply_migrations, get_db
 from app.contabilidad.ejercicios_contables_repository import crear_ejercicio_contable
 
 
 def _crear_ejercicio_contable_para_detalle():
-    return crear_ejercicio_contable(
+    ejercicio_contable = crear_ejercicio_contable(
         {
             "codigo": "EJ2026",
             "nombre": "Ejercicio 2026",
@@ -13,13 +13,27 @@ def _crear_ejercicio_contable_para_detalle():
             "fecha_hasta": "2026-12-31",
             "estado": "ABIERTO",
             "activo": True,
-            "fase_cierre": "ABIERTO",
-            "bloqueado": False,
-            "bloqueado_en": None,
+            "fase_cierre": "BLOQUEADO",
+            "bloqueado": True,
+            "bloqueado_en": "2026-01-02 10:11:12",
             "observaciones_cierre": "Detalle de prueba",
             "es_primer_ejercicio": True,
         }
     )
+
+    db = get_db()
+    db.execute(
+        """
+        UPDATE ejercicios_contables
+        SET creado_en = ?,
+            actualizado_en = ?
+        WHERE codigo = ?
+        """,
+        ("2026-01-01 09:08:07", "2026-01-03 12:13:14", "EJ2026"),
+    )
+    db.commit()
+
+    return ejercicio_contable
 
 
 def test_listado_muestra_accion_detalle_de_ejercicio_contable():
@@ -70,8 +84,14 @@ def test_get_detalle_ejercicio_contable_muestra_datos_reales():
     assert b"Ejercicio 2026" in response.data
     assert b"01/01/2026" in response.data
     assert b"31/12/2026" in response.data
+    assert b"01/01/2026 09:08:07" in response.data
+    assert b"02/01/2026 10:11:12" in response.data
+    assert b"03/01/2026 12:13:14" in response.data
     assert b"2026-01-01" not in response.data
     assert b"2026-12-31" not in response.data
+    assert b"2026-01-01 09:08:07" not in response.data
+    assert b"2026-01-02 10:11:12" not in response.data
+    assert b"2026-01-03 12:13:14" not in response.data
     assert b"ABIERTO" in response.data
     assert b"Detalle de prueba" in response.data
     assert b'data-field="es_primer_ejercicio"' in response.data

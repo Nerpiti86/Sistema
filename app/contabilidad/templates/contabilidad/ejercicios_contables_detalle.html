@@ -100,7 +100,7 @@
 
                     <dt class="col-sm-3">Bloqueado en</dt>
                     <dd class="col-sm-9" data-field="bloqueado_en">
-                        {{ ejercicio_contable.bloqueado_en or "Sin bloqueo" }}
+                        {{ ejercicio_contable.bloqueado_en_argentina or "Sin bloqueo" }}
                     </dd>
 
                     <dt class="col-sm-3">Es primer ejercicio</dt>
@@ -119,12 +119,12 @@
 
                     <dt class="col-sm-3">Creado en</dt>
                     <dd class="col-sm-9" data-field="creado_en">
-                        {{ ejercicio_contable.creado_en }}
+                        {{ ejercicio_contable.creado_en_argentina }}
                     </dd>
 
                     <dt class="col-sm-3">Actualizado en</dt>
                     <dd class="col-sm-9" data-field="actualizado_en">
-                        {{ ejercicio_contable.actualizado_en or "Sin actualizar" }}
+                        {{ ejercicio_contable.actualizado_en_argentina or "Sin actualizar" }}
                     </dd>
                 </dl>
             {% endcall %}

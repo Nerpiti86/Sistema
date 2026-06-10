@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any
 
 from app.shared.formatos import (
+    formatear_fecha_hora_sql_a_argentina,
     formatear_fecha_iso_a_argentina,
     normalizar_fecha_argentina_a_iso,
 )
@@ -212,6 +213,19 @@ def _preparar_ejercicio_contable_para_pantalla(
     )
     ejercicio_contable_pantalla["fecha_hasta_argentina"] = (
         formatear_fecha_iso_a_argentina(ejercicio_contable["fecha_hasta"])
+    )
+    ejercicio_contable_pantalla["creado_en_argentina"] = (
+        formatear_fecha_hora_sql_a_argentina(ejercicio_contable["creado_en"])
+    )
+    ejercicio_contable_pantalla["actualizado_en_argentina"] = (
+        formatear_fecha_hora_sql_a_argentina(ejercicio_contable["actualizado_en"])
+        if ejercicio_contable.get("actualizado_en")
+        else None
+    )
+    ejercicio_contable_pantalla["bloqueado_en_argentina"] = (
+        formatear_fecha_hora_sql_a_argentina(ejercicio_contable["bloqueado_en"])
+        if ejercicio_contable.get("bloqueado_en")
+        else None
     )
 
     return ejercicio_contable_pantalla

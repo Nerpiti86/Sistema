@@ -23,10 +23,13 @@ def test_obtener_contexto_listado_ejercicios_contables_devuelve_contexto_chico()
                 fecha_hasta,
                 estado,
                 activo,
+                creado_en,
+                actualizado_en,
                 fase_cierre,
-                bloqueado
+                bloqueado,
+                bloqueado_en
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 "EJ2026",
@@ -35,8 +38,11 @@ def test_obtener_contexto_listado_ejercicios_contables_devuelve_contexto_chico()
                 "2026-12-31",
                 "ABIERTO",
                 1,
-                "ABIERTO",
-                0,
+                "2026-01-01 08:09:10",
+                "2026-01-02 11:12:13",
+                "BLOQUEADO",
+                1,
+                "2026-01-03 14:15:16",
             ),
         )
 
@@ -60,4 +66,16 @@ def test_obtener_contexto_listado_ejercicios_contables_devuelve_contexto_chico()
     assert (
         contexto_listado["ejercicios_contables"][0]["fecha_desde_argentina"]
         == "01/01/2026"
+    )
+    assert (
+        contexto_listado["ejercicios_contables"][0]["creado_en_argentina"]
+        == "01/01/2026 08:09:10"
+    )
+    assert (
+        contexto_listado["ejercicios_contables"][0]["actualizado_en_argentina"]
+        == "02/01/2026 11:12:13"
+    )
+    assert (
+        contexto_listado["ejercicios_contables"][0]["bloqueado_en_argentina"]
+        == "03/01/2026 14:15:16"
     )

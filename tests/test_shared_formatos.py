@@ -2,6 +2,7 @@ import pytest
 
 from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
+    formatear_fecha_hora_sql_a_argentina,
     formatear_fecha_iso_a_argentina,
     formatear_periodo_yyyymm_a_argentina,
     normalizar_decimal_argentino_a_entero_escala,
@@ -29,6 +30,30 @@ def test_rechaza_fechas_con_formato_o_calendario_invalido():
 
     with pytest.raises(ValueError):
         normalizar_fecha_argentina_a_iso("31/02/2025")
+
+
+def test_formatea_fecha_hora_sql_a_pantalla_argentina():
+    """Contrato: los timestamps SQL se muestran como DD/MM/YYYY HH:MM:SS."""
+    assert (
+        formatear_fecha_hora_sql_a_argentina("2026-01-01 09:08:07")
+        == "01/01/2026 09:08:07"
+    )
+    assert (
+        formatear_fecha_hora_sql_a_argentina("2026-01-01T09:08:07")
+        == "01/01/2026 09:08:07"
+    )
+
+
+def test_rechaza_fecha_hora_sql_con_formato_o_calendario_invalido():
+    """Contrato: los timestamps SQL deben ser estrictos y validos."""
+    with pytest.raises(ValueError):
+        formatear_fecha_hora_sql_a_argentina("01/01/2026 09:08:07")
+
+    with pytest.raises(ValueError):
+        formatear_fecha_hora_sql_a_argentina("2026-02-30 09:08:07")
+
+    with pytest.raises(ValueError):
+        formatear_fecha_hora_sql_a_argentina("2026-01-01 25:08:07")
 
 
 def test_formatea_periodo_yyyymm_a_mes_anio_y_fecha_argentina():
