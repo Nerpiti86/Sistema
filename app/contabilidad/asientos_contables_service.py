@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from app.contabilidad.asientos_contables_repository import (
@@ -18,10 +19,20 @@ from app.shared.monedas_cotizaciones_repository import (
 from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
     formatear_fecha_iso_a_argentina,
+    normalizar_decimal_argentino_a_entero_escala,
 )
 
 _MONEDA_CONTABLE = "ARS"
 _TIPO_COTIZACION_DEFAULT = "CIERRE"
+_DETALLE_FORM_RE = re.compile(r"^detalles\[(\d+)\]\[([a-zA-Z0-9_]+)\]$")
+_DETALLE_FORM_CAMPOS = {
+    "cuenta_contable_codigo",
+    "descripcion",
+    "moneda_codigo",
+    "cotizacion_1000000",
+    "debe_centavos",
+    "haber_centavos",
+}
 
 
 def crear_asiento_contable_borrador(
@@ -176,6 +187,185 @@ def _formatear_cotizacion_asiento(asiento: dict[str, Any]) -> str:
         int(asiento["cotizacion_1000000"]),
         6,
     )
+
+
+
+def preparar_asiento_contable_borrador_desde_formulario(
+    formulario: Any,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """
+    Normaliza datos de formulario para crear un asiento borrador.
+
+    No persiste datos ni consulta repositorios. Devuelve la cabecera y los
+    renglones listos para delegar luego en crear_asiento_contable_borrador.
+    """
+    datos_formulario = _copiar_formulario_plano(formulario)
+    fecha = str(datos_formulario.get("fecha") or "").strip()
+
+    if not fecha:
+        raise ValueError("La fecha del asiento es obligatoria.")
+
+    cotizacion_tipo = str(
+        datos_formulario.get("cotizacion_tipo") or _TIPO_COTIZACION_DEFAULT
+    ).strip().upper()
+
+    datos_asiento = {
+        "ejercicio_id": _validar_entero_positivo(
+            datos_formulario.get("ejercicio_id"),
+            "El ejercicio contable es obligatorio.",
+        ),
+        "fecha": fecha,
+        "descripcion": str(datos_formulario.get("descripcion") or "").strip(),
+        "tipo": str(datos_formulario.get("tipo") or "MANUAL").strip().upper(),
+        "estado": "BORRADOR",
+        "moneda_origen_codigo": _validar_codigo_moneda(
+            datos_formulario.get("moneda_origen_codigo") or _MONEDA_CONTABLE,
+            "La moneda origen es obligatoria.",
+        ),
+        "moneda_destino_codigo": _validar_codigo_moneda(
+            datos_formulario.get("moneda_destino_codigo") or _MONEDA_CONTABLE,
+            "La moneda destino es obligatoria.",
+        ),
+        "cotizacion_tipo": cotizacion_tipo,
+    }
+
+    return datos_asiento, _normalizar_detalles_asiento_desde_formulario(
+        datos_formulario
+    )
+
+
+def _copiar_formulario_plano(formulario: Any) -> dict[str, str]:
+    if not hasattr(formulario, "items"):
+        raise ValueError("El formulario del asiento es obligatorio.")
+
+    return {
+        str(clave): _normalizar_valor_formulario(valor)
+        for clave, valor in formulario.items()
+    }
+
+
+def _normalizar_valor_formulario(valor: Any) -> str:
+    if isinstance(valor, (list, tuple)):
+        valor = valor[0] if valor else ""
+
+    return str(valor or "").strip()
+
+
+def _normalizar_detalles_asiento_desde_formulario(
+    datos_formulario: dict[str, str],
+) -> list[dict[str, Any]]:
+    detalles_por_indice: dict[int, dict[str, str]] = {}
+
+    for clave, valor in datos_formulario.items():
+        coincidencia = _DETALLE_FORM_RE.fullmatch(clave)
+
+        if coincidencia is None:
+            continue
+
+        indice = int(coincidencia.group(1))
+        campo = coincidencia.group(2)
+
+        if campo not in _DETALLE_FORM_CAMPOS:
+            continue
+
+        detalles_por_indice.setdefault(indice, {})[campo] = valor
+
+    if not detalles_por_indice:
+        raise ValueError("El asiento debe tener al menos un renglon.")
+
+    detalles: list[dict[str, Any]] = []
+
+    for indice in sorted(detalles_por_indice):
+        detalle = _normalizar_detalle_asiento_desde_formulario(
+            detalles_por_indice[indice]
+        )
+
+        if detalle is not None:
+            detalles.append(detalle)
+
+    if not detalles:
+        raise ValueError("El asiento debe tener al menos un renglon.")
+
+    return detalles
+
+
+def _normalizar_detalle_asiento_desde_formulario(
+    detalle_formulario: dict[str, str],
+) -> dict[str, Any] | None:
+    if _detalle_formulario_vacio(detalle_formulario):
+        return None
+
+    cuenta_contable_codigo = str(
+        detalle_formulario.get("cuenta_contable_codigo") or ""
+    ).strip()
+
+    if not cuenta_contable_codigo:
+        raise ValueError("La cuenta del renglon es obligatoria.")
+
+    debe_centavos = _normalizar_importe_formulario_a_entero(
+        detalle_formulario.get("debe_centavos"),
+        2,
+        "El debe del renglon es invalido.",
+    )
+    haber_centavos = _normalizar_importe_formulario_a_entero(
+        detalle_formulario.get("haber_centavos"),
+        2,
+        "El haber del renglon es invalido.",
+    )
+
+    if debe_centavos > 0 and haber_centavos > 0:
+        raise ValueError("Un renglon no puede tener debe y haber simultaneamente.")
+
+    if debe_centavos == 0 and haber_centavos == 0:
+        raise ValueError("Cada renglon debe tener importe.")
+
+    return {
+        "cuenta_contable_codigo": cuenta_contable_codigo,
+        "descripcion": str(detalle_formulario.get("descripcion") or "").strip(),
+        "moneda_codigo": _validar_codigo_moneda(
+            detalle_formulario.get("moneda_codigo") or _MONEDA_CONTABLE,
+            "La moneda del renglon es obligatoria.",
+        ),
+        "cotizacion_1000000": _normalizar_importe_formulario_a_entero(
+            detalle_formulario.get("cotizacion_1000000") or "1,000000",
+            6,
+            "La cotizacion del renglon es invalida.",
+        ),
+        "nominal_debe_centavos": debe_centavos,
+        "nominal_haber_centavos": haber_centavos,
+        "debe_centavos": debe_centavos,
+        "haber_centavos": haber_centavos,
+    }
+
+
+def _detalle_formulario_vacio(detalle_formulario: dict[str, str]) -> bool:
+    campos_contenido = (
+        "cuenta_contable_codigo",
+        "descripcion",
+        "debe_centavos",
+        "haber_centavos",
+    )
+
+    return all(not str(detalle_formulario.get(campo) or "").strip() for campo in campos_contenido)
+
+
+def _normalizar_importe_formulario_a_entero(
+    valor: Any,
+    escala: int,
+    mensaje_error: str,
+) -> int:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return 0
+
+    try:
+        return normalizar_decimal_argentino_a_entero_escala(
+            valor_normalizado,
+            escala,
+        )
+    except ValueError as exc:
+        raise ValueError(mensaje_error) from exc
 
 
 def obtener_contexto_nuevo_asiento_contable() -> dict[str, Any]:

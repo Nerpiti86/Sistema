@@ -7,6 +7,7 @@ from app.contabilidad.asientos_contables_service import (
     crear_asiento_contable_borrador,
     listar_asientos_contables,
     obtener_asiento_contable,
+    preparar_asiento_contable_borrador_desde_formulario,
 )
 
 
@@ -413,3 +414,133 @@ def test_service_obtener_y_listar_delegan_en_repository():
     assert obtenido["id"] == asiento["id"]
     assert len(obtenido["detalles"]) == 2
     assert [item["id"] for item in listado] == [asiento["id"]]
+
+
+
+def test_service_parser_formulario_normaliza_cabecera_y_renglones():
+    """
+    Valida parser puro del formulario de nuevo asiento.
+
+    Convierte valores de pantalla a enteros en centavos sin persistir ni usar
+    repository.
+    """
+    datos_asiento, detalles_asiento = (
+        preparar_asiento_contable_borrador_desde_formulario(
+            {
+                "ejercicio_id": "7",
+                "fecha": "2026-06-10",
+                "descripcion": " Asiento manual ",
+                "tipo": "manual",
+                "moneda_origen_codigo": "ars",
+                "moneda_destino_codigo": "ARS",
+                "cotizacion_tipo": "cierre",
+                "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+                "detalles[0][descripcion]": "Caja",
+                "detalles[0][moneda_codigo]": "ars",
+                "detalles[0][cotizacion_1000000]": "1,000000",
+                "detalles[0][debe_centavos]": "1.000,00",
+                "detalles[0][haber_centavos]": "",
+                "detalles[1][cuenta_contable_codigo]": "4.1.01.01.999",
+                "detalles[1][descripcion]": "Venta",
+                "detalles[1][moneda_codigo]": "ARS",
+                "detalles[1][cotizacion_1000000]": "1,000000",
+                "detalles[1][debe_centavos]": "",
+                "detalles[1][haber_centavos]": "1.000,00",
+            }
+        )
+    )
+
+    assert datos_asiento == {
+        "ejercicio_id": 7,
+        "fecha": "2026-06-10",
+        "descripcion": "Asiento manual",
+        "tipo": "MANUAL",
+        "estado": "BORRADOR",
+        "moneda_origen_codigo": "ARS",
+        "moneda_destino_codigo": "ARS",
+        "cotizacion_tipo": "CIERRE",
+    }
+    assert detalles_asiento == [
+        {
+            "cuenta_contable_codigo": "1.1.01.01.999",
+            "descripcion": "Caja",
+            "moneda_codigo": "ARS",
+            "cotizacion_1000000": 1000000,
+            "nominal_debe_centavos": 100000,
+            "nominal_haber_centavos": 0,
+            "debe_centavos": 100000,
+            "haber_centavos": 0,
+        },
+        {
+            "cuenta_contable_codigo": "4.1.01.01.999",
+            "descripcion": "Venta",
+            "moneda_codigo": "ARS",
+            "cotizacion_1000000": 1000000,
+            "nominal_debe_centavos": 0,
+            "nominal_haber_centavos": 100000,
+            "debe_centavos": 0,
+            "haber_centavos": 100000,
+        },
+    ]
+
+
+def test_service_parser_formulario_ignora_renglones_vacios():
+    """
+    Valida que el parser ignore filas vacias del formulario.
+
+    Esto permite mantener renglones base visibles sin crear detalles nulos.
+    """
+    datos_asiento, detalles_asiento = (
+        preparar_asiento_contable_borrador_desde_formulario(
+            {
+                "ejercicio_id": "7",
+                "fecha": "2026-06-10",
+                "descripcion": "Asiento con fila vacia",
+                "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+                "detalles[0][debe_centavos]": "500,00",
+                "detalles[1][cuenta_contable_codigo]": "",
+                "detalles[1][descripcion]": "",
+                "detalles[1][debe_centavos]": "",
+                "detalles[1][haber_centavos]": "",
+            }
+        )
+    )
+
+    assert datos_asiento["ejercicio_id"] == 7
+    assert len(detalles_asiento) == 1
+    assert detalles_asiento[0]["debe_centavos"] == 50000
+
+
+def test_service_parser_formulario_rechaza_renglon_con_debe_y_haber():
+    """
+    Valida regla de pantalla antes de delegar creacion del asiento.
+
+    Un mismo renglon no puede registrar importe en debe y haber a la vez.
+    """
+    with pytest.raises(ValueError, match="debe y haber simultaneamente"):
+        preparar_asiento_contable_borrador_desde_formulario(
+            {
+                "ejercicio_id": "7",
+                "fecha": "2026-06-10",
+                "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+                "detalles[0][debe_centavos]": "500,00",
+                "detalles[0][haber_centavos]": "500,00",
+            }
+        )
+
+
+def test_service_parser_formulario_rechaza_importe_invalido():
+    """
+    Valida que el parser no acepte importes fuera del formato argentino.
+
+    La conversion queda centralizada antes del futuro POST.
+    """
+    with pytest.raises(ValueError, match="debe del renglon es invalido"):
+        preparar_asiento_contable_borrador_desde_formulario(
+            {
+                "ejercicio_id": "7",
+                "fecha": "2026-06-10",
+                "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+                "detalles[0][debe_centavos]": "500.00",
+            }
+        )
