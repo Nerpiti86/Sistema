@@ -257,6 +257,70 @@ def listar_cuentas_contables_por_sumarizadora(
     ]
 
 
+
+def buscar_cuentas_contables_imputables(
+    termino_busqueda: Any,
+    limite: int = 10,
+) -> list[dict[str, Any]]:
+    """
+    Busca cuentas imputables por codigo o descripcion para lookup.
+
+    Este repository ejecuta SQL directo y limita resultados para uso al vuelo.
+    """
+    termino_normalizado = _normalizar_termino_lookup_cuenta(termino_busqueda)
+    limite_validado = _validar_limite_lookup_cuentas(limite)
+
+    if not termino_normalizado:
+        return []
+
+    patron_busqueda = f"%{termino_normalizado}%"
+    filas_cuentas_contables = get_db().execute(
+        f"""
+        SELECT {_COLUMNAS_SELECT_CUENTAS_CONTABLES}
+        FROM cuentas_contables
+        WHERE imputable = 1
+          AND (
+              cuenta LIKE ?
+              OR descripcion LIKE ?
+          )
+        ORDER BY cuenta
+        LIMIT ?
+        """,
+        (
+            patron_busqueda,
+            patron_busqueda,
+            limite_validado,
+        ),
+    ).fetchall()
+
+    return [
+        _normalizar_fila_cuenta_contable(fila_cuenta_contable)
+        for fila_cuenta_contable in filas_cuentas_contables
+    ]
+
+
+def _normalizar_termino_lookup_cuenta(termino_busqueda: Any) -> str:
+    """Normaliza texto libre de busqueda para lookup de cuentas."""
+    return str(termino_busqueda or "").strip()
+
+
+def _validar_limite_lookup_cuentas(limite: Any) -> int:
+    """Valida limite defensivo para endpoints de lookup/autocomplete."""
+    try:
+        limite_validado = int(limite)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "El limite del lookup de cuentas contables es invalido."
+        ) from exc
+
+    if limite_validado < 1 or limite_validado > 50:
+        raise ValueError(
+            "El limite del lookup de cuentas contables debe estar entre 1 y 50."
+        )
+
+    return limite_validado
+
+
 def validar_cuenta_contable_imputable(cuenta_contable: str) -> bool:
     """Valida que una cuenta exista y permita imputacion contable."""
     cuenta_contable_validada = _validar_cuenta_contable(cuenta_contable)

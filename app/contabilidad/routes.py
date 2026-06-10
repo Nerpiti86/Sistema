@@ -19,6 +19,7 @@ from app.contabilidad.cuentas_contables_service import (
     obtener_disponibilidad_cuenta_contable,
     obtener_contexto_detalle_cuenta_contable,
     obtener_contexto_listado_cuentas_contables,
+    obtener_lookup_cuentas_contables_imputables,
 )
 
 from app.contabilidad.ejercicios_contables_service import (
@@ -334,6 +335,38 @@ def validar_disponibilidad_cuenta_contable(cuenta_contable_codigo):
         )
 
     return jsonify(disponibilidad_cuenta_contable)
+
+
+
+@bp.get("/cuentas-contables/imputables/buscar/")
+def buscar_cuentas_contables_imputables_json():
+    """
+    Devuelve cuentas imputables para autocomplete de asientos contables.
+
+    Esta route no ejecuta SQL directo. Consulta al service y responde JSON.
+    """
+    termino_busqueda = request.args.get("q", "")
+    limite = request.args.get("limite", 10)
+
+    try:
+        lookup_cuentas = obtener_lookup_cuentas_contables_imputables(
+            termino_busqueda,
+            limite,
+        )
+    except ValueError as exc:
+        return (
+            jsonify(
+                {
+                    "q": str(termino_busqueda or "").strip(),
+                    "cantidad": 0,
+                    "resultados": [],
+                    "mensaje": str(exc),
+                }
+            ),
+            400,
+        )
+
+    return jsonify(lookup_cuentas)
 
 
 @bp.get("/cuentas-contables/lookup-sumarizadora/<cuenta_contable_codigo>/")

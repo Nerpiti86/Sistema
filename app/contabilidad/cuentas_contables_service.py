@@ -2,6 +2,7 @@ from typing import Any
 
 from app.contabilidad.cuentas_contables_repository import (
     actualizar_cuenta_contable_por_cuenta,
+    buscar_cuentas_contables_imputables,
     crear_cuenta_contable,
     listar_cuentas_contables,
     obtener_cuenta_contable_por_cuenta,
@@ -87,6 +88,50 @@ def obtener_disponibilidad_cuenta_contable(
         "ocupada": True,
         "descripcion": cuenta_contable["descripcion"],
         "mensaje": "La cuenta contable ya esta ocupada.",
+    }
+
+
+
+def obtener_lookup_cuentas_contables_imputables(
+    termino_busqueda: Any,
+    limite: int = 10,
+) -> dict[str, Any]:
+    """
+    Devuelve resultados JSON-ready para lookup de cuentas imputables.
+
+    El service no ejecuta SQL directo. Normaliza respuesta para consumo de JS.
+    """
+    termino_normalizado = str(termino_busqueda or "").strip()
+    cuentas_contables = buscar_cuentas_contables_imputables(
+        termino_normalizado,
+        limite,
+    )
+    resultados = [
+        _preparar_cuenta_contable_imputable_para_lookup(cuenta_contable)
+        for cuenta_contable in cuentas_contables
+    ]
+
+    return {
+        "q": termino_normalizado,
+        "cantidad": len(resultados),
+        "resultados": resultados,
+    }
+
+
+def _preparar_cuenta_contable_imputable_para_lookup(
+    cuenta_contable: dict[str, Any],
+) -> dict[str, Any]:
+    """Prepara cuenta imputable para autocomplete de asientos."""
+    return {
+        "cuenta": cuenta_contable["cuenta"],
+        "descripcion": cuenta_contable["descripcion"],
+        "label": f"{cuenta_contable['cuenta']} - {cuenta_contable['descripcion']}",
+        "valor": cuenta_contable["cuenta"],
+        "saldo_habitual": cuenta_contable["saldo_habitual"],
+        "naturaleza": cuenta_contable["naturaleza"],
+        "imputable": int(cuenta_contable["imputable"]),
+        "monetaria": int(cuenta_contable["monetaria"]),
+        "es_monetaria": bool(cuenta_contable["es_monetaria"]),
     }
 
 
