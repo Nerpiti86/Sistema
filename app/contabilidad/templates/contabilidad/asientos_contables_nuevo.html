@@ -205,8 +205,18 @@
                     </div>
 
                     <div class="col-12 col-md-4">
-                        <label for="as-cotizacion-tipo" class="form-label">
-                            Cotizacion
+                        <label
+                            for="as-cotizacion-tipo"
+                            class="form-label d-flex align-items-center gap-1"
+                        >
+                            <span>Cotizacion</span>
+                            <span
+                                id="as-cotizacion-ayuda"
+                                data-field="cotizacion_ayuda"
+                                class="badge rounded-pill text-bg-secondary"
+                                title="Define el criterio para buscar cotizacion cuando la moneda origen no es ARS."
+                                aria-label="Define el criterio para buscar cotizacion cuando la moneda origen no es ARS."
+                            >?</span>
                         </label>
                         <select
                             id="as-cotizacion-tipo"
@@ -226,9 +236,7 @@
                                 </option>
                             {% endfor %}
                         </select>
-                        <div id="as-cotizacion-ayuda" class="form-text">
-                            Define el criterio para buscar cotizacion cuando la moneda origen no es ARS.
-                        </div>
+
                     </div>
 
                     <div class="col-12">
@@ -257,7 +265,16 @@
                                     data-table="asientos_contables_detalle"
                                     data-query="obtener_contexto_nuevo_asiento_contable"
                                     class="table table-sm table-hover align-middle mb-2"
+                                    style="table-layout: fixed;"
                                 >
+                                    <colgroup>
+                                        <col id="as-det-col-cuenta" style="width: 17%;">
+                                        <col id="as-det-col-descripcion" style="width: 35%;">
+                                        <col id="as-det-col-moneda" style="width: 8%;">
+                                        <col id="as-det-col-cotizacion" style="width: 14%;">
+                                        <col id="as-det-col-debe" style="width: 13%;">
+                                        <col id="as-det-col-haber" style="width: 13%;">
+                                    </colgroup>
                                     <thead>
                                         <tr>
                                             <th data-field="cuenta_contable_codigo" class="text-nowrap">Cuenta</th>
@@ -309,8 +326,9 @@
                                                         type="text"
                                                         name="detalles[{{ renglon_idx }}][moneda_codigo]"
                                                         value="{{ detalle_asiento.moneda_codigo }}"
-                                                        class="form-control form-control-sm text-center"
+                                                        class="form-control form-control-sm text-center px-1"
                                                         aria-label="Moneda del renglon {{ renglon_idx + 1 }}"
+                                                        maxlength="3"
                                                         readonly
                                                     >
                                                 </td>

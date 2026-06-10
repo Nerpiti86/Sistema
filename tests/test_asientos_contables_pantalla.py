@@ -492,3 +492,36 @@ def test_pantalla_post_nuevo_asiento_contable_con_error_retorna_formulario():
     assert b'id="as-form"' in response.data
     assert b'value="Asiento sin fecha"' in response.data
     assert b'id="as-guardar"' in response.data
+
+
+
+def test_pantalla_nuevo_asiento_contable_tooltip_y_columnas_renglones():
+    """
+    Valida housekeeping visual de cotizacion y columnas de renglones.
+
+    La ayuda de cotizacion no ocupa espacio fijo y la tabla reserva mas ancho
+    para descripciones de cuenta/renglon.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    assert response.status_code == 200
+    assert b'id="as-cotizacion-ayuda"' in response.data
+    assert b'class="badge rounded-pill text-bg-secondary"' in response.data
+    assert (
+        b'title="Define el criterio para buscar cotizacion cuando la moneda origen no es ARS."'
+        in response.data
+    )
+    assert b'id="as-det-col-descripcion"' in response.data
+    assert b'style="width: 35%;"' in response.data
+    assert b'id="as-det-col-moneda"' in response.data
+    assert b'style="width: 8%;"' in response.data
+    assert b'style="table-layout: fixed;"' in response.data
+    assert b'maxlength="3"' in response.data
