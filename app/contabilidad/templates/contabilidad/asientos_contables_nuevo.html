@@ -159,8 +159,9 @@
                             id="as-renglones"
                             data-table="asientos_contables_detalle"
                             data-query="obtener_contexto_nuevo_asiento_contable"
+                            class="border rounded-3 p-3 bg-body-tertiary"
                         >
-                            <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+                            <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
                                 <h2 id="as-renglones-titulo" class="h5 mb-0">
                                     Renglones
                                 </h2>
@@ -178,16 +179,16 @@
                                     id="as-det-tabla"
                                     data-table="asientos_contables_detalle"
                                     data-query="obtener_contexto_nuevo_asiento_contable"
-                                    class="table table-sm align-middle mb-2"
+                                    class="table table-sm table-hover align-middle mb-2"
                                 >
                                     <thead>
                                         <tr>
-                                            <th data-field="cuenta_contable_codigo">Cuenta</th>
-                                            <th data-field="descripcion">Descripcion</th>
-                                            <th data-field="moneda_codigo">Moneda</th>
-                                            <th data-field="cotizacion_1000000" class="text-end">Cotizacion</th>
-                                            <th data-field="debe_centavos" class="text-end">Debe</th>
-                                            <th data-field="haber_centavos" class="text-end">Haber</th>
+                                            <th data-field="cuenta_contable_codigo" class="text-nowrap">Cuenta</th>
+                                            <th data-field="descripcion" class="text-nowrap">Descripcion</th>
+                                            <th data-field="moneda_codigo" class="text-nowrap">Moneda</th>
+                                            <th data-field="cotizacion_1000000" class="text-end text-nowrap">Cotizacion</th>
+                                            <th data-field="debe_centavos" class="text-end text-nowrap">Debe</th>
+                                            <th data-field="haber_centavos" class="text-end text-nowrap">Haber</th>
                                         </tr>
                                     </thead>
                                     <tbody id="as-det-tbody">
@@ -206,6 +207,8 @@
                                                         name="detalles[{{ renglon_idx }}][cuenta_contable_codigo]"
                                                         value="{{ detalle_asiento.cuenta_contable_codigo }}"
                                                         class="form-control form-control-sm"
+                                                        placeholder="Codigo de cuenta"
+                                                        aria-label="Cuenta del renglon {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
                                                 </td>
@@ -217,6 +220,8 @@
                                                         name="detalles[{{ renglon_idx }}][descripcion]"
                                                         value="{{ detalle_asiento.descripcion }}"
                                                         class="form-control form-control-sm"
+                                                        placeholder="Detalle"
+                                                        aria-label="Descripcion del renglon {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
                                                 </td>
@@ -227,7 +232,8 @@
                                                         type="text"
                                                         name="detalles[{{ renglon_idx }}][moneda_codigo]"
                                                         value="{{ detalle_asiento.moneda_codigo }}"
-                                                        class="form-control form-control-sm"
+                                                        class="form-control form-control-sm text-center"
+                                                        aria-label="Moneda del renglon {{ renglon_idx + 1 }}"
                                                         readonly
                                                     >
                                                 </td>
@@ -239,6 +245,7 @@
                                                         name="detalles[{{ renglon_idx }}][cotizacion_1000000]"
                                                         value="{{ detalle_asiento.cotizacion_1000000 }}"
                                                         class="form-control form-control-sm text-end"
+                                                        aria-label="Cotizacion del renglon {{ renglon_idx + 1 }}"
                                                         readonly
                                                     >
                                                 </td>
@@ -251,6 +258,8 @@
                                                         name="detalles[{{ renglon_idx }}][debe_centavos]"
                                                         value="{{ detalle_asiento.debe_centavos }}"
                                                         class="form-control form-control-sm text-end"
+                                                        placeholder="0,00"
+                                                        aria-label="Debe del renglon {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
                                                 </td>
@@ -263,6 +272,8 @@
                                                         name="detalles[{{ renglon_idx }}][haber_centavos]"
                                                         value="{{ detalle_asiento.haber_centavos }}"
                                                         class="form-control form-control-sm text-end"
+                                                        placeholder="0,00"
+                                                        aria-label="Haber del renglon {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
                                                 </td>
@@ -272,7 +283,7 @@
                                 </table>
                             </div>
 
-                            <p id="as-renglones-ayuda" class="text-muted mb-0">
+                            <p id="as-renglones-ayuda" class="small text-muted mb-0">
                                 Se muestran dos renglones base para iniciar el asiento. La persistencia se habilitara en un paso posterior.
                             </p>
                         </div>
