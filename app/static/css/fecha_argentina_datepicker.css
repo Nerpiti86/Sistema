@@ -96,3 +96,52 @@
     gap: 0.5rem;
     margin-top: 0.75rem;
 }
+
+.ns-date-picker__month-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+}
+
+.ns-date-picker__month {
+    min-height: 2.25rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--bs-body-color);
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.ns-date-picker__month:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+.ns-date-picker__month--selected {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary);
+    color: var(--bs-white);
+}
+
+.ns-date-picker__month--current {
+    outline: 2px solid var(--bs-primary-border-subtle);
+    outline-offset: 1px;
+}
+
+.ns-date-picker--periodo {
+    width: 22rem;
+}
+
+.ns-date-picker--periodo .ns-date-picker__title {
+    font-size: 1rem;
+}
+
+.ns-date-picker--periodo .ns-date-picker__month-grid {
+    gap: 0.5rem;
+}
+
+.ns-date-picker--periodo .ns-date-picker__month {
+    min-height: 2.4rem;
+    padding: 0.35rem 0.55rem;
+    white-space: nowrap;
+}

@@ -25,6 +25,10 @@ def test_get_indices_inflacion_muestra_formulario_y_estado_vacio():
     assert b'id="ec-indice-form"' in response.data
     assert b'id="ec-indice-periodo"' in response.data
     assert b'name="periodo"' in response.data
+    assert b'data-datepicker="periodo-argentino"' in response.data
+    assert b'placeholder="MM/AAAA"' in response.data
+    assert b'pattern="\\d{2}/\\d{4}"' in response.data
+    assert b'type="month"' not in response.data
     assert b'id="ec-indice-valor"' in response.data
     assert b'name="indice"' in response.data
     assert b'id="ec-indices-vacio"' in response.data
