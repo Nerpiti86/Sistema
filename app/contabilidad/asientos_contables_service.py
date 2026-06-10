@@ -212,9 +212,24 @@ def obtener_contexto_nuevo_asiento_contable() -> dict[str, Any]:
             if ejercicio_contable_activo
             else "Sin ejercicio contable activo."
         ),
+        "detalles_asiento_form": _obtener_detalles_asiento_form_default(),
         "form_action_url": "#",
         "form_cancelar_url": "/contabilidad/asientos-contables/",
     }
+
+
+def _obtener_detalles_asiento_form_default() -> list[dict[str, Any]]:
+    """Devuelve dos renglones base para la pantalla GET de alta."""
+    detalle_base = {
+        "cuenta_contable_codigo": "",
+        "descripcion": "",
+        "moneda_codigo": _MONEDA_CONTABLE,
+        "cotizacion_1000000": "1,000000",
+        "debe_centavos": "",
+        "haber_centavos": "",
+    }
+
+    return [dict(detalle_base), dict(detalle_base)]
 
 
 def obtener_contexto_detalle_asiento_contable(

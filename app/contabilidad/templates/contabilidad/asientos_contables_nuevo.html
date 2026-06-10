@@ -156,11 +156,125 @@
 
                     <div class="col-12">
                         <div
-                            id="as-renglones-pendientes"
+                            id="as-renglones"
                             data-table="asientos_contables_detalle"
-                            class="alert alert-info mb-0"
+                            data-query="obtener_contexto_nuevo_asiento_contable"
                         >
-                            Los renglones del asiento se agregaran en el siguiente paso.
+                            <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+                                <h2 id="as-renglones-titulo" class="h5 mb-0">
+                                    Renglones
+                                </h2>
+                                <span
+                                    id="as-renglones-cantidad"
+                                    data-field="cantidad_renglones"
+                                    class="badge text-bg-secondary"
+                                >
+                                    {{ detalles_asiento_form|length }}
+                                </span>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table
+                                    id="as-det-tabla"
+                                    data-table="asientos_contables_detalle"
+                                    data-query="obtener_contexto_nuevo_asiento_contable"
+                                    class="table table-sm align-middle mb-2"
+                                >
+                                    <thead>
+                                        <tr>
+                                            <th data-field="cuenta_contable_codigo">Cuenta</th>
+                                            <th data-field="descripcion">Descripcion</th>
+                                            <th data-field="moneda_codigo">Moneda</th>
+                                            <th data-field="cotizacion_1000000" class="text-end">Cotizacion</th>
+                                            <th data-field="debe_centavos" class="text-end">Debe</th>
+                                            <th data-field="haber_centavos" class="text-end">Haber</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="as-det-tbody">
+                                        {% for detalle_asiento in detalles_asiento_form %}
+                                            {% set renglon_idx = loop.index0 %}
+                                            <tr
+                                                id="as-det-row-{{ renglon_idx }}"
+                                                data-table="asientos_contables_detalle"
+                                                data-row-index="{{ renglon_idx }}"
+                                            >
+                                                <td data-field="cuenta_contable_codigo">
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-cuenta"
+                                                        data-field="cuenta_contable_codigo"
+                                                        type="text"
+                                                        name="detalles[{{ renglon_idx }}][cuenta_contable_codigo]"
+                                                        value="{{ detalle_asiento.cuenta_contable_codigo }}"
+                                                        class="form-control form-control-sm"
+                                                        autocomplete="off"
+                                                    >
+                                                </td>
+                                                <td data-field="descripcion">
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-descripcion"
+                                                        data-field="descripcion"
+                                                        type="text"
+                                                        name="detalles[{{ renglon_idx }}][descripcion]"
+                                                        value="{{ detalle_asiento.descripcion }}"
+                                                        class="form-control form-control-sm"
+                                                        autocomplete="off"
+                                                    >
+                                                </td>
+                                                <td data-field="moneda_codigo">
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-moneda"
+                                                        data-field="moneda_codigo"
+                                                        type="text"
+                                                        name="detalles[{{ renglon_idx }}][moneda_codigo]"
+                                                        value="{{ detalle_asiento.moneda_codigo }}"
+                                                        class="form-control form-control-sm"
+                                                        readonly
+                                                    >
+                                                </td>
+                                                <td data-field="cotizacion_1000000">
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-cotizacion"
+                                                        data-field="cotizacion_1000000"
+                                                        type="text"
+                                                        name="detalles[{{ renglon_idx }}][cotizacion_1000000]"
+                                                        value="{{ detalle_asiento.cotizacion_1000000 }}"
+                                                        class="form-control form-control-sm text-end"
+                                                        readonly
+                                                    >
+                                                </td>
+                                                <td data-field="debe_centavos">
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-debe"
+                                                        data-field="debe_centavos"
+                                                        type="text"
+                                                        inputmode="decimal"
+                                                        name="detalles[{{ renglon_idx }}][debe_centavos]"
+                                                        value="{{ detalle_asiento.debe_centavos }}"
+                                                        class="form-control form-control-sm text-end"
+                                                        autocomplete="off"
+                                                    >
+                                                </td>
+                                                <td data-field="haber_centavos">
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-haber"
+                                                        data-field="haber_centavos"
+                                                        type="text"
+                                                        inputmode="decimal"
+                                                        name="detalles[{{ renglon_idx }}][haber_centavos]"
+                                                        value="{{ detalle_asiento.haber_centavos }}"
+                                                        class="form-control form-control-sm text-end"
+                                                        autocomplete="off"
+                                                    >
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <p id="as-renglones-ayuda" class="text-muted mb-0">
+                                Se muestran dos renglones base para iniciar el asiento. La persistencia se habilitara en un paso posterior.
+                            </p>
                         </div>
                     </div>
 

@@ -334,3 +334,48 @@ def test_pantalla_asientos_contables_tiene_acceso_a_nuevo_asiento():
     assert b'id="as-nuevo"' in response.data
     assert b"/contabilidad/asientos-contables/nuevo/" in response.data
     assert b'data-action="ver_formulario_nuevo_asiento_contable"' in response.data
+
+
+
+def test_pantalla_nuevo_asiento_contable_muestra_renglones_base():
+    """
+    Valida renglones base del formulario GET de nuevo asiento.
+
+    La pantalla mantiene persistencia deshabilitada y solo expone campos
+    estables para cuenta, descripcion, moneda, cotizacion, debe y haber.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    assert response.status_code == 200
+    assert b'id="as-renglones"' in response.data
+    assert b'id="as-det-tabla"' in response.data
+    assert b'id="as-det-tbody"' in response.data
+    assert b'id="as-det-row-0"' in response.data
+    assert b'id="as-det-row-1"' in response.data
+    assert b'data-row-index="0"' in response.data
+    assert b'data-row-index="1"' in response.data
+
+    for indice in (0, 1):
+        assert f'id="as-det-{indice}-cuenta"'.encode() in response.data
+        assert f'id="as-det-{indice}-descripcion"'.encode() in response.data
+        assert f'id="as-det-{indice}-moneda"'.encode() in response.data
+        assert f'id="as-det-{indice}-cotizacion"'.encode() in response.data
+        assert f'id="as-det-{indice}-debe"'.encode() in response.data
+        assert f'id="as-det-{indice}-haber"'.encode() in response.data
+
+    assert b'data-table="asientos_contables_detalle"' in response.data
+    assert b'data-field="cuenta_contable_codigo"' in response.data
+    assert b'data-field="debe_centavos"' in response.data
+    assert b'data-field="haber_centavos"' in response.data
+    assert b'value="ARS"' in response.data
+    assert b'value="1,000000"' in response.data
+    assert b'id="as-guardar"' in response.data
+    assert b"disabled" in response.data
