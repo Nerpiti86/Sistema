@@ -17,6 +17,13 @@
             >
                 {{ secondary_link("Ejercicios contables", url_for("contabilidad.ver_listado_ejercicios_contables")) }}
                 <span
+                    id="ec-indices-acceso"
+                    data-table="indices_inflacion"
+                    data-action="ver_indices_inflacion"
+                >
+                    {{ secondary_link("Índices de inflación", url_for("contabilidad.ver_indices_inflacion")) }}
+                </span>
+                <span
                     id="cc-acceso"
                     data-table="cuentas_contables"
                     data-action="ver_listado_cuentas_contables"
