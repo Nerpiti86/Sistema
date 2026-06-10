@@ -365,7 +365,8 @@ def test_pantalla_nuevo_asiento_contable_muestra_renglones_base():
     assert response.status_code == 200
     assert b'id="as-renglones"' in response.data
     assert b'id="as-det-tabla"' in response.data
-    assert b'id="as-det-tbody"' in response.data
+    assert b'id="as-det-renglones"' in response.data
+    assert b'data-role="asiento-renglones"' in response.data
     assert b'id="as-det-row-0"' in response.data
     assert b'id="as-det-row-1"' in response.data
     assert b'data-row-index="0"' in response.data
@@ -520,7 +521,7 @@ def test_pantalla_nuevo_asiento_contable_tooltip_y_columnas_renglones():
         in response.data
     )
     assert b'id="as-det-col-nombre-cuenta"' in response.data
-    assert b'style="width: 34%;"' in response.data
+    assert b'style="width: 32%;"' in response.data
     assert b'id="as-det-col-moneda"' in response.data
     assert b'style="width: 8%;"' in response.data
     assert b'style="table-layout: fixed;"' in response.data
@@ -591,3 +592,33 @@ def test_pantalla_nuevo_asiento_contable_expone_controles_renglones_dinamicos():
     assert 'name="detalles[1][cuenta_contable_codigo]"' in html
     assert 'id="as-det-0-cuenta-opciones"' in html
     assert 'id="as-det-1-cuenta-opciones"' in html
+
+
+
+def test_pantalla_nuevo_asiento_contable_quitar_renglon_en_columna_accion():
+    """
+    Valida que quitar renglon quede en columna propia.
+
+    El boton de quitar no debe ocupar espacio debajo de Cuenta; queda al final
+    del renglon como accion visual compacta.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'id="as-det-col-accion"' in html
+    assert 'data-field="accion"' in html
+    assert 'class="text-center text-nowrap">Accion</th>' in html
+    assert 'class="btn btn-outline-danger btn-sm px-2"' in html
+    assert 'title="Quitar renglon"' in html
+    assert 'id="as-det-renglones" data-role="asiento-renglones">' in html
+    assert 'id="as-det-renglones" data-role="asiento-renglones" id=' not in html

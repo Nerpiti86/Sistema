@@ -268,12 +268,13 @@
                                     style="table-layout: fixed;"
                                 >
                                     <colgroup>
-                                        <col id="as-det-col-cuenta" style="width: 18%;">
-                                        <col id="as-det-col-nombre-cuenta" style="width: 34%;">
+                                        <col id="as-det-col-cuenta" style="width: 16%;">
+                                        <col id="as-det-col-nombre-cuenta" style="width: 32%;">
                                         <col id="as-det-col-moneda" style="width: 8%;">
-                                        <col id="as-det-col-cotizacion" style="width: 14%;">
-                                        <col id="as-det-col-debe" style="width: 13%;">
-                                        <col id="as-det-col-haber" style="width: 13%;">
+                                        <col id="as-det-col-cotizacion" style="width: 13%;">
+                                        <col id="as-det-col-debe" style="width: 12%;">
+                                        <col id="as-det-col-haber" style="width: 12%;">
+                                        <col id="as-det-col-accion" style="width: 7%;">
                                     </colgroup>
                                     <thead>
                                         <tr>
@@ -283,16 +284,17 @@
                                             <th data-field="cotizacion_1000000" class="text-end text-nowrap">Cotizacion</th>
                                             <th data-field="debe_centavos" class="text-end text-nowrap">Debe</th>
                                             <th data-field="haber_centavos" class="text-end text-nowrap">Haber</th>
+                                            <th data-field="accion" class="text-center text-nowrap">Accion</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="as-det-renglones" data-role="asiento-renglones" id="as-det-tbody">
+                                    <tbody id="as-det-renglones" data-role="asiento-renglones">
                                         {% for detalle_asiento in detalles_asiento_form %}
                                             {% set renglon_idx = loop.index0 %}
                                             <tr
                                                 id="as-det-row-{{ renglon_idx }}"
                                                 data-table="asientos_contables_detalle"
                                                 data-row-index="{{ renglon_idx }}"
-                                            data-role="asiento-renglon"
+                                                data-role="asiento-renglon"
                                             >
                                                 <td data-field="cuenta_contable_codigo">
                                                     <input
@@ -317,16 +319,6 @@
                                                         data-table="cuentas_contables"
                                                         data-field="cuenta_contable_lookup_opciones"
                                                     ></datalist>
-                                                    <button
-                                                        id="as-det-{{ renglon_idx }}-quitar"
-                                                        data-action="quitar-renglon"
-                                                        data-row-index="{{ renglon_idx }}"
-                                                        type="button"
-                                                        class="btn btn-outline-danger btn-sm mt-1 w-100"
-                                                        aria-label="Quitar renglon {{ renglon_idx + 1 }}"
-                                                    >
-                                                        Quitar
-                                                    </button>
                                                 </td>
                                                 <td>
                                                     {# Mantiene compatibilidad con el POST actual; visualmente la cuenta se describe en Nombre cuenta. #}
@@ -403,6 +395,19 @@
                                                         aria-label="Haber del renglon {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
+                                                </td>
+                                                <td data-field="accion" class="text-center">
+                                                    <button
+                                                        id="as-det-{{ renglon_idx }}-quitar"
+                                                        data-action="quitar-renglon"
+                                                        data-row-index="{{ renglon_idx }}"
+                                                        type="button"
+                                                        class="btn btn-outline-danger btn-sm px-2"
+                                                        title="Quitar renglon"
+                                                        aria-label="Quitar renglon {{ renglon_idx + 1 }}"
+                                                    >
+                                                        ×
+                                                    </button>
                                                 </td>
                                             </tr>
                                         {% endfor %}
