@@ -1,12 +1,40 @@
 {% macro flash_messages() %}
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            <section
+                id="ns-alerts"
+                class="ns-alerts-global"
+                aria-label="Mensajes del sistema"
+                aria-live="polite"
+            >
+                <div class="ns-alerts-stack">
+                    {% for category, message in messages %}
+                        {% set alert_category = category if category in ["success", "danger", "warning", "info"] else "info" %}
+                        <div
+                            class="alert alert-{{ alert_category }} alert-dismissible fade show ns-alert-modal shadow-lg"
+                            role="alert"
+                            data-ns-alert
+                        >
+                            <button
+                                type="button"
+                                class="btn-close position-absolute top-0 end-0 m-3"
+                                data-bs-dismiss="alert"
+                                aria-label="Cerrar"
+                            ></button>
+
+                            <div class="ns-alert-body">
+                                <div
+                                    class="ns-alert-date small fw-semibold text-body-secondary mb-1"
+                                    data-ns-alert-created-at
+                                ></div>
+                                <div class="ns-alert-message fw-semibold">
+                                    {{ message }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
+            </section>
         {% endif %}
     {% endwith %}
 {% endmacro %}
