@@ -13,6 +13,7 @@ from app.contabilidad.ejercicios_contables_repository import (
     obtener_ejercicio_contable_activo,
     obtener_ejercicio_contable_por_fecha,
 )
+from app.shared.monedas_repository import listar_monedas_activas
 from app.shared.monedas_cotizaciones_repository import (
     obtener_ultima_moneda_cotizacion,
 )
@@ -20,6 +21,7 @@ from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
     formatear_fecha_iso_a_argentina,
     normalizar_decimal_argentino_a_entero_escala,
+    normalizar_fecha_argentina_a_iso,
 )
 
 _MONEDA_CONTABLE = "ARS"
@@ -33,6 +35,12 @@ _DETALLE_FORM_CAMPOS = {
     "debe_centavos",
     "haber_centavos",
 }
+_COTIZACION_TIPOS_FORM = [
+    {"codigo": "CIERRE", "descripcion": "CIERRE - Cotizacion de cierre"},
+    {"codigo": "COMPRA", "descripcion": "COMPRA - Tipo comprador"},
+    {"codigo": "VENTA", "descripcion": "VENTA - Tipo vendedor"},
+    {"codigo": "PROMEDIO", "descripcion": "PROMEDIO - Cotizacion promedio"},
+]
 
 
 def crear_asiento_contable_borrador(
@@ -200,10 +208,9 @@ def preparar_asiento_contable_borrador_desde_formulario(
     renglones listos para delegar luego en crear_asiento_contable_borrador.
     """
     datos_formulario = _copiar_formulario_plano(formulario)
-    fecha = str(datos_formulario.get("fecha") or "").strip()
-
-    if not fecha:
-        raise ValueError("La fecha del asiento es obligatoria.")
+    fecha = _normalizar_fecha_formulario_a_iso(
+        datos_formulario.get("fecha")
+    )
 
     cotizacion_tipo = str(
         datos_formulario.get("cotizacion_tipo") or _TIPO_COTIZACION_DEFAULT
@@ -232,6 +239,21 @@ def preparar_asiento_contable_borrador_desde_formulario(
     return datos_asiento, _normalizar_detalles_asiento_desde_formulario(
         datos_formulario
     )
+
+
+def _normalizar_fecha_formulario_a_iso(valor: Any) -> str:
+    fecha = str(valor or "").strip()
+
+    if not fecha:
+        raise ValueError("La fecha del asiento es obligatoria.")
+
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha):
+        return fecha
+
+    try:
+        return normalizar_fecha_argentina_a_iso(fecha)
+    except ValueError as exc:
+        raise ValueError("La fecha del asiento es invalida.") from exc
 
 
 def _copiar_formulario_plano(formulario: Any) -> dict[str, str]:
@@ -489,6 +511,8 @@ def obtener_contexto_nuevo_asiento_contable() -> dict[str, Any]:
             else "Sin ejercicio contable activo."
         ),
         "detalles_asiento_form": _obtener_detalles_asiento_form_default(),
+        "monedas_activas": listar_monedas_activas(),
+        "cotizacion_tipos": list(_COTIZACION_TIPOS_FORM),
         "form_action_url": "#",
         "form_cancelar_url": "/contabilidad/asientos-contables/",
     }

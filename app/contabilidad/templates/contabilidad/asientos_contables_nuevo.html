@@ -15,8 +15,53 @@
                     Nuevo asiento contable
                 </h1>
                 <p id="as-nuevo-descripcion" class="text-muted mb-0">
-                    Carga inicial de asiento manual en estado borrador. La persistencia se habilitara en el proximo paso.
+                    Carga inicial de asiento manual en estado borrador.
                 </p>
+                <div
+                    id="as-nuevo-ejercicio"
+                    data-table="ejercicios_contables"
+                    class="mt-2 small text-muted"
+                >
+                    {% if ejercicio_contable_activo %}
+                        <span class="fw-semibold">Ejercicio activo:</span>
+                        <span
+                            id="as-nuevo-ejercicio-codigo"
+                            data-field="codigo"
+                        >
+                            {{ ejercicio_contable_activo.codigo }}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span
+                            id="as-nuevo-ejercicio-nombre"
+                            data-field="nombre"
+                        >
+                            {{ ejercicio_contable_activo.nombre }}
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span
+                            id="as-nuevo-ejercicio-periodo"
+                            data-field="periodo"
+                        >
+                            {{ ejercicio_contable_activo.fecha_desde_argentina }}
+                            a {{ ejercicio_contable_activo.fecha_hasta_argentina }}
+                        </span>
+                    {% else %}
+                        <span class="fw-semibold">Ejercicio activo:</span>
+                        <span
+                            id="as-nuevo-ejercicio-codigo"
+                            data-field="codigo"
+                        >-</span>
+                        <span
+                            id="as-nuevo-ejercicio-nombre"
+                            data-field="nombre"
+                            class="visually-hidden"
+                        >-</span>
+                        <span
+                            id="as-nuevo-ejercicio-periodo"
+                            data-field="periodo"
+                        >Sin ejercicio contable activo</span>
+                    {% endif %}
+                </div>
             </div>
             <div id="as-nuevo-acciones">
                 <a
@@ -32,7 +77,7 @@
         </div>
     </div>
 
-    <div class="col-12 col-xl-8">
+    <div class="col-12">
         {% call card("Cabecera", "asientos_contables") %}
             {% if mensaje_contexto_asiento %}
                 <div
@@ -68,10 +113,13 @@
                         <input
                             id="as-fecha"
                             data-field="fecha"
-                            type="date"
+                            data-datepicker="fecha-argentina"
+                            type="text"
+                            inputmode="numeric"
                             name="fecha"
                             value="{{ asiento_contable_form.fecha }}"
                             class="form-control"
+                            placeholder="DD/MM/AAAA"
                             autocomplete="off"
                         >
                     </div>
@@ -122,15 +170,23 @@
                         <label for="as-moneda-origen" class="form-label">
                             Moneda origen
                         </label>
-                        <input
+                        <select
                             id="as-moneda-origen"
+                            data-ns-select="normal"
+                            data-table="asientos_contables"
                             data-field="moneda_origen_codigo"
-                            type="text"
                             name="moneda_origen_codigo"
-                            value="{{ asiento_contable_form.moneda_origen_codigo }}"
-                            class="form-control"
-                            readonly
+                            class="form-select"
                         >
+                            {% for moneda in monedas_activas %}
+                                <option
+                                    value="{{ moneda.codigo }}"
+                                    {% if moneda.codigo == asiento_contable_form.moneda_origen_codigo %}selected{% endif %}
+                                >
+                                    {{ moneda.descripcion_select }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div class="col-12 col-md-4">
@@ -152,15 +208,27 @@
                         <label for="as-cotizacion-tipo" class="form-label">
                             Cotizacion
                         </label>
-                        <input
+                        <select
                             id="as-cotizacion-tipo"
+                            data-ns-select="normal"
+                            data-table="asientos_contables"
                             data-field="cotizacion_tipo"
-                            type="text"
                             name="cotizacion_tipo"
-                            value="{{ asiento_contable_form.cotizacion_tipo }}"
-                            class="form-control"
-                            readonly
+                            class="form-select"
+                            aria-describedby="as-cotizacion-ayuda"
                         >
+                            {% for cotizacion_tipo in cotizacion_tipos %}
+                                <option
+                                    value="{{ cotizacion_tipo.codigo }}"
+                                    {% if cotizacion_tipo.codigo == asiento_contable_form.cotizacion_tipo %}selected{% endif %}
+                                >
+                                    {{ cotizacion_tipo.descripcion }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div id="as-cotizacion-ayuda" class="form-text">
+                            Define el criterio para buscar cotizacion cuando la moneda origen no es ARS.
+                        </div>
                     </div>
 
                     <div class="col-12">
@@ -320,55 +388,6 @@
                     </div>
                 </div>
             </form>
-        {% endcall %}
-    </div>
-
-    <div class="col-12 col-xl-4">
-        {% call card("Ejercicio activo", "ejercicios_contables") %}
-            <dl id="as-nuevo-ejercicio" class="row mb-0">
-                <dt class="col-5">Codigo</dt>
-                <dd
-                    id="as-nuevo-ejercicio-codigo"
-                    data-table="ejercicios_contables"
-                    data-field="codigo"
-                    class="col-7"
-                >
-                    {% if ejercicio_contable_activo %}
-                        {{ ejercicio_contable_activo.codigo }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </dd>
-
-                <dt class="col-5">Nombre</dt>
-                <dd
-                    id="as-nuevo-ejercicio-nombre"
-                    data-table="ejercicios_contables"
-                    data-field="nombre"
-                    class="col-7"
-                >
-                    {% if ejercicio_contable_activo %}
-                        {{ ejercicio_contable_activo.nombre }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </dd>
-
-                <dt class="col-5">Periodo</dt>
-                <dd
-                    id="as-nuevo-ejercicio-periodo"
-                    data-table="ejercicios_contables"
-                    data-field="periodo"
-                    class="col-7"
-                >
-                    {% if ejercicio_contable_activo %}
-                        {{ ejercicio_contable_activo.fecha_desde_argentina }}
-                        a {{ ejercicio_contable_activo.fecha_hasta_argentina }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </dd>
-            </dl>
         {% endcall %}
     </div>
 </section>

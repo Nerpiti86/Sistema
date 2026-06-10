@@ -428,7 +428,7 @@ def test_service_parser_formulario_normaliza_cabecera_y_renglones():
         preparar_asiento_contable_borrador_desde_formulario(
             {
                 "ejercicio_id": "7",
-                "fecha": "2026-06-10",
+                "fecha": "10/06/2026",
                 "descripcion": " Asiento manual ",
                 "tipo": "manual",
                 "moneda_origen_codigo": "ars",
@@ -544,3 +544,23 @@ def test_service_parser_formulario_rechaza_importe_invalido():
                 "detalles[0][debe_centavos]": "500.00",
             }
         )
+
+
+
+def test_service_parser_formulario_normaliza_fecha_argentina():
+    """
+    Valida fecha DD/MM/AAAA proveniente del selector de la app.
+
+    El parser entrega fecha ISO para las reglas contables y repository.
+    """
+    datos_asiento, _ = preparar_asiento_contable_borrador_desde_formulario(
+        {
+            "ejercicio_id": "7",
+            "fecha": "10/06/2026",
+            "descripcion": "Fecha argentina",
+            "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+            "detalles[0][debe_centavos]": "500,00",
+        }
+    )
+
+    assert datos_asiento["fecha"] == "2026-06-10"

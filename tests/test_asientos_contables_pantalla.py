@@ -283,11 +283,15 @@ def test_pantalla_nuevo_asiento_contable_muestra_formulario_borrador():
     assert b'method="post"' in response.data
     assert b'id="as-ejercicio-id"' in response.data
     assert b'id="as-fecha"' in response.data
+    assert b'data-datepicker="fecha-argentina"' in response.data
+    assert b'placeholder="DD/MM/AAAA"' in response.data
     assert b'id="as-descripcion-input"' in response.data
     assert b'value="MANUAL"' in response.data
     assert b'value="BORRADOR"' in response.data
     assert b'value="ARS"' in response.data
-    assert b'value="CIERRE"' in response.data
+    assert b'id="as-cotizacion-tipo"' in response.data
+    assert b'data-ns-select="normal"' in response.data
+    assert b'CIERRE - Cotizacion de cierre' in response.data
     assert b"Ejercicio 2026" in response.data
     assert b"01/01/2026" in response.data
     assert b"31/12/2026" in response.data
