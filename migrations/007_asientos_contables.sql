@@ -73,8 +73,13 @@ CREATE TABLE IF NOT EXISTS asientos_contables_detalle (
     renglon INTEGER NOT NULL,
     cuenta_contable_codigo TEXT NOT NULL,
     descripcion TEXT,
-    debe_moneda_centavos INTEGER NOT NULL DEFAULT 0,
-    haber_moneda_centavos INTEGER NOT NULL DEFAULT 0,
+    moneda_codigo TEXT NOT NULL DEFAULT 'ARS',
+    cotizacion_id INTEGER,
+    cotizacion_fecha TEXT NOT NULL,
+    cotizacion_tipo TEXT NOT NULL DEFAULT 'CIERRE',
+    cotizacion_1000000 INTEGER NOT NULL DEFAULT 1000000,
+    nominal_debe_centavos INTEGER NOT NULL DEFAULT 0,
+    nominal_haber_centavos INTEGER NOT NULL DEFAULT 0,
     debe_centavos INTEGER NOT NULL DEFAULT 0,
     haber_centavos INTEGER NOT NULL DEFAULT 0,
 
@@ -85,11 +90,22 @@ CREATE TABLE IF NOT EXISTS asientos_contables_detalle (
     FOREIGN KEY (cuenta_contable_codigo)
         REFERENCES cuentas_contables(cuenta),
 
+    FOREIGN KEY (moneda_codigo)
+        REFERENCES monedas(codigo),
+
+    FOREIGN KEY (cotizacion_id)
+        REFERENCES monedas_cotizaciones(id),
+
     UNIQUE (asiento_id, renglon),
 
     CHECK (renglon > 0),
-    CHECK (debe_moneda_centavos >= 0),
-    CHECK (haber_moneda_centavos >= 0),
+    CHECK (cotizacion_tipo IN ('COMPRA', 'VENTA', 'CIERRE', 'PROMEDIO')),
+    CHECK (cotizacion_1000000 > 0),
+    CHECK (cotizacion_fecha GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+    CHECK (CAST(substr(cotizacion_fecha, 6, 2) AS INTEGER) BETWEEN 1 AND 12),
+    CHECK (CAST(substr(cotizacion_fecha, 9, 2) AS INTEGER) BETWEEN 1 AND 31),
+    CHECK (nominal_debe_centavos >= 0),
+    CHECK (nominal_haber_centavos >= 0),
     CHECK (debe_centavos >= 0),
     CHECK (haber_centavos >= 0),
     CHECK (
@@ -98,9 +114,13 @@ CREATE TABLE IF NOT EXISTS asientos_contables_detalle (
         (debe_centavos = 0 AND haber_centavos > 0)
     ),
     CHECK (
-        (debe_moneda_centavos > 0 AND haber_moneda_centavos = 0)
+        (nominal_debe_centavos > 0 AND nominal_haber_centavos = 0)
         OR
-        (debe_moneda_centavos = 0 AND haber_moneda_centavos > 0)
+        (nominal_debe_centavos = 0 AND nominal_haber_centavos > 0)
+    ),
+    CHECK (
+        moneda_codigo != 'ARS'
+        OR cotizacion_1000000 = 1000000
     )
 );
 

@@ -226,12 +226,12 @@ def test_asientos_contables_tiene_columnas_monetarias():
     }.issubset(columnas)
 
 
-def test_asientos_contables_detalle_tiene_importes_moneda_y_contables():
+def test_asientos_contables_detalle_tiene_nominal_y_ars_contable():
     """
-    Valida importes originales y convertidos en el detalle.
+    Valida nominal por renglon y ARS contable.
 
-    El libro contable valida por debe_centavos/haber_centavos, pero conserva
-    debe_moneda_centavos/haber_moneda_centavos como importe original.
+    Toda la contabilidad se expresa en ARS mediante debe_centavos/haber_centavos,
+    pero cada renglon conserva moneda real, cotizacion y nominal.
     """
     app = _crear_app()
 
@@ -245,11 +245,19 @@ def test_asientos_contables_detalle_tiene_importes_moneda_y_contables():
         }
 
     assert {
-        "debe_moneda_centavos",
-        "haber_moneda_centavos",
+        "moneda_codigo",
+        "cotizacion_id",
+        "cotizacion_fecha",
+        "cotizacion_tipo",
+        "cotizacion_1000000",
+        "nominal_debe_centavos",
+        "nominal_haber_centavos",
         "debe_centavos",
         "haber_centavos",
     }.issubset(columnas)
+
+    assert "_".join(["debe", "moneda", "centavos"]) not in columnas
+    assert "_".join(["haber", "moneda", "centavos"]) not in columnas
 
 
 def test_asiento_permite_ars_ars_con_cotizacion_uno():
@@ -397,13 +405,63 @@ def test_detalle_rechaza_debe_y_haber_contable_simultaneos():
                     asiento_id,
                     renglon,
                     cuenta_contable_codigo,
-                    debe_moneda_centavos,
+                    moneda_codigo,
+                    cotizacion_fecha,
+                    nominal_debe_centavos,
                     debe_centavos,
                     haber_centavos
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (asiento_id, 1, cuenta, 10000, 10000, 5000),
+                (
+                    asiento_id,
+                    1,
+                    cuenta,
+                    "ARS",
+                    "2026-06-10",
+                    10000,
+                    10000,
+                    5000,
+                ),
+            )
+
+
+def test_detalle_rechaza_nominal_debe_y_haber_simultaneos():
+    """Valida que una linea no pueda tener nominal debe y haber a la vez."""
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _primer_ejercicio_id(db)
+        asiento_id = _crear_asiento_base(db, ejercicio_id)
+        cuenta = _cuenta_imputable(db)
+
+        with pytest.raises(sqlite3.IntegrityError):
+            db.execute(
+                """
+                INSERT INTO asientos_contables_detalle (
+                    asiento_id,
+                    renglon,
+                    cuenta_contable_codigo,
+                    moneda_codigo,
+                    cotizacion_fecha,
+                    nominal_debe_centavos,
+                    nominal_haber_centavos,
+                    debe_centavos
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    asiento_id,
+                    1,
+                    cuenta,
+                    "ARS",
+                    "2026-06-10",
+                    10000,
+                    5000,
+                    10000,
+                ),
             )
 
 
@@ -424,16 +482,17 @@ def test_detalle_rechaza_linea_en_cero():
                 INSERT INTO asientos_contables_detalle (
                     asiento_id,
                     renglon,
-                    cuenta_contable_codigo
+                    cuenta_contable_codigo,
+                    cotizacion_fecha
                 )
-                VALUES (?, ?, ?)
+                VALUES (?, ?, ?, ?)
                 """,
-                (asiento_id, 1, cuenta),
+                (asiento_id, 1, cuenta, "2026-06-10"),
             )
 
 
-def test_detalle_permite_linea_debe_convertida():
-    """Valida linea con importe original y contable en debe."""
+def test_detalle_permite_linea_ars_con_nominal_igual_contable():
+    """Valida linea ARS donde nominal y contable coinciden."""
     app = _crear_app()
 
     with app.app_context():
@@ -449,19 +508,33 @@ def test_detalle_permite_linea_debe_convertida():
                 asiento_id,
                 renglon,
                 cuenta_contable_codigo,
-                debe_moneda_centavos,
+                moneda_codigo,
+                cotizacion_fecha,
+                cotizacion_1000000,
+                nominal_debe_centavos,
                 debe_centavos
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (asiento_id, 1, cuenta, 10000, 10000),
+            (
+                asiento_id,
+                1,
+                cuenta,
+                "ARS",
+                "2026-06-10",
+                1000000,
+                12500000,
+                12500000,
+            ),
         )
 
         fila = db.execute(
             """
-            SELECT debe_moneda_centavos,
+            SELECT moneda_codigo,
+                   cotizacion_1000000,
+                   nominal_debe_centavos,
                    debe_centavos,
-                   haber_moneda_centavos,
+                   nominal_haber_centavos,
                    haber_centavos
             FROM asientos_contables_detalle
             WHERE asiento_id = ?
@@ -470,7 +543,118 @@ def test_detalle_permite_linea_debe_convertida():
             (asiento_id, 1),
         ).fetchone()
 
-    assert fila["debe_moneda_centavos"] == 10000
-    assert fila["debe_centavos"] == 10000
-    assert fila["haber_moneda_centavos"] == 0
+    assert fila["moneda_codigo"] == "ARS"
+    assert fila["cotizacion_1000000"] == 1000000
+    assert fila["nominal_debe_centavos"] == 12500000
+    assert fila["debe_centavos"] == 12500000
+    assert fila["nominal_haber_centavos"] == 0
     assert fila["haber_centavos"] == 0
+
+
+def test_detalle_permite_linea_usd_con_nominal_y_ars_contable():
+    """Valida linea USD con nominal USD y contabilidad en ARS."""
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _primer_ejercicio_id(db)
+        cotizacion_id = _crear_cotizacion_usd_ars(db)
+        asiento_id = _crear_asiento_base(
+            db,
+            ejercicio_id,
+            moneda_origen_codigo="USD",
+            moneda_destino_codigo="ARS",
+            cotizacion_id=cotizacion_id,
+            cotizacion_1000000=1250500000,
+        )
+        cuenta = _cuenta_imputable(db)
+
+        db.execute(
+            """
+            INSERT INTO asientos_contables_detalle (
+                asiento_id,
+                renglon,
+                cuenta_contable_codigo,
+                moneda_codigo,
+                cotizacion_id,
+                cotizacion_fecha,
+                cotizacion_tipo,
+                cotizacion_1000000,
+                nominal_debe_centavos,
+                debe_centavos
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                asiento_id,
+                1,
+                cuenta,
+                "USD",
+                cotizacion_id,
+                "2026-06-10",
+                "CIERRE",
+                1250500000,
+                10000,
+                12505000,
+            ),
+        )
+
+        fila = db.execute(
+            """
+            SELECT moneda_codigo,
+                   cotizacion_id,
+                   cotizacion_1000000,
+                   nominal_debe_centavos,
+                   debe_centavos
+            FROM asientos_contables_detalle
+            WHERE asiento_id = ?
+              AND renglon = ?
+            """,
+            (asiento_id, 1),
+        ).fetchone()
+
+    assert fila["moneda_codigo"] == "USD"
+    assert fila["cotizacion_id"] == cotizacion_id
+    assert fila["cotizacion_1000000"] == 1250500000
+    assert fila["nominal_debe_centavos"] == 10000
+    assert fila["debe_centavos"] == 12505000
+
+
+def test_detalle_rechaza_ars_con_cotizacion_distinta_de_uno():
+    """Valida que renglon ARS no use cotizacion distinta de 1."""
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _primer_ejercicio_id(db)
+        asiento_id = _crear_asiento_base(db, ejercicio_id)
+        cuenta = _cuenta_imputable(db)
+
+        with pytest.raises(sqlite3.IntegrityError):
+            db.execute(
+                """
+                INSERT INTO asientos_contables_detalle (
+                    asiento_id,
+                    renglon,
+                    cuenta_contable_codigo,
+                    moneda_codigo,
+                    cotizacion_fecha,
+                    cotizacion_1000000,
+                    nominal_debe_centavos,
+                    debe_centavos
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    asiento_id,
+                    1,
+                    cuenta,
+                    "ARS",
+                    "2026-06-10",
+                    1250500000,
+                    12500000,
+                    12500000,
+                ),
+            )
