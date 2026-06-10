@@ -126,3 +126,40 @@ def test_select_respeta_contrato_visual_global():
     assert "border-color: var(--ns-color-accent);" in contenido
     assert "background: var(--ns-color-main);" in contenido
     assert "var(--bs-primary)" not in contenido
+
+
+def test_tema_visual_global_refina_tablas():
+    """
+    Valida refinamiento visual de tablas.
+
+    El encabezado debe medir al menos 35px, el borde debe ser de 2px,
+    la fuente del encabezado debe quedar normal y la tabla debe tener padding.
+    """
+    contenido = Path("app/static/css/nerisoft_theme.css").read_text(encoding="utf-8")
+
+    assert "--ns-table-border-width: 2px;" in contenido
+    assert "--ns-table-header-height: 35px;" in contenido
+    assert "--ns-table-outer-padding: 0.25rem;" in contenido
+    assert "border: var(--ns-table-border-width) solid var(--ns-color-main);" in contenido
+    assert "min-height: var(--ns-table-header-height);" in contenido
+    assert "height: var(--ns-table-header-height);" in contenido
+    assert "font-weight: 400;" in contenido
+    assert "padding: var(--ns-table-cell-padding-y) var(--ns-table-cell-padding-x);" in contenido
+
+
+def test_navbar_respeta_contrato_visual_global():
+    """
+    Valida que navbar use el contrato visual global.
+
+    El navbar no debe depender del fondo tertiary de Bootstrap y debe usar
+    negro principal, texto claro, acento amarillo y dropdowns tematizados.
+    """
+    layout = Path("app/ui/templates/components/layout.html").read_text(encoding="utf-8")
+    css = Path("app/static/css/nerisoft_navbar.css").read_text(encoding="utf-8")
+
+    assert "bg-body-tertiary" not in layout
+    assert "background-color: var(--ns-color-main) !important;" in css
+    assert "border-bottom: 2px solid var(--ns-color-accent) !important;" in css
+    assert "color: var(--ns-color-soft) !important;" in css
+    assert "box-shadow: var(--ns-shadow-floating);" in css
+    assert ".ns-navbar .dropdown-item.active" in css

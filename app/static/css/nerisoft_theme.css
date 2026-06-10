@@ -156,3 +156,41 @@ main.container-fluid {
     background-color: var(--ns-color-main);
     border-color: var(--ns-color-main);
 }
+
+/* Ajuste contrato visual: tablas refinadas */
+
+:root {
+    --ns-table-border-width: 2px;
+    --ns-table-header-height: 35px;
+    --ns-table-cell-padding-y: 0.42rem;
+    --ns-table-cell-padding-x: 0.55rem;
+    --ns-table-outer-padding: 0.25rem;
+}
+
+.ns-card .table-responsive {
+    padding: var(--ns-table-outer-padding);
+    border: var(--ns-table-border-width) solid var(--ns-color-main);
+    border-radius: var(--ns-radius-subtle);
+    background-color: var(--ns-color-card-bg);
+}
+
+.ns-card .table {
+    border: var(--ns-table-border-width) solid var(--ns-color-main);
+}
+
+.ns-card .table-responsive > .table {
+    border: 0;
+}
+
+.ns-card .table > :not(caption) > * > * {
+    padding: var(--ns-table-cell-padding-y) var(--ns-table-cell-padding-x);
+}
+
+.ns-card .table thead th {
+    min-height: var(--ns-table-header-height);
+    height: var(--ns-table-header-height);
+    padding-top: var(--ns-table-cell-padding-y);
+    padding-bottom: var(--ns-table-cell-padding-y);
+    font-weight: 400;
+    line-height: 1.15;
+}
