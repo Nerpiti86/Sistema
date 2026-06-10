@@ -315,8 +315,10 @@
                                                         id="as-det-{{ renglon_idx }}-cuenta-opciones"
                                                         data-table="cuentas_contables"
                                                         data-field="cuenta_contable_lookup_opciones"
-                                                    ></datalist>                                                </td>
+                                                    ></datalist>
+                                                </td>
                                                 <td>
+                                                    {# Mantiene compatibilidad con el POST actual; visualmente la cuenta se describe en Nombre cuenta. #}
                                                     <input
                                                         id="as-det-{{ renglon_idx }}-descripcion"
                                                         data-row-index="{{ renglon_idx }}"
