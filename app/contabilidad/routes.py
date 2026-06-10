@@ -1,5 +1,8 @@
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
+from app.contabilidad.coeficientes_inflacion_service import (
+    generar_coeficientes_inflacion_ejercicio,
+)
 from app.contabilidad.cuentas_contables_service import (
     actualizar_cuenta_contable_desde_formulario,
     crear_cuenta_contable_desde_formulario,
@@ -358,6 +361,29 @@ def actualizar_ejercicio_contable(codigo):
             codigo=ejercicio_contable_actualizado["codigo"],
         )
     )
+
+@bp.post("/ejercicios-contables/<codigo>/coeficientes-inflacion/generar/")
+def generar_coeficientes_inflacion_para_ejercicio(codigo):
+    """
+    Genera o recalcula coeficientes de inflacion del ejercicio contable.
+
+    Esta route no ejecuta SQL directo. La validacion, el calculo entero y la
+    persistencia del snapshot quedan delegados al service.
+    """
+    try:
+        generar_coeficientes_inflacion_ejercicio(codigo)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+    else:
+        flash("Coeficientes de inflacion generados correctamente.", "success")
+
+    return redirect(
+        url_for(
+            "contabilidad.ver_detalle_ejercicio_contable",
+            codigo=codigo,
+        )
+    )
+
 
 @bp.get("/ejercicios-contables/<codigo>/")
 def ver_detalle_ejercicio_contable(codigo):

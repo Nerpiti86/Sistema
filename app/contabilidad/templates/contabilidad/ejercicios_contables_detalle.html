@@ -20,6 +20,22 @@
                 </p>
             </div>
             <div id="ec-detalle-acciones">
+                <form
+                    id="ec-coef-form"
+                    data-table="ejercicios_coeficientes_inflacion"
+                    data-action="generar_coeficientes_inflacion"
+                    method="post"
+                    action="{{ url_for('contabilidad.generar_coeficientes_inflacion_para_ejercicio', codigo=ejercicio_contable.codigo) }}"
+                    class="d-inline"
+                >
+                    <button
+                        id="ec-coef-generar"
+                        type="submit"
+                        class="btn btn-outline-primary"
+                    >
+                        Generar/Recalcular coeficientes
+                    </button>
+                </form>
                 <a
                     id="ec-editar"
                     data-table="ejercicios_contables"
@@ -127,6 +143,66 @@
                         {{ ejercicio_contable.actualizado_en_argentina or "Sin actualizar" }}
                     </dd>
                 </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="ec-coef-card"
+            data-table="ejercicios_coeficientes_inflacion"
+            data-query="obtener_contexto_coeficientes_inflacion_ejercicio"
+            data-row-codigo="{{ ejercicio_contable.codigo }}"
+        >
+            {% call card("Coeficientes de inflacion", "ejercicios_coeficientes_inflacion") %}
+                {% if tiene_coeficientes_inflacion %}
+                    <div class="table-responsive">
+                        <table
+                            id="ec-coef-tabla"
+                            data-table="ejercicios_coeficientes_inflacion"
+                            class="table table-sm align-middle mb-0"
+                        >
+                            <thead>
+                                <tr>
+                                    <th scope="col">Periodo</th>
+                                    <th scope="col" class="text-end">Indice inicio</th>
+                                    <th scope="col">Periodo cierre</th>
+                                    <th scope="col" class="text-end">Indice cierre</th>
+                                    <th scope="col" class="text-end">Coeficiente</th>
+                                    <th scope="col">Calculado en</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for coeficiente in coeficientes_inflacion %}
+                                    <tr data-row-periodo="{{ coeficiente.periodo_yyyymm }}">
+                                        <td data-field="periodo">
+                                            {{ coeficiente.periodo_argentina }}
+                                        </td>
+                                        <td data-field="indice_inicio" class="text-end">
+                                            {{ coeficiente.indice_inicio_argentina }}
+                                        </td>
+                                        <td data-field="indice_cierre_periodo">
+                                            {{ coeficiente.indice_cierre_periodo_argentina }}
+                                        </td>
+                                        <td data-field="indice_cierre" class="text-end">
+                                            {{ coeficiente.indice_cierre_argentina }}
+                                        </td>
+                                        <td data-field="coeficiente" class="text-end">
+                                            {{ coeficiente.coeficiente_argentina }}
+                                        </td>
+                                        <td data-field="calculado_en">
+                                            {{ coeficiente.calculado_en_argentina or "Sin calcular" }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p id="ec-coef-vacio" class="text-muted mb-0">
+                        Sin coeficientes generados.
+                    </p>
+                {% endif %}
             {% endcall %}
         </div>
     </div>

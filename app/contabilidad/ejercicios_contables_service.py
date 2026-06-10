@@ -7,6 +7,9 @@ from app.shared.formatos import (
     normalizar_fecha_argentina_a_iso,
 )
 
+from app.contabilidad.coeficientes_inflacion_service import (
+    obtener_contexto_coeficientes_inflacion_ejercicio,
+)
 from app.contabilidad.ejercicios_contables_repository import (
     actualizar_ejercicio_contable_por_codigo,
     crear_ejercicio_contable,
@@ -140,10 +143,15 @@ def obtener_contexto_detalle_ejercicio_contable(
     if ejercicio_contable is None:
         raise ValueError("No existe el ejercicio contable informado.")
 
+    contexto_coeficientes_inflacion = (
+        obtener_contexto_coeficientes_inflacion_ejercicio(codigo_normalizado)
+    )
+
     return {
         "ejercicio_contable": _preparar_ejercicio_contable_para_pantalla(
             ejercicio_contable
         ),
+        **contexto_coeficientes_inflacion,
     }
 
 
