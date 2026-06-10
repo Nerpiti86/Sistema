@@ -19,7 +19,16 @@
                     Listado inicial de asientos contables. La carga se habilitara en un paso posterior.
                 </p>
             </div>
-            <div id="as-acciones-listado">
+            <div id="as-acciones-listado" class="d-flex gap-2">
+                <a
+                    id="as-nuevo"
+                    data-table="asientos_contables"
+                    data-action="ver_formulario_nuevo_asiento_contable"
+                    href="{{ url_for('contabilidad.ver_formulario_nuevo_asiento_contable') }}"
+                    class="btn btn-primary"
+                >
+                    Nuevo asiento
+                </a>
                 {{ secondary_link("Volver a contabilidad", url_for("contabilidad.index")) }}
             </div>
         </div>

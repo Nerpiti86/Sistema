@@ -253,3 +253,84 @@ def test_pantalla_detalle_asiento_inexistente_redirige_al_listado():
 
     assert response.status_code == 302
     assert "/contabilidad/asientos-contables/" in response.headers["Location"]
+
+
+
+def test_pantalla_nuevo_asiento_contable_muestra_formulario_borrador():
+    """
+    Valida pantalla GET de alta inicial de asiento borrador.
+
+    La pantalla no persiste datos ni expone POST; solo prepara cabecera base
+    con IDs cortos y data-* para trazabilidad tecnica.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    assert response.status_code == 200
+    assert b"Nuevo asiento contable" in response.data
+    assert b'id="as-nuevo-form"' in response.data
+    assert b'id="as-form"' in response.data
+    assert b'data-table="asientos_contables"' in response.data
+    assert b'data-action="crear_asiento_contable_borrador"' in response.data
+    assert b'method="get"' in response.data
+    assert b'id="as-fecha"' in response.data
+    assert b'id="as-descripcion-input"' in response.data
+    assert b'value="MANUAL"' in response.data
+    assert b'value="BORRADOR"' in response.data
+    assert b'value="ARS"' in response.data
+    assert b'value="CIERRE"' in response.data
+    assert b"Ejercicio 2026" in response.data
+    assert b"01/01/2026" in response.data
+    assert b"31/12/2026" in response.data
+    assert b'id="as-guardar"' in response.data
+    assert b"disabled" in response.data
+    assert b'id="as-nuevo-volver"' in response.data
+    assert b'id="as-cancelar"' in response.data
+    assert b"/contabilidad/asientos-contables/" in response.data
+
+
+def test_pantalla_nuevo_asiento_contable_sin_ejercicio_activo_informa_contexto():
+    """
+    Valida manejo visual cuando no hay ejercicio activo para cargar asientos.
+
+    El formulario GET responde sin error tecnico y muestra observacion de
+    contexto sin crear registros.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    assert response.status_code == 200
+    assert b"Sin ejercicio contable activo" in response.data
+    assert b'id="as-nuevo-mensaje-contexto"' in response.data
+    assert b'id="as-nuevo-ejercicio-codigo"' in response.data
+    assert b'id="as-form"' in response.data
+
+
+def test_pantalla_asientos_contables_tiene_acceso_a_nuevo_asiento():
+    """
+    Valida acceso desde listado hacia formulario GET de nuevo asiento.
+
+    El link queda identificado con ID corto y data-action estable.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        response = client.get("/contabilidad/asientos-contables/")
+
+    assert response.status_code == 200
+    assert b'id="as-nuevo"' in response.data
+    assert b"/contabilidad/asientos-contables/nuevo/" in response.data
+    assert b'data-action="ver_formulario_nuevo_asiento_contable"' in response.data

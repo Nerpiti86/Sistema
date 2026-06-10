@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+
+{% block content %}
+<section
+    id="as-nuevo-form"
+    data-table="asientos_contables"
+    data-action="ver_formulario_nuevo_asiento_contable"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="as-nuevo-titulo" class="h3 mb-1">
+                    Nuevo asiento contable
+                </h1>
+                <p id="as-nuevo-descripcion" class="text-muted mb-0">
+                    Carga inicial de asiento manual en estado borrador. La persistencia se habilitara en el proximo paso.
+                </p>
+            </div>
+            <div id="as-nuevo-acciones">
+                <a
+                    id="as-nuevo-volver"
+                    data-table="asientos_contables"
+                    data-action="volver_listado_asientos_contables"
+                    href="{{ form_cancelar_url }}"
+                    class="btn btn-secondary ns-btn-secondary"
+                >
+                    Volver al listado
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-8">
+        {% call card("Cabecera", "asientos_contables") %}
+            {% if mensaje_contexto_asiento %}
+                <div
+                    id="as-nuevo-mensaje-contexto"
+                    data-table="asientos_contables"
+                    data-field="mensaje_contexto_asiento"
+                    class="alert alert-warning mb-3"
+                >
+                    {{ mensaje_contexto_asiento }}
+                </div>
+            {% endif %}
+
+            <form
+                id="as-form"
+                data-table="asientos_contables"
+                data-action="crear_asiento_contable_borrador"
+                action="{{ form_action_url }}"
+                method="get"
+                novalidate
+            >
+                <div class="row g-3">
+                    <div class="col-12 col-md-4">
+                        <label for="as-fecha" class="form-label">Fecha</label>
+                        <input
+                            id="as-fecha"
+                            data-field="fecha"
+                            type="date"
+                            name="fecha"
+                            value="{{ asiento_contable_form.fecha }}"
+                            class="form-control"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="as-tipo" class="form-label">Tipo</label>
+                        <input
+                            id="as-tipo"
+                            data-field="tipo"
+                            type="text"
+                            name="tipo"
+                            value="{{ asiento_contable_form.tipo }}"
+                            class="form-control"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="as-estado" class="form-label">Estado</label>
+                        <input
+                            id="as-estado"
+                            data-field="estado"
+                            type="text"
+                            name="estado"
+                            value="{{ asiento_contable_form.estado }}"
+                            class="form-control"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="col-12">
+                        <label for="as-descripcion-input" class="form-label">
+                            Descripcion
+                        </label>
+                        <input
+                            id="as-descripcion-input"
+                            data-field="descripcion"
+                            type="text"
+                            name="descripcion"
+                            value="{{ asiento_contable_form.descripcion }}"
+                            class="form-control"
+                            maxlength="255"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="as-moneda-origen" class="form-label">
+                            Moneda origen
+                        </label>
+                        <input
+                            id="as-moneda-origen"
+                            data-field="moneda_origen_codigo"
+                            type="text"
+                            name="moneda_origen_codigo"
+                            value="{{ asiento_contable_form.moneda_origen_codigo }}"
+                            class="form-control"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="as-moneda-destino" class="form-label">
+                            Moneda destino
+                        </label>
+                        <input
+                            id="as-moneda-destino"
+                            data-field="moneda_destino_codigo"
+                            type="text"
+                            name="moneda_destino_codigo"
+                            value="{{ asiento_contable_form.moneda_destino_codigo }}"
+                            class="form-control"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="as-cotizacion-tipo" class="form-label">
+                            Cotizacion
+                        </label>
+                        <input
+                            id="as-cotizacion-tipo"
+                            data-field="cotizacion_tipo"
+                            type="text"
+                            name="cotizacion_tipo"
+                            value="{{ asiento_contable_form.cotizacion_tipo }}"
+                            class="form-control"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="col-12">
+                        <div
+                            id="as-renglones-pendientes"
+                            data-table="asientos_contables_detalle"
+                            class="alert alert-info mb-0"
+                        >
+                            Los renglones del asiento se agregaran en el siguiente paso.
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        <a
+                            id="as-cancelar"
+                            data-table="asientos_contables"
+                            data-action="cancelar_nuevo_asiento_contable"
+                            href="{{ form_cancelar_url }}"
+                            class="btn btn-secondary ns-btn-secondary"
+                        >
+                            Cancelar
+                        </a>
+                        <button
+                            id="as-guardar"
+                            data-action="guardar_borrador_pendiente"
+                            type="button"
+                            class="btn btn-primary"
+                            disabled
+                        >
+                            Guardar borrador
+                        </button>
+                    </div>
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+
+    <div class="col-12 col-xl-4">
+        {% call card("Ejercicio activo", "ejercicios_contables") %}
+            <dl id="as-nuevo-ejercicio" class="row mb-0">
+                <dt class="col-5">Codigo</dt>
+                <dd
+                    id="as-nuevo-ejercicio-codigo"
+                    data-table="ejercicios_contables"
+                    data-field="codigo"
+                    class="col-7"
+                >
+                    {% if ejercicio_contable_activo %}
+                        {{ ejercicio_contable_activo.codigo }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </dd>
+
+                <dt class="col-5">Nombre</dt>
+                <dd
+                    id="as-nuevo-ejercicio-nombre"
+                    data-table="ejercicios_contables"
+                    data-field="nombre"
+                    class="col-7"
+                >
+                    {% if ejercicio_contable_activo %}
+                        {{ ejercicio_contable_activo.nombre }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </dd>
+
+                <dt class="col-5">Periodo</dt>
+                <dd
+                    id="as-nuevo-ejercicio-periodo"
+                    data-table="ejercicios_contables"
+                    data-field="periodo"
+                    class="col-7"
+                >
+                    {% if ejercicio_contable_activo %}
+                        {{ ejercicio_contable_activo.fecha_desde_argentina }}
+                        a {{ ejercicio_contable_activo.fecha_hasta_argentina }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </dd>
+            </dl>
+        {% endcall %}
+    </div>
+</section>
+{% endblock %}

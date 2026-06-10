@@ -178,6 +178,45 @@ def _formatear_cotizacion_asiento(asiento: dict[str, Any]) -> str:
     )
 
 
+def obtener_contexto_nuevo_asiento_contable() -> dict[str, Any]:
+    """
+    Devuelve contexto de pantalla para alta manual de asiento borrador.
+
+    No persiste datos. Solo prepara defaults seguros para el formulario GET
+    del borrador y el ejercicio contable activo disponible.
+    """
+    try:
+        ejercicio_contable_activo = obtener_ejercicio_contable_activo()
+    except ValueError:
+        ejercicio_contable_activo = None
+
+    return {
+        "ejercicio_contable_activo": (
+            _preparar_ejercicio_contable_activo_para_listado(
+                ejercicio_contable_activo
+            )
+            if ejercicio_contable_activo
+            else None
+        ),
+        "asiento_contable_form": {
+            "fecha": "",
+            "descripcion": "",
+            "tipo": "MANUAL",
+            "estado": "BORRADOR",
+            "moneda_origen_codigo": _MONEDA_CONTABLE,
+            "moneda_destino_codigo": _MONEDA_CONTABLE,
+            "cotizacion_tipo": _TIPO_COTIZACION_DEFAULT,
+        },
+        "mensaje_contexto_asiento": (
+            ""
+            if ejercicio_contable_activo
+            else "Sin ejercicio contable activo."
+        ),
+        "form_action_url": "#",
+        "form_cancelar_url": "/contabilidad/asientos-contables/",
+    }
+
+
 def obtener_contexto_detalle_asiento_contable(
     asiento_id: Any,
 ) -> dict[str, Any]:

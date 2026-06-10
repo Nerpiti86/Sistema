@@ -3,6 +3,7 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from app.contabilidad.asientos_contables_service import (
     obtener_contexto_detalle_asiento_contable,
     obtener_contexto_listado_asientos_contables,
+    obtener_contexto_nuevo_asiento_contable,
 )
 from app.contabilidad.coeficientes_inflacion_service import (
     generar_coeficientes_inflacion_ejercicio,
@@ -54,6 +55,23 @@ def ver_listado_asientos_contables():
         "contabilidad/asientos_contables.html",
         page_title="Asientos contables",
         **contexto_asientos_contables,
+    )
+
+
+@bp.get("/asientos-contables/nuevo/")
+def ver_formulario_nuevo_asiento_contable():
+    """
+    Muestra formulario inicial de nuevo asiento contable borrador.
+
+    Esta route no ejecuta SQL directo. Solo renderiza contexto de pantalla
+    preparado por el service; la persistencia se habilitara en otro paso.
+    """
+    contexto_nuevo = obtener_contexto_nuevo_asiento_contable()
+
+    return render_template(
+        "contabilidad/asientos_contables_nuevo.html",
+        page_title="Nuevo asiento contable",
+        **contexto_nuevo,
     )
 
 
