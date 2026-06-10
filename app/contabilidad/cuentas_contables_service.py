@@ -49,6 +49,47 @@ def obtener_contexto_detalle_cuenta_contable(
     }
 
 
+def obtener_disponibilidad_cuenta_contable(
+    cuenta_contable_codigo: str,
+) -> dict[str, Any]:
+    """
+    Devuelve disponibilidad funcional de una cuenta contable.
+
+    Este service no ejecuta SQL directo. Normaliza entrada minima y consulta al
+    repository para informar si el codigo ya esta ocupado antes del submit.
+    """
+    cuenta_contable_codigo_normalizado = str(cuenta_contable_codigo or "").strip()
+
+    if not cuenta_contable_codigo_normalizado:
+        raise ValueError("La cuenta contable es obligatoria.")
+
+    try:
+        cuenta_contable = obtener_cuenta_contable_por_cuenta(
+            cuenta_contable_codigo_normalizado
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "La cuenta contable debe respetar el formato 9.9.99.99.999."
+        ) from exc
+
+    if cuenta_contable is None:
+        return {
+            "cuenta": cuenta_contable_codigo_normalizado,
+            "disponible": True,
+            "ocupada": False,
+            "descripcion": "",
+            "mensaje": "Cuenta contable disponible.",
+        }
+
+    return {
+        "cuenta": cuenta_contable["cuenta"],
+        "disponible": False,
+        "ocupada": True,
+        "descripcion": cuenta_contable["descripcion"],
+        "mensaje": "La cuenta contable ya esta ocupada.",
+    }
+
+
 def crear_cuenta_contable_desde_formulario(formulario: dict[str, Any]) -> dict[str, Any]:
     """
     Crea una cuenta contable desde datos de formulario.

@@ -8,6 +8,7 @@ from app.contabilidad.coeficientes_inflacion_service import (
 from app.contabilidad.cuentas_contables_service import (
     actualizar_cuenta_contable_desde_formulario,
     crear_cuenta_contable_desde_formulario,
+    obtener_disponibilidad_cuenta_contable,
     obtener_contexto_detalle_cuenta_contable,
     obtener_contexto_listado_cuentas_contables,
 )
@@ -193,6 +194,35 @@ def actualizar_cuenta_contable_existente(cuenta_contable_codigo):
         )
     )
 
+
+
+@bp.get("/cuentas-contables/disponibilidad/<cuenta_contable_codigo>/")
+def validar_disponibilidad_cuenta_contable(cuenta_contable_codigo):
+    """
+    Devuelve disponibilidad de codigo de cuenta contable para validacion al vuelo.
+
+    Esta route no ejecuta SQL directo. Consulta por service y responde JSON para
+    que el formulario de alta informe si la cuenta ya esta ocupada.
+    """
+    try:
+        disponibilidad_cuenta_contable = obtener_disponibilidad_cuenta_contable(
+            cuenta_contable_codigo
+        )
+    except ValueError as exc:
+        return (
+            jsonify(
+                {
+                    "cuenta": cuenta_contable_codigo,
+                    "disponible": False,
+                    "ocupada": False,
+                    "descripcion": "",
+                    "mensaje": str(exc),
+                }
+            ),
+            400,
+        )
+
+    return jsonify(disponibilidad_cuenta_contable)
 
 
 @bp.get("/cuentas-contables/lookup-sumarizadora/<cuenta_contable_codigo>/")

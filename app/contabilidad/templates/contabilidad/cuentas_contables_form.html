@@ -43,6 +43,10 @@
                             data-table="cuentas_contables"
                             data-field="cuenta"
                             data-validation="cuentas-contables-formato-cuenta"
+                            {% if not cuenta_solo_lectura|default(false) %}
+                            data-disponibilidad="cuentas-contables-cuenta-disponible"
+                            data-disponibilidad-url="{{ url_for('contabilidad.validar_disponibilidad_cuenta_contable', cuenta_contable_codigo='__CUENTA_CONTABLE__') }}"
+                            {% endif %}
                             name="cuenta"
                             type="text"
                             class="form-control"
@@ -208,6 +212,7 @@
     </div>
 </section>
 <script src="{{ url_for('static', filename='js/cuentas_contables_form_validacion_cuenta.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cuentas_contables_form_disponibilidad.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cuentas_contables_form_lookup_sumarizadora.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cuentas_contables_form_sugerencia_sumarizadora.js') }}"></script>
 {% endblock %}
