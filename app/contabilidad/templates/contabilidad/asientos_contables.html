@@ -105,6 +105,7 @@
                                 <th data-field="cotizacion_1000000" class="text-end">Cotizacion</th>
                                 <th data-field="debe_centavos" class="text-end">Debe ARS</th>
                                 <th data-field="haber_centavos" class="text-end">Haber ARS</th>
+                                <th data-field="acciones" class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="as-tbody">
@@ -145,6 +146,18 @@
                                     <td data-field="haber_centavos" class="text-end">
                                         {{ asiento_contable.total_haber_argentina }}
                                     </td>
+                                    <td data-field="acciones" class="text-end">
+                                        <a
+                                            id="as-detalle-{{ asiento_contable.id }}"
+                                            data-table="asientos_contables"
+                                            data-action="ver_detalle_asiento_contable"
+                                            data-row-id="{{ asiento_contable.id }}"
+                                            href="{{ url_for('contabilidad.ver_detalle_asiento_contable', asiento_id=asiento_contable.id) }}"
+                                            class="btn btn-sm btn-outline-primary"
+                                        >
+                                            Detalle
+                                        </a>
+                                    </td>
                                 </tr>
                             {% else %}
                                 <tr
@@ -154,7 +167,7 @@
                                 >
                                     <td
                                         id="as-mensaje-sin-datos"
-                                        colspan="10"
+                                        colspan="11"
                                         class="text-center text-muted py-4"
                                     >
                                         No hay asientos contables cargados.

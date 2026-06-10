@@ -146,6 +146,9 @@ def test_pantalla_asientos_contables_muestra_asiento_con_ids_y_formato_argentino
     assert b"ARS/ARS" in response.data
     assert b"1,000000" in response.data
     assert b"1.000,00" in response.data
+    assert f"/contabilidad/asientos-contables/{asiento['id']}/".encode() in response.data
+    assert f'id="as-detalle-{asiento["id"]}"'.encode() in response.data
+    assert b'data-action="ver_detalle_asiento_contable"' in response.data
     html = response.data.decode("utf-8")
     assert re.search(r">\\s*100000\\s*<", html) is None
 
@@ -167,3 +170,86 @@ def test_pantalla_contabilidad_tiene_acceso_corto_a_asientos_contables():
     assert b'id="as-acceso"' in response.data
     assert b'data-table="asientos_contables"' in response.data
     assert b'data-action="ver_listado_asientos_contables"' in response.data
+
+
+def test_pantalla_detalle_asiento_contable_muestra_cabecera_y_renglones():
+    """
+    Valida detalle de asiento con cabecera y renglones formateados.
+
+    La route mantiene el contrato de solo lectura: no expone POST ni acciones de
+    confirmacion/anulacion en esta etapa.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _insertar_ejercicio_contable_pantalla_para_asientos(db)
+        cuenta_debe = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "1.1.01.01.999",
+        )
+        cuenta_haber = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "1.1.01.01.998",
+        )
+
+        asiento = crear_asiento_contable_borrador(
+            {
+                "ejercicio_id": ejercicio_id,
+                "fecha": "2026-06-10",
+                "descripcion": "Asiento detalle",
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "descripcion": "Renglon debe",
+                    "nominal_debe_centavos": 100000,
+                    "debe_centavos": 100000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "descripcion": "Renglon haber",
+                    "nominal_haber_centavos": 100000,
+                    "haber_centavos": 100000,
+                },
+            ],
+        )
+
+        response = client.get(f"/contabilidad/asientos-contables/{asiento['id']}/")
+
+    assert response.status_code == 200
+    assert b"Asiento contable" in response.data
+    assert b"Asiento detalle" in response.data
+    assert f'id="as-detalle"'.encode() in response.data
+    assert f'data-row-id="{asiento["id"]}"'.encode() in response.data
+    assert b'id="as-detalle-card"' in response.data
+    assert b'id="as-detalle-tabla"' in response.data
+    assert b'id="as-detalle-cantidad-renglones"' in response.data
+    assert b"10/06/2026" in response.data
+    assert b"2026-06-10" not in response.data
+    assert b"1.1.01.01.999" in response.data
+    assert b"1.1.01.01.998" in response.data
+    assert b"Renglon debe" in response.data
+    assert b"Renglon haber" in response.data
+    assert b"1.000,00" in response.data
+    assert b'id="as-volver-listado"' in response.data
+    assert b"/contabilidad/asientos-contables/" in response.data
+
+
+def test_pantalla_detalle_asiento_inexistente_redirige_al_listado():
+    """
+    Valida manejo de asiento inexistente sin exponer error tecnico.
+
+    La route delega la validacion al service y vuelve al listado.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        response = client.get("/contabilidad/asientos-contables/999999/")
+
+    assert response.status_code == 302
+    assert "/contabilidad/asientos-contables/" in response.headers["Location"]

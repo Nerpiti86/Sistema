@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+
+{% block content %}
+<section
+    id="as-detalle"
+    data-table="asientos_contables"
+    data-query="obtener_contexto_detalle_asiento_contable"
+    data-row-id="{{ asiento_contable.id }}"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="as-detalle-titulo" class="h3 mb-1">
+                    Asiento contable {{ asiento_contable.id }}
+                </h1>
+                <p id="as-detalle-descripcion" class="text-muted mb-0">
+                    Detalle de solo lectura. No confirma, anula ni modifica el asiento.
+                </p>
+            </div>
+            <div id="as-detalle-acciones">
+                <a
+                    id="as-volver-listado"
+                    href="{{ url_for('contabilidad.ver_listado_asientos_contables') }}"
+                    class="btn btn-secondary"
+                >
+                    Volver al listado
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="as-detalle-card"
+            data-table="asientos_contables"
+            data-query="obtener_contexto_detalle_asiento_contable"
+            data-row-id="{{ asiento_contable.id }}"
+        >
+            {% call card("Datos del asiento", "asientos_contables") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">ID</dt>
+                    <dd class="col-sm-9" data-field="id">
+                        {{ asiento_contable.id }}
+                    </dd>
+
+                    <dt class="col-sm-3">Numero</dt>
+                    <dd class="col-sm-9" data-field="numero_asiento">
+                        {{ asiento_contable.numero_asiento_mostrar }}
+                    </dd>
+
+                    <dt class="col-sm-3">Fecha</dt>
+                    <dd class="col-sm-9" data-field="fecha">
+                        {{ asiento_contable.fecha_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Descripcion</dt>
+                    <dd class="col-sm-9" data-field="descripcion">
+                        {{ asiento_contable.descripcion }}
+                    </dd>
+
+                    <dt class="col-sm-3">Estado</dt>
+                    <dd class="col-sm-9" data-field="estado">
+                        {{ asiento_contable.estado_codigo }}
+                    </dd>
+
+                    <dt class="col-sm-3">Tipo</dt>
+                    <dd class="col-sm-9" data-field="tipo">
+                        {{ asiento_contable.tipo_codigo }}
+                    </dd>
+
+                    <dt class="col-sm-3">Monedas</dt>
+                    <dd class="col-sm-9" data-field="moneda_origen_codigo">
+                        {{ asiento_contable.par_monedas_codigo }}
+                    </dd>
+
+                    <dt class="col-sm-3">Cotizacion</dt>
+                    <dd class="col-sm-9" data-field="cotizacion_1000000">
+                        {{ asiento_contable.cotizacion_mostrar }}
+                    </dd>
+
+                    <dt class="col-sm-3">Debe ARS</dt>
+                    <dd class="col-sm-9" data-field="debe_centavos">
+                        {{ asiento_contable.total_debe_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Haber ARS</dt>
+                    <dd class="col-sm-9" data-field="haber_centavos">
+                        {{ asiento_contable.total_haber_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Renglones</dt>
+                    <dd
+                        id="as-detalle-cantidad-renglones"
+                        class="col-sm-9"
+                        data-field="cantidad_renglones_asiento"
+                    >
+                        {{ cantidad_renglones_asiento }}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="as-detalle-renglones"
+            data-table="asientos_contables_detalle"
+            data-query="obtener_contexto_detalle_asiento_contable"
+            data-row-id="{{ asiento_contable.id }}"
+        >
+            {% call card("Renglones", "asientos_contables_detalle") %}
+                <div class="table-responsive">
+                    <table
+                        id="as-detalle-tabla"
+                        data-table="asientos_contables_detalle"
+                        data-query="obtener_contexto_detalle_asiento_contable"
+                        class="table table-sm align-middle mb-0"
+                    >
+                        <thead>
+                            <tr>
+                                <th data-field="renglon">Renglon</th>
+                                <th data-field="cuenta_contable_codigo">Cuenta</th>
+                                <th data-field="descripcion">Descripcion</th>
+                                <th data-field="moneda_codigo">Moneda</th>
+                                <th data-field="cotizacion_1000000" class="text-end">Cotizacion</th>
+                                <th data-field="nominal_debe_centavos" class="text-end">Nominal debe</th>
+                                <th data-field="nominal_haber_centavos" class="text-end">Nominal haber</th>
+                                <th data-field="debe_centavos" class="text-end">Debe ARS</th>
+                                <th data-field="haber_centavos" class="text-end">Haber ARS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="as-detalle-tbody">
+                            {% for detalle in detalles_asiento_contable %}
+                                <tr
+                                    id="as-detalle-row-{{ detalle.renglon }}"
+                                    data-table="asientos_contables_detalle"
+                                    data-row-id="{{ detalle.id }}"
+                                    data-row-renglon="{{ detalle.renglon }}"
+                                >
+                                    <td data-field="renglon">
+                                        {{ detalle.renglon }}
+                                    </td>
+                                    <td data-field="cuenta_contable_codigo" class="fw-semibold">
+                                        {{ detalle.cuenta_contable_codigo }}
+                                    </td>
+                                    <td data-field="descripcion">
+                                        {{ detalle.descripcion_mostrar }}
+                                    </td>
+                                    <td data-field="moneda_codigo">
+                                        {{ detalle.moneda_codigo }}
+                                    </td>
+                                    <td data-field="cotizacion_1000000" class="text-end">
+                                        {{ detalle.cotizacion_mostrar }}
+                                    </td>
+                                    <td data-field="nominal_debe_centavos" class="text-end">
+                                        {{ detalle.nominal_debe_argentina }}
+                                    </td>
+                                    <td data-field="nominal_haber_centavos" class="text-end">
+                                        {{ detalle.nominal_haber_argentina }}
+                                    </td>
+                                    <td data-field="debe_centavos" class="text-end">
+                                        {{ detalle.debe_argentina }}
+                                    </td>
+                                    <td data-field="haber_centavos" class="text-end">
+                                        {{ detalle.haber_argentina }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr
+                                    id="as-detalle-row-sin-datos"
+                                    data-table="asientos_contables_detalle"
+                                >
+                                    <td
+                                        id="as-detalle-mensaje-sin-datos"
+                                        colspan="9"
+                                        class="text-center text-muted py-4"
+                                    >
+                                        No hay renglones para este asiento.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

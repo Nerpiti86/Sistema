@@ -178,6 +178,73 @@ def _formatear_cotizacion_asiento(asiento: dict[str, Any]) -> str:
     )
 
 
+def obtener_contexto_detalle_asiento_contable(
+    asiento_id: Any,
+) -> dict[str, Any]:
+    """
+    Devuelve contexto de pantalla para detalle de asiento contable.
+
+    La pantalla es de solo lectura. No confirma, anula ni modifica el asiento.
+    """
+    asiento = obtener_asiento_contable_por_id(asiento_id)
+
+    if asiento is None:
+        raise ValueError("No existe el asiento contable informado.")
+
+    asiento_pantalla = _preparar_asiento_contable_para_listado(asiento)
+    detalles_pantalla = [
+        _preparar_detalle_asiento_contable_para_pantalla(detalle)
+        for detalle in asiento["detalles"]
+    ]
+
+    return {
+        "asiento_contable": asiento_pantalla,
+        "detalles_asiento_contable": detalles_pantalla,
+        "cantidad_renglones_asiento": len(detalles_pantalla),
+    }
+
+
+def _preparar_detalle_asiento_contable_para_pantalla(
+    detalle: dict[str, Any],
+) -> dict[str, Any]:
+    detalle_pantalla = dict(detalle)
+    detalle_pantalla["descripcion_mostrar"] = detalle["descripcion"] or ""
+    detalle_pantalla["cotizacion_mostrar"] = _formatear_cotizacion_detalle(detalle)
+    detalle_pantalla["nominal_debe_argentina"] = _formatear_importe_cero_vacio(
+        detalle["nominal_debe_centavos"]
+    )
+    detalle_pantalla["nominal_haber_argentina"] = _formatear_importe_cero_vacio(
+        detalle["nominal_haber_centavos"]
+    )
+    detalle_pantalla["debe_argentina"] = _formatear_importe_cero_vacio(
+        detalle["debe_centavos"]
+    )
+    detalle_pantalla["haber_argentina"] = _formatear_importe_cero_vacio(
+        detalle["haber_centavos"]
+    )
+
+    return detalle_pantalla
+
+
+def _formatear_cotizacion_detalle(detalle: dict[str, Any]) -> str:
+    if detalle["moneda_codigo"] == _MONEDA_CONTABLE:
+        return "1,000000"
+
+    return formatear_entero_escala_a_decimal_argentino(
+        int(detalle["cotizacion_1000000"]),
+        6,
+    )
+
+
+def _formatear_importe_cero_vacio(importe_centavos: Any) -> str:
+    importe_validado = int(importe_centavos)
+
+    if importe_validado == 0:
+        return ""
+
+    return formatear_entero_escala_a_decimal_argentino(importe_validado, 2)
+
+
 def _validar_ejercicio_operacion(ejercicio_id: int, fecha: str) -> None:
     ejercicio = obtener_ejercicio_contable_por_fecha(fecha)
 

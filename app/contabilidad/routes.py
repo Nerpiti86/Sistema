@@ -1,6 +1,7 @@
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
 from app.contabilidad.asientos_contables_service import (
+    obtener_contexto_detalle_asiento_contable,
     obtener_contexto_listado_asientos_contables,
 )
 from app.contabilidad.coeficientes_inflacion_service import (
@@ -53,6 +54,29 @@ def ver_listado_asientos_contables():
         "contabilidad/asientos_contables.html",
         page_title="Asientos contables",
         **contexto_asientos_contables,
+    )
+
+
+@bp.get("/asientos-contables/<int:asiento_id>/")
+def ver_detalle_asiento_contable(asiento_id):
+    """
+    Muestra detalle de un asiento contable.
+
+    Esta route no ejecuta SQL directo. Pide contexto al service y renderiza una
+    pantalla de solo lectura.
+    """
+    try:
+        contexto_detalle = obtener_contexto_detalle_asiento_contable(asiento_id)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("contabilidad.ver_listado_asientos_contables"))
+
+    asiento_contable = contexto_detalle["asiento_contable"]
+
+    return render_template(
+        "contabilidad/asientos_contables_detalle.html",
+        page_title=f"Asiento contable {asiento_contable['id']}",
+        **contexto_detalle,
     )
 
 
