@@ -18,4 +18,9 @@ def create_app(config_class=Config):
     register_error_handlers(app)
     register_modules(app)
 
+    @app.get("/favicon.ico")
+    def favicon():
+        """Sirve el favicon SVG para evitar 404 del navegador."""
+        return app.send_static_file("img/favicon.svg")
+
     return app
