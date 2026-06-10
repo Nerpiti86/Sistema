@@ -74,3 +74,55 @@ def test_no_quedan_table_striped_en_templates():
             rutas_con_striped.append(str(ruta))
 
     assert rutas_con_striped == []
+
+
+def test_tema_visual_global_declara_fondo_y_sombra_de_cards():
+    """
+    Valida fondo general y sombra de cards.
+
+    El fondo de la app debe ser gris claro, y los cards deben usar borde
+    apenas mas oscuro y sombra difusa pareja desde todos los bordes.
+    """
+    contenido = Path("app/static/css/nerisoft_theme.css").read_text(encoding="utf-8")
+
+    assert "body {" in contenido
+    assert "background-color: var(--ns-color-soft);" in contenido
+    assert "--ns-color-card-border: #D0D0D0;" in contenido
+    assert "--ns-shadow-card: 0 0 1.15rem rgba(38, 38, 38, 0.10);" in contenido
+    assert "box-shadow: var(--ns-shadow-card);" in contenido
+
+
+def test_datepicker_respeta_contrato_visual_global():
+    """
+    Valida que el datepicker use paleta y sombra global.
+
+    No debe depender del primary de Bootstrap para estados seleccionados.
+    """
+    contenido = Path("app/static/css/fecha_argentina_datepicker.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert "border: 1px solid var(--ns-color-card-border);" in contenido
+    assert "background: var(--ns-color-card-bg);" in contenido
+    assert "box-shadow: var(--ns-shadow-floating);" in contenido
+    assert "background: var(--ns-color-main);" in contenido
+    assert "outline: 2px solid var(--ns-color-accent);" in contenido
+    assert "var(--bs-primary)" not in contenido
+
+
+def test_select_respeta_contrato_visual_global():
+    """
+    Valida que el select custom use paleta y sombra global.
+
+    El control, panel, busqueda y opciones deben quedar alineados al tema.
+    """
+    contenido = Path("app/static/css/nerisoft_select.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert "border: 1px solid var(--ns-color-card-border);" in contenido
+    assert "background: var(--ns-color-card-bg);" in contenido
+    assert "box-shadow: var(--ns-shadow-floating);" in contenido
+    assert "border-color: var(--ns-color-accent);" in contenido
+    assert "background: var(--ns-color-main);" in contenido
+    assert "var(--bs-primary)" not in contenido

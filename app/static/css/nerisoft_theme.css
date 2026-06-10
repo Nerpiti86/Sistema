@@ -3,15 +3,30 @@
     --ns-color-main: #262626;
     --ns-color-soft: #F2F2F2;
     --ns-color-white: #FFFFFF;
+    --ns-color-card-border: #D0D0D0;
+    --ns-color-card-bg: #FFFFFF;
+    --ns-shadow-card: 0 0 1.15rem rgba(38, 38, 38, 0.10);
+    --ns-shadow-floating: 0 0 1.35rem rgba(38, 38, 38, 0.16);
     --ns-table-card-padding: 15px;
     --ns-radius-subtle: 0.45rem;
+}
+
+body {
+    background-color: var(--ns-color-soft);
+}
+
+main.container,
+main.container-fluid {
+    background-color: transparent;
 }
 
 /* Cards globales */
 
 .ns-card {
-    border-color: rgba(38, 38, 38, 0.18);
+    border-color: var(--ns-color-card-border);
     border-radius: 0.75rem;
+    background-color: var(--ns-color-card-bg);
+    box-shadow: var(--ns-shadow-card);
 }
 
 .ns-card-body {

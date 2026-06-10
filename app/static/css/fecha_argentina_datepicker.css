@@ -10,10 +10,10 @@
     width: 18rem;
     max-width: calc(100vw - 2rem);
     padding: 0.75rem;
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid var(--ns-color-card-border);
     border-radius: 0.75rem;
-    background: var(--bs-body-bg);
-    box-shadow: 0 0.75rem 2rem rgba(15, 23, 42, 0.18);
+    background: var(--ns-color-card-bg);
+    box-shadow: var(--ns-shadow-floating);
 }
 
 .ns-date-picker[hidden] {
@@ -39,16 +39,20 @@
 .ns-date-picker__nav {
     width: 2rem;
     height: 2rem;
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid var(--ns-color-card-border);
     border-radius: 999px;
-    background: var(--bs-body-bg);
-    color: var(--bs-body-color);
+    background: var(--ns-color-card-bg);
+    color: var(--ns-color-main);
     line-height: 1;
+    transition:
+        background-color 0.12s ease-in-out,
+        border-color 0.12s ease-in-out,
+        box-shadow 0.15s ease-in-out;
 }
 
 .ns-date-picker__nav:hover,
 .ns-date-picker__day:hover {
-    background: var(--bs-tertiary-bg);
+    background: rgba(255, 217, 102, 0.18);
 }
 
 .ns-date-picker__grid {
@@ -71,7 +75,7 @@
     border: 0;
     border-radius: 999px;
     background: transparent;
-    color: var(--bs-body-color);
+    color: var(--ns-color-main);
     font-variant-numeric: tabular-nums;
 }
 
@@ -81,12 +85,13 @@
 }
 
 .ns-date-picker__day--selected {
-    background: var(--bs-primary);
-    color: var(--bs-white);
+    background: var(--ns-color-main);
+    color: var(--ns-color-white);
+    font-weight: 700;
 }
 
 .ns-date-picker__day--today {
-    outline: 2px solid var(--bs-primary-border-subtle);
+    outline: 2px solid var(--ns-color-accent);
     outline-offset: 1px;
 }
 
@@ -105,26 +110,27 @@
 
 .ns-date-picker__month {
     min-height: 2.25rem;
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid var(--ns-color-card-border);
     border-radius: 999px;
     background: transparent;
-    color: var(--bs-body-color);
+    color: var(--ns-color-main);
     font-size: 0.875rem;
     font-variant-numeric: tabular-nums;
 }
 
 .ns-date-picker__month:hover {
-    background: var(--bs-tertiary-bg);
+    background: rgba(255, 217, 102, 0.18);
 }
 
 .ns-date-picker__month--selected {
-    border-color: var(--bs-primary);
-    background: var(--bs-primary);
-    color: var(--bs-white);
+    border-color: var(--ns-color-main);
+    background: var(--ns-color-main);
+    color: var(--ns-color-white);
+    font-weight: 700;
 }
 
 .ns-date-picker__month--current {
-    outline: 2px solid var(--bs-primary-border-subtle);
+    outline: 2px solid var(--ns-color-accent);
     outline-offset: 1px;
 }
 
