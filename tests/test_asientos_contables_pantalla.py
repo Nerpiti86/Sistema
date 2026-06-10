@@ -277,9 +277,11 @@ def test_pantalla_nuevo_asiento_contable_muestra_formulario_borrador():
     assert b"Nuevo asiento contable" in response.data
     assert b'id="as-nuevo-form"' in response.data
     assert b'id="as-form"' in response.data
+    assert b'id="as-guardar"' in response.data
     assert b'data-table="asientos_contables"' in response.data
     assert b'data-action="crear_asiento_contable_borrador"' in response.data
-    assert b'method="get"' in response.data
+    assert b'method="post"' in response.data
+    assert b'id="as-ejercicio-id"' in response.data
     assert b'id="as-fecha"' in response.data
     assert b'id="as-descripcion-input"' in response.data
     assert b'value="MANUAL"' in response.data
@@ -290,7 +292,7 @@ def test_pantalla_nuevo_asiento_contable_muestra_formulario_borrador():
     assert b"01/01/2026" in response.data
     assert b"31/12/2026" in response.data
     assert b'id="as-guardar"' in response.data
-    assert b"disabled" in response.data
+    assert b'type="submit"' in response.data
     assert b'id="as-nuevo-volver"' in response.data
     assert b'id="as-cancelar"' in response.data
     assert b"/contabilidad/asientos-contables/" in response.data
@@ -315,6 +317,8 @@ def test_pantalla_nuevo_asiento_contable_sin_ejercicio_activo_informa_contexto()
     assert b'id="as-nuevo-mensaje-contexto"' in response.data
     assert b'id="as-nuevo-ejercicio-codigo"' in response.data
     assert b'id="as-form"' in response.data
+    assert b'id="as-guardar"' in response.data
+    assert b"disabled" in response.data
 
 
 def test_pantalla_asientos_contables_tiene_acceso_a_nuevo_asiento():
@@ -378,4 +382,109 @@ def test_pantalla_nuevo_asiento_contable_muestra_renglones_base():
     assert b'value="ARS"' in response.data
     assert b'value="1,000000"' in response.data
     assert b'id="as-guardar"' in response.data
-    assert b"disabled" in response.data
+    assert b'type="submit"' in response.data
+
+
+
+def test_pantalla_post_nuevo_asiento_contable_crea_borrador_y_redirige_detalle():
+    """
+    Valida POST de nuevo asiento contable.
+
+    La route no ejecuta SQL directo: delega parser, reglas y persistencia al
+    service, luego redirige al detalle del borrador creado.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _insertar_ejercicio_contable_pantalla_para_asientos(db)
+        cuenta_debe = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "1.1.01.01.999",
+        )
+        cuenta_haber = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "4.1.01.01.999",
+        )
+
+        response = client.post(
+            "/contabilidad/asientos-contables/nuevo/",
+            data={
+                "ejercicio_id": str(ejercicio_id),
+                "fecha": "2026-06-10",
+                "descripcion": "Asiento desde POST",
+                "tipo": "MANUAL",
+                "moneda_origen_codigo": "ARS",
+                "moneda_destino_codigo": "ARS",
+                "cotizacion_tipo": "CIERRE",
+                "detalles[0][cuenta_contable_codigo]": cuenta_debe,
+                "detalles[0][descripcion]": "Renglon debe POST",
+                "detalles[0][moneda_codigo]": "ARS",
+                "detalles[0][cotizacion_1000000]": "1,000000",
+                "detalles[0][debe_centavos]": "1.000,00",
+                "detalles[0][haber_centavos]": "",
+                "detalles[1][cuenta_contable_codigo]": cuenta_haber,
+                "detalles[1][descripcion]": "Renglon haber POST",
+                "detalles[1][moneda_codigo]": "ARS",
+                "detalles[1][cotizacion_1000000]": "1,000000",
+                "detalles[1][debe_centavos]": "",
+                "detalles[1][haber_centavos]": "1.000,00",
+            },
+        )
+
+        asiento = db.execute(
+            """
+            SELECT id, numero_asiento, estado, descripcion
+            FROM asientos_contables
+            WHERE descripcion = ?
+            """,
+            ("Asiento desde POST",),
+        ).fetchone()
+
+    assert response.status_code == 302
+    assert asiento is not None
+    assert asiento["estado"] == "BORRADOR"
+    assert asiento["numero_asiento"] is None
+    assert (
+        f"/contabilidad/asientos-contables/{asiento['id']}/"
+        in response.headers["Location"]
+    )
+
+
+def test_pantalla_post_nuevo_asiento_contable_con_error_retorna_formulario():
+    """
+    Valida error de POST sin exponer excepcion tecnica.
+
+    Ante formulario invalido, la route vuelve a renderizar el alta y conserva
+    datos ingresados para correccion del usuario.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.post(
+            "/contabilidad/asientos-contables/nuevo/",
+            data={
+                "ejercicio_id": str(ejercicio_id),
+                "fecha": "",
+                "descripcion": "Asiento sin fecha",
+                "tipo": "MANUAL",
+                "moneda_origen_codigo": "ARS",
+                "moneda_destino_codigo": "ARS",
+                "cotizacion_tipo": "CIERRE",
+                "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+                "detalles[0][debe_centavos]": "1.000,00",
+            },
+        )
+
+    assert response.status_code == 400
+    assert b"La fecha del asiento es obligatoria" in response.data
+    assert b'id="as-form"' in response.data
+    assert b'value="Asiento sin fecha"' in response.data
+    assert b'id="as-guardar"' in response.data

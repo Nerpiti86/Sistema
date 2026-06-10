@@ -1,9 +1,12 @@
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
 from app.contabilidad.asientos_contables_service import (
+    crear_asiento_contable_borrador,
     obtener_contexto_detalle_asiento_contable,
     obtener_contexto_listado_asientos_contables,
     obtener_contexto_nuevo_asiento_contable,
+    obtener_contexto_nuevo_asiento_contable_desde_formulario,
+    preparar_asiento_contable_borrador_desde_formulario,
 )
 from app.contabilidad.coeficientes_inflacion_service import (
     generar_coeficientes_inflacion_ejercicio,
@@ -67,11 +70,57 @@ def ver_formulario_nuevo_asiento_contable():
     preparado por el service; la persistencia se habilitara en otro paso.
     """
     contexto_nuevo = obtener_contexto_nuevo_asiento_contable()
+    contexto_nuevo["form_action_url"] = url_for(
+        "contabilidad.crear_asiento_contable_nuevo"
+    )
 
     return render_template(
         "contabilidad/asientos_contables_nuevo.html",
         page_title="Nuevo asiento contable",
         **contexto_nuevo,
+    )
+
+
+@bp.post("/asientos-contables/nuevo/")
+def crear_asiento_contable_nuevo():
+    """
+    Crea asiento contable manual en estado borrador desde formulario.
+
+    Esta route no ejecuta SQL directo. El parser, validacion de negocio y
+    persistencia quedan delegados al service de asientos contables.
+    """
+    try:
+        datos_asiento, detalles_asiento = (
+            preparar_asiento_contable_borrador_desde_formulario(request.form)
+        )
+        asiento_contable = crear_asiento_contable_borrador(
+            datos_asiento,
+            detalles_asiento,
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        contexto_nuevo = obtener_contexto_nuevo_asiento_contable_desde_formulario(
+            request.form
+        )
+        contexto_nuevo["form_action_url"] = url_for(
+            "contabilidad.crear_asiento_contable_nuevo"
+        )
+
+        return (
+            render_template(
+                "contabilidad/asientos_contables_nuevo.html",
+                page_title="Nuevo asiento contable",
+                **contexto_nuevo,
+            ),
+            400,
+        )
+
+    flash("Asiento contable borrador creado correctamente.", "success")
+    return redirect(
+        url_for(
+            "contabilidad.ver_detalle_asiento_contable",
+            asiento_id=asiento_contable["id"],
+        )
     )
 
 

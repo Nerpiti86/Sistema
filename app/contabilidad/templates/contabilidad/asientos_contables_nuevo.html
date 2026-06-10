@@ -50,9 +50,18 @@
                 data-table="asientos_contables"
                 data-action="crear_asiento_contable_borrador"
                 action="{{ form_action_url }}"
-                method="get"
+                method="post"
                 novalidate
             >
+                {% if ejercicio_contable_activo %}
+                    <input
+                        id="as-ejercicio-id"
+                        data-field="ejercicio_id"
+                        type="hidden"
+                        name="ejercicio_id"
+                        value="{{ ejercicio_contable_activo.id }}"
+                    >
+                {% endif %}
                 <div class="row g-3">
                     <div class="col-12 col-md-4">
                         <label for="as-fecha" class="form-label">Fecha</label>
@@ -301,10 +310,10 @@
                         </a>
                         <button
                             id="as-guardar"
-                            data-action="guardar_borrador_pendiente"
-                            type="button"
+                            data-action="crear_asiento_contable_borrador"
+                            type="submit"
                             class="btn btn-primary"
-                            disabled
+                            {% if not ejercicio_contable_activo %}disabled{% endif %}
                         >
                             Guardar borrador
                         </button>

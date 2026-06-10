@@ -368,6 +368,92 @@ def _normalizar_importe_formulario_a_entero(
         raise ValueError(mensaje_error) from exc
 
 
+
+def obtener_contexto_nuevo_asiento_contable_desde_formulario(
+    formulario: Any,
+) -> dict[str, Any]:
+    """
+    Devuelve contexto de formulario preservando valores ingresados.
+
+    Se usa para re-renderizar el alta cuando el POST falla. No persiste datos.
+    """
+    contexto = obtener_contexto_nuevo_asiento_contable()
+    datos_formulario = _copiar_formulario_plano(formulario)
+
+    contexto["asiento_contable_form"] = {
+        "fecha": datos_formulario.get("fecha", ""),
+        "descripcion": datos_formulario.get("descripcion", ""),
+        "tipo": datos_formulario.get("tipo", "MANUAL") or "MANUAL",
+        "estado": "BORRADOR",
+        "moneda_origen_codigo": (
+            datos_formulario.get("moneda_origen_codigo", _MONEDA_CONTABLE)
+            or _MONEDA_CONTABLE
+        ).upper(),
+        "moneda_destino_codigo": (
+            datos_formulario.get("moneda_destino_codigo", _MONEDA_CONTABLE)
+            or _MONEDA_CONTABLE
+        ).upper(),
+        "cotizacion_tipo": (
+            datos_formulario.get("cotizacion_tipo", _TIPO_COTIZACION_DEFAULT)
+            or _TIPO_COTIZACION_DEFAULT
+        ).upper(),
+    }
+    contexto["detalles_asiento_form"] = (
+        _obtener_detalles_asiento_form_desde_formulario(datos_formulario)
+    )
+
+    return contexto
+
+
+def _obtener_detalles_asiento_form_desde_formulario(
+    datos_formulario: dict[str, str],
+) -> list[dict[str, str]]:
+    detalles_por_indice: dict[int, dict[str, str]] = {}
+
+    for clave, valor in datos_formulario.items():
+        coincidencia = _DETALLE_FORM_RE.fullmatch(clave)
+
+        if coincidencia is None:
+            continue
+
+        indice = int(coincidencia.group(1))
+        campo = coincidencia.group(2)
+
+        if campo not in _DETALLE_FORM_CAMPOS:
+            continue
+
+        detalles_por_indice.setdefault(indice, {})[campo] = valor
+
+    if not detalles_por_indice:
+        return _obtener_detalles_asiento_form_default()
+
+    detalles = []
+
+    for indice in sorted(detalles_por_indice):
+        detalle_formulario = detalles_por_indice[indice]
+        detalles.append(
+            {
+                "cuenta_contable_codigo": detalle_formulario.get(
+                    "cuenta_contable_codigo",
+                    "",
+                ),
+                "descripcion": detalle_formulario.get("descripcion", ""),
+                "moneda_codigo": detalle_formulario.get(
+                    "moneda_codigo",
+                    _MONEDA_CONTABLE,
+                ) or _MONEDA_CONTABLE,
+                "cotizacion_1000000": detalle_formulario.get(
+                    "cotizacion_1000000",
+                    "1,000000",
+                ) or "1,000000",
+                "debe_centavos": detalle_formulario.get("debe_centavos", ""),
+                "haber_centavos": detalle_formulario.get("haber_centavos", ""),
+            }
+        )
+
+    return detalles
+
+
 def obtener_contexto_nuevo_asiento_contable() -> dict[str, Any]:
     """
     Devuelve contexto de pantalla para alta manual de asiento borrador.
