@@ -98,18 +98,16 @@
 }
 
 .ns-navbar .navbar-brand,
-.ns-navbar .nav-link,
-.ns-navbar .dropdown-toggle {
+.ns-navbar > .ns-navbar-container .navbar-nav > .nav-item > .nav-link {
     color: var(--ns-color-soft) !important;
 }
 
 .ns-navbar .navbar-brand:hover,
 .ns-navbar .navbar-brand:focus,
-.ns-navbar .nav-link:hover,
-.ns-navbar .nav-link:focus,
-.ns-navbar .nav-link.active,
-.ns-navbar .dropdown-toggle.show,
-.ns-navbar .dropdown-toggle.active {
+.ns-navbar > .ns-navbar-container .navbar-nav > .nav-item > .nav-link:hover,
+.ns-navbar > .ns-navbar-container .navbar-nav > .nav-item > .nav-link:focus,
+.ns-navbar > .ns-navbar-container .navbar-nav > .nav-item > .nav-link.active,
+.ns-navbar > .ns-navbar-container .navbar-nav > .nav-item > .nav-link.show {
     color: var(--ns-color-accent) !important;
 }
 
@@ -149,4 +147,26 @@
 .ns-navbar .dropdown-item:active {
     background-color: var(--ns-color-main);
     color: var(--ns-color-white);
+}
+
+/* Fix contrato visual: dropdown padres internos */
+
+.ns-navbar .dropdown-menu .dropdown-toggle,
+.ns-navbar .dropdown-menu .dropdown-item.dropdown-toggle {
+    color: var(--ns-color-main) !important;
+}
+
+.ns-navbar .dropdown-menu .dropdown-toggle:hover,
+.ns-navbar .dropdown-menu .dropdown-toggle:focus,
+.ns-navbar .dropdown-menu .dropdown-item.dropdown-toggle:hover,
+.ns-navbar .dropdown-menu .dropdown-item.dropdown-toggle:focus {
+    background-color: rgba(255, 217, 102, 0.18);
+    color: var(--ns-color-main) !important;
+}
+
+.ns-navbar .dropdown-menu .dropdown-toggle.active,
+.ns-navbar .dropdown-menu .dropdown-item.dropdown-toggle.active,
+.ns-navbar .dropdown-menu .dropdown-submenu.show > .dropdown-toggle {
+    background-color: var(--ns-color-main);
+    color: var(--ns-color-white) !important;
 }

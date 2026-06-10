@@ -202,3 +202,21 @@ def test_navbar_respeta_contrato_visual_global():
     assert "color: var(--ns-color-soft) !important;" in css
     assert "box-shadow: var(--ns-shadow-floating);" in css
     assert ".ns-navbar .dropdown-item.active" in css
+
+
+def test_navbar_dropdown_padres_internos_tienen_contraste():
+    """
+    Valida contraste de dropdowns padre internos.
+
+    Los toggles principales del navbar deben ser claros sobre fondo oscuro,
+    pero los dropdowns padre internos, como Cuentas y Ejercicios, deben ser
+    oscuros porque viven dentro de un menu claro.
+    """
+    css = Path("app/static/css/nerisoft_navbar.css").read_text(encoding="utf-8")
+
+    assert ".ns-navbar .dropdown-menu .dropdown-toggle" in css
+    assert "color: var(--ns-color-main) !important;" in css
+    assert ".dropdown-submenu.show > .dropdown-toggle" in css
+    assert "color: var(--ns-color-white) !important;" in css
+    assert ".ns-navbar .navbar-brand," in css
+    assert ".navbar-nav > .nav-item > .nav-link" in css
