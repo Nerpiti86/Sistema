@@ -157,6 +157,8 @@ def crear_ejercicio_contable(
     if ejercicio_contable_fecha_hasta < ejercicio_contable_fecha_desde:
         raise ValueError("La fecha hasta no puede ser anterior a la fecha desde.")
 
+    creado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+
     db = get_db()
 
     try:
@@ -174,9 +176,10 @@ def crear_ejercicio_contable(
                     bloqueado,
                     bloqueado_en,
                     observaciones_cierre,
-                    es_primer_ejercicio
+                    es_primer_ejercicio,
+                    creado_en
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ejercicio_contable_codigo,
@@ -190,6 +193,7 @@ def crear_ejercicio_contable(
                     datos_ejercicio_contable["bloqueado_en"],
                     datos_ejercicio_contable["observaciones_cierre"],
                     int(datos_ejercicio_contable["es_primer_ejercicio"]),
+                    creado_en,
                 ),
             )
     except sqlite3.IntegrityError as exc:

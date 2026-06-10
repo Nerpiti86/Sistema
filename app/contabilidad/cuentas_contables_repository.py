@@ -102,6 +102,8 @@ def crear_cuenta_contable(datos_cuenta_contable: dict[str, Any]) -> dict[str, An
     if sumarizadora == cuenta_contable:
         raise ValueError("La cuenta contable no puede sumarizarse a si misma.")
 
+    creado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+
     db = get_db()
 
     try:
@@ -115,9 +117,10 @@ def crear_cuenta_contable(datos_cuenta_contable: dict[str, Any]) -> dict[str, An
                     naturaleza,
                     imputable,
                     monetaria,
-                    sumarizadora
+                    sumarizadora,
+                    creado_en
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     cuenta_contable,
@@ -127,6 +130,7 @@ def crear_cuenta_contable(datos_cuenta_contable: dict[str, Any]) -> dict[str, An
                     imputable,
                     monetaria,
                     sumarizadora,
+                    creado_en,
                 ),
             )
     except sqlite3.IntegrityError as exc:

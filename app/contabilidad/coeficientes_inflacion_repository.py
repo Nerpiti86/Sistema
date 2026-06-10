@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 from typing import Any
 
 from app.db import get_db
@@ -36,6 +37,7 @@ def guardar_indice_inflacion(
     """
     periodo_validado = _validar_periodo_yyyymm(periodo_yyyymm)
     indice_validado = _validar_entero_positivo(indice_10000, "indice_10000")
+    ahora = datetime.now().replace(microsecond=0).isoformat(sep=" ")
 
     db = get_db()
 
@@ -45,16 +47,19 @@ def guardar_indice_inflacion(
                 """
                 INSERT INTO indices_inflacion (
                     periodo_yyyymm,
-                    indice_10000
+                    indice_10000,
+                    creado_en
                 )
-                VALUES (?, ?)
+                VALUES (?, ?, ?)
                 ON CONFLICT(periodo_yyyymm) DO UPDATE SET
                     indice_10000 = excluded.indice_10000,
-                    actualizado_en = CURRENT_TIMESTAMP
+                    actualizado_en = ?
                 """,
                 (
                     periodo_validado,
                     indice_validado,
+                    ahora,
+                    ahora,
                 ),
             )
     except sqlite3.IntegrityError as exc:
@@ -139,6 +144,7 @@ def reemplazar_coeficientes_inflacion_ejercicio(
     ]
 
     db = get_db()
+    ahora = datetime.now().replace(microsecond=0).isoformat(sep=" ")
 
     try:
         with db:
@@ -158,9 +164,10 @@ def reemplazar_coeficientes_inflacion_ejercicio(
                     indice_inicio_10000,
                     indice_cierre_periodo_yyyymm,
                     indice_cierre_10000,
-                    coeficiente_1000000000000
+                    coeficiente_1000000000000,
+                    calculado_en
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     (
@@ -170,6 +177,7 @@ def reemplazar_coeficientes_inflacion_ejercicio(
                         coeficiente["indice_cierre_periodo_yyyymm"],
                         coeficiente["indice_cierre_10000"],
                         coeficiente["coeficiente_1000000000000"],
+                        ahora,
                     )
                     for coeficiente in coeficientes_validados
                 ],
