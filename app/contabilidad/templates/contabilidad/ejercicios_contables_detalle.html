@@ -166,10 +166,10 @@
                                 <tr>
                                     <th scope="col">Periodo</th>
                                     <th scope="col" class="text-end">Indice inicio</th>
-                                    <th scope="col">Periodo cierre</th>
+                                    <th scope="col" class="text-center">Periodo cierre</th>
                                     <th scope="col" class="text-end">Indice cierre</th>
                                     <th scope="col" class="text-end">Coeficiente</th>
-                                    <th scope="col">Calculado en</th>
+                                    <th scope="col" class="text-end">Calculado en</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -181,7 +181,7 @@
                                         <td data-field="indice_inicio" class="text-end">
                                             {{ coeficiente.indice_inicio_argentina }}
                                         </td>
-                                        <td data-field="indice_cierre_periodo">
+                                        <td data-field="indice_cierre_periodo" class="text-center">
                                             {{ coeficiente.indice_cierre_periodo_argentina }}
                                         </td>
                                         <td data-field="indice_cierre" class="text-end">
@@ -190,7 +190,7 @@
                                         <td data-field="coeficiente" class="text-end">
                                             {{ coeficiente.coeficiente_argentina }}
                                         </td>
-                                        <td data-field="calculado_en">
+                                        <td data-field="calculado_en" class="text-end">
                                             {{ coeficiente.calculado_en_argentina or "Sin calcular" }}
                                         </td>
                                     </tr>
