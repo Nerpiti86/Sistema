@@ -519,9 +519,42 @@ def test_pantalla_nuevo_asiento_contable_tooltip_y_columnas_renglones():
         b'title="Define el criterio para buscar cotizacion cuando la moneda origen no es ARS."'
         in response.data
     )
-    assert b'id="as-det-col-descripcion"' in response.data
-    assert b'style="width: 35%;"' in response.data
+    assert b'id="as-det-col-nombre-cuenta"' in response.data
+    assert b'style="width: 34%;"' in response.data
     assert b'id="as-det-col-moneda"' in response.data
     assert b'style="width: 8%;"' in response.data
     assert b'style="table-layout: fixed;"' in response.data
     assert b'maxlength="3"' in response.data
+
+
+
+def test_pantalla_nuevo_asiento_contable_expone_lookup_cuentas_imputables():
+    """
+    Valida contrato HTML para lookup frontend de cuentas imputables.
+
+    El renglon de asiento debe buscar cuentas imputables y completar el nombre
+    de cuenta sin mostrar un campo Detalle como columna principal.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'data-lookup="asientos-cuentas-imputables"' in html
+    assert 'data-lookup-url="/contabilidad/cuentas-contables/imputables/buscar/"' in html
+    assert 'data-lookup-result="as-det-0-cuenta-nombre"' in html
+    assert 'id="as-det-0-cuenta-opciones"' in html
+    assert 'id="as-det-0-cuenta-nombre"' in html
+    assert 'data-field="cuenta_contable_descripcion"' in html
+    assert ">Nombre cuenta<" in html
+    assert 'name="detalles[0][descripcion]"' in html
+    assert 'type="hidden"' in html
+    assert "js/asientos_contables_nuevo_lookup_cuentas.js" in html

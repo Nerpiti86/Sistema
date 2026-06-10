@@ -268,8 +268,8 @@
                                     style="table-layout: fixed;"
                                 >
                                     <colgroup>
-                                        <col id="as-det-col-cuenta" style="width: 17%;">
-                                        <col id="as-det-col-descripcion" style="width: 35%;">
+                                        <col id="as-det-col-cuenta" style="width: 18%;">
+                                        <col id="as-det-col-nombre-cuenta" style="width: 34%;">
                                         <col id="as-det-col-moneda" style="width: 8%;">
                                         <col id="as-det-col-cotizacion" style="width: 14%;">
                                         <col id="as-det-col-debe" style="width: 13%;">
@@ -278,7 +278,7 @@
                                     <thead>
                                         <tr>
                                             <th data-field="cuenta_contable_codigo" class="text-nowrap">Cuenta</th>
-                                            <th data-field="descripcion" class="text-nowrap">Descripcion</th>
+                                            <th data-field="cuenta_contable_descripcion" class="text-nowrap">Nombre cuenta</th>
                                             <th data-field="moneda_codigo" class="text-nowrap">Moneda</th>
                                             <th data-field="cotizacion_1000000" class="text-end text-nowrap">Cotizacion</th>
                                             <th data-field="debe_centavos" class="text-end text-nowrap">Debe</th>
@@ -297,7 +297,12 @@
                                                     <input
                                                         id="as-det-{{ renglon_idx }}-cuenta"
                                                         data-field="cuenta_contable_codigo"
+                                                        data-lookup="asientos-cuentas-imputables"
+                                                        data-lookup-url="{{ url_for('contabilidad.buscar_cuentas_contables_imputables_json') }}"
+                                                        data-lookup-limite="10"
+                                                        data-lookup-result="as-det-{{ renglon_idx }}-cuenta-nombre"
                                                         type="text"
+                                                        list="as-det-{{ renglon_idx }}-cuenta-opciones"
                                                         name="detalles[{{ renglon_idx }}][cuenta_contable_codigo]"
                                                         value="{{ detalle_asiento.cuenta_contable_codigo }}"
                                                         class="form-control form-control-sm"
@@ -305,18 +310,32 @@
                                                         aria-label="Cuenta del renglon {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
-                                                </td>
-                                                <td data-field="descripcion">
+
+                                                    <datalist
+                                                        id="as-det-{{ renglon_idx }}-cuenta-opciones"
+                                                        data-table="cuentas_contables"
+                                                        data-field="cuenta_contable_lookup_opciones"
+                                                    ></datalist>                                                </td>
+                                                <td>
                                                     <input
                                                         id="as-det-{{ renglon_idx }}-descripcion"
+                                                        data-row-index="{{ renglon_idx }}"
                                                         data-field="descripcion"
-                                                        type="text"
+                                                        type="hidden"
                                                         name="detalles[{{ renglon_idx }}][descripcion]"
                                                         value="{{ detalle_asiento.descripcion }}"
+                                                    >
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-cuenta-nombre"
+                                                        data-row-index="{{ renglon_idx }}"
+                                                        data-field="cuenta_contable_descripcion"
+                                                        data-lookup-result="asientos-cuentas-imputables"
+                                                        type="text"
+                                                        value=""
                                                         class="form-control form-control-sm"
-                                                        placeholder="Detalle"
-                                                        aria-label="Descripcion del renglon {{ renglon_idx + 1 }}"
+                                                        placeholder="Nombre de cuenta"
                                                         autocomplete="off"
+                                                        readonly
                                                     >
                                                 </td>
                                                 <td data-field="moneda_codigo">
@@ -409,4 +428,5 @@
         {% endcall %}
     </div>
 </section>
+<script src="{{ url_for('static', filename='js/asientos_contables_nuevo_lookup_cuentas.js') }}"></script>
 {% endblock %}
