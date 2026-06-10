@@ -558,3 +558,36 @@ def test_pantalla_nuevo_asiento_contable_expone_lookup_cuentas_imputables():
     assert 'name="detalles[0][descripcion]"' in html
     assert 'type="hidden"' in html
     assert "js/asientos_contables_nuevo_lookup_cuentas.js" in html
+
+
+
+def test_pantalla_nuevo_asiento_contable_expone_controles_renglones_dinamicos():
+    """
+    Valida contrato HTML para agregar y quitar renglones.
+
+    La pantalla debe exponer data-hooks estables sin cambiar el POST de
+    detalles[n][...] existente.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert 'id="as-det-renglones"' in html
+    assert 'data-role="asiento-renglones"' in html
+    assert 'data-role="asiento-renglon"' in html
+    assert 'id="as-det-agregar-renglon"' in html
+    assert 'data-action="agregar-renglon"' in html
+    assert 'data-action="quitar-renglon"' in html
+    assert 'name="detalles[0][cuenta_contable_codigo]"' in html
+    assert 'name="detalles[1][cuenta_contable_codigo]"' in html
+    assert 'id="as-det-0-cuenta-opciones"' in html
+    assert 'id="as-det-1-cuenta-opciones"' in html

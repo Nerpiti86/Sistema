@@ -4,10 +4,18 @@
     const ASIENTOS_SELECTOR_LOOKUP_CUENTAS =
         '[data-lookup="asientos-cuentas-imputables"]';
 
+    const ASIENTOS_SELECTOR_RENGLONES = "#as-det-renglones";
+    const ASIENTOS_SELECTOR_RENGLON = '[data-role="asiento-renglon"]';
+    const ASIENTOS_SELECTOR_AGREGAR_RENGLON =
+        '[data-action="agregar-renglon"]';
+    const ASIENTOS_SELECTOR_QUITAR_RENGLON =
+        '[data-action="quitar-renglon"]';
+
     const ASIENTOS_MENSAJE_LOOKUP_CUENTA_ERROR =
         "No se pudo buscar la cuenta contable.";
 
     const ASIENTOS_MINIMO_CARACTERES_LOOKUP_CUENTA = 2;
+    const ASIENTOS_MINIMO_RENGLONES = 2;
 
     function obtenerDatalistLookupCuenta(inputCuentaContable) {
         const datalistId = inputCuentaContable.getAttribute("list");
@@ -171,29 +179,238 @@
         };
     }
 
-    function inicializarLookupCuentasImputablesAsiento() {
-        const inputsCuentaContable = document.querySelectorAll(
-            ASIENTOS_SELECTOR_LOOKUP_CUENTAS
+    const buscarCuentasConDebounce = crearDebounceLookupCuenta(
+        buscarCuentasImputablesParaAsiento,
+        250
+    );
+
+    function obtenerRenglonesAsiento() {
+        const contenedorRenglones = document.querySelector(
+            ASIENTOS_SELECTOR_RENGLONES
         );
 
-        const buscarCuentasConDebounce = crearDebounceLookupCuenta(
-            buscarCuentasImputablesParaAsiento,
-            250
+        if (!contenedorRenglones) {
+            return [];
+        }
+
+        return Array.from(
+            contenedorRenglones.querySelectorAll(ASIENTOS_SELECTOR_RENGLON)
+        );
+    }
+
+    function reemplazarIndiceRenglon(valor, indiceRenglon) {
+        if (!valor) {
+            return valor;
+        }
+
+        return String(valor)
+            .replace(/as-det-\d+-/g, `as-det-${indiceRenglon}-`)
+            .replace(/detalles\[\d+\]/g, `detalles[${indiceRenglon}]`)
+            .replace(/renglon \d+/gi, `renglon ${indiceRenglon + 1}`);
+    }
+
+    function reindexarAtributo(elemento, atributo, indiceRenglon) {
+        const valorActual = elemento.getAttribute(atributo);
+
+        if (!valorActual) {
+            return;
+        }
+
+        const valorNuevo = reemplazarIndiceRenglon(
+            valorActual,
+            indiceRenglon
         );
 
-        inputsCuentaContable.forEach((inputCuentaContable) => {
-            inputCuentaContable.addEventListener("input", () => {
-                buscarCuentasConDebounce(inputCuentaContable);
-            });
+        if (valorNuevo !== valorActual) {
+            elemento.setAttribute(atributo, valorNuevo);
+        }
+    }
 
-            inputCuentaContable.addEventListener("change", () => {
-                buscarCuentasImputablesParaAsiento(inputCuentaContable);
-            });
+    function reindexarRenglonAsiento(renglonAsiento, indiceRenglon) {
+        renglonAsiento.dataset.rowIndex = String(indiceRenglon);
 
-            inputCuentaContable.addEventListener("blur", () => {
-                buscarCuentasImputablesParaAsiento(inputCuentaContable);
-            });
+        reindexarAtributo(renglonAsiento, "id", indiceRenglon);
+
+        const elementosReindexables = renglonAsiento.querySelectorAll(
+            "[id], [name], [list], [data-lookup-result], [data-row-index], [aria-label]"
+        );
+
+        elementosReindexables.forEach((elemento) => {
+            reindexarAtributo(elemento, "id", indiceRenglon);
+            reindexarAtributo(elemento, "name", indiceRenglon);
+            reindexarAtributo(elemento, "list", indiceRenglon);
+            reindexarAtributo(elemento, "data-lookup-result", indiceRenglon);
+            reindexarAtributo(elemento, "aria-label", indiceRenglon);
+            elemento.dataset.rowIndex = String(indiceRenglon);
         });
+    }
+
+    function limpiarValorCampoNuevoRenglon(campoRenglon) {
+        const campo = campoRenglon.dataset.field || "";
+
+        if (
+            campo === "cuenta_contable_codigo" ||
+            campo === "cuenta_contable_descripcion" ||
+            campo === "descripcion" ||
+            campo === "debe_centavos" ||
+            campo === "haber_centavos"
+        ) {
+            campoRenglon.value = "";
+        }
+
+        if (campo === "moneda_codigo") {
+            campoRenglon.value = "ARS";
+        }
+
+        if (campo === "cotizacion_1000000") {
+            campoRenglon.value = "1,000000";
+        }
+
+        campoRenglon.classList.remove("is-valid", "is-invalid");
+        campoRenglon.setCustomValidity("");
+    }
+
+    function limpiarRenglonClonado(renglonAsiento) {
+        const camposRenglon = renglonAsiento.querySelectorAll("input");
+        const datalistsRenglon = renglonAsiento.querySelectorAll("datalist");
+
+        camposRenglon.forEach((campoRenglon) => {
+            limpiarValorCampoNuevoRenglon(campoRenglon);
+        });
+
+        datalistsRenglon.forEach((datalistRenglon) => {
+            datalistRenglon.innerHTML = "";
+        });
+    }
+
+    function actualizarEstadoBotonesQuitarRenglon() {
+        const renglonesAsiento = obtenerRenglonesAsiento();
+        const debeBloquearQuitar =
+            renglonesAsiento.length <= ASIENTOS_MINIMO_RENGLONES;
+
+        renglonesAsiento.forEach((renglonAsiento) => {
+            const botonQuitar = renglonAsiento.querySelector(
+                ASIENTOS_SELECTOR_QUITAR_RENGLON
+            );
+
+            if (botonQuitar) {
+                botonQuitar.disabled = debeBloquearQuitar;
+                botonQuitar.classList.toggle(
+                    "disabled",
+                    debeBloquearQuitar
+                );
+            }
+        });
+    }
+
+    function reindexarRenglonesAsiento() {
+        obtenerRenglonesAsiento().forEach((renglonAsiento, indiceRenglon) => {
+            reindexarRenglonAsiento(renglonAsiento, indiceRenglon);
+        });
+
+        actualizarEstadoBotonesQuitarRenglon();
+    }
+
+    function agregarRenglonAsiento() {
+        const contenedorRenglones = document.querySelector(
+            ASIENTOS_SELECTOR_RENGLONES
+        );
+        const renglonesAsiento = obtenerRenglonesAsiento();
+        const ultimoRenglon = renglonesAsiento[renglonesAsiento.length - 1];
+
+        if (!contenedorRenglones || !ultimoRenglon) {
+            return;
+        }
+
+        const nuevoRenglon = ultimoRenglon.cloneNode(true);
+
+        limpiarRenglonClonado(nuevoRenglon);
+        contenedorRenglones.appendChild(nuevoRenglon);
+        reindexarRenglonesAsiento();
+    }
+
+    function quitarRenglonAsiento(botonQuitar) {
+        const renglonesAsiento = obtenerRenglonesAsiento();
+
+        if (renglonesAsiento.length <= ASIENTOS_MINIMO_RENGLONES) {
+            actualizarEstadoBotonesQuitarRenglon();
+            return;
+        }
+
+        const renglonAsiento = botonQuitar.closest(ASIENTOS_SELECTOR_RENGLON);
+
+        if (!renglonAsiento) {
+            return;
+        }
+
+        renglonAsiento.remove();
+        reindexarRenglonesAsiento();
+    }
+
+    function inicializarEventosLookupCuenta() {
+        const contenedorRenglones = document.querySelector(
+            ASIENTOS_SELECTOR_RENGLONES
+        );
+
+        if (!contenedorRenglones) {
+            return;
+        }
+
+        contenedorRenglones.addEventListener("input", (evento) => {
+            const inputCuentaContable = evento.target.closest(
+                ASIENTOS_SELECTOR_LOOKUP_CUENTAS
+            );
+
+            if (inputCuentaContable) {
+                buscarCuentasConDebounce(inputCuentaContable);
+            }
+        });
+
+        contenedorRenglones.addEventListener("change", (evento) => {
+            const inputCuentaContable = evento.target.closest(
+                ASIENTOS_SELECTOR_LOOKUP_CUENTAS
+            );
+
+            if (inputCuentaContable) {
+                buscarCuentasImputablesParaAsiento(inputCuentaContable);
+            }
+        });
+
+        contenedorRenglones.addEventListener("blur", (evento) => {
+            const inputCuentaContable = evento.target.closest(
+                ASIENTOS_SELECTOR_LOOKUP_CUENTAS
+            );
+
+            if (inputCuentaContable) {
+                buscarCuentasImputablesParaAsiento(inputCuentaContable);
+            }
+        }, true);
+    }
+
+    function inicializarEventosRenglonesDinamicos() {
+        const botonAgregar = document.querySelector(
+            ASIENTOS_SELECTOR_AGREGAR_RENGLON
+        );
+
+        if (botonAgregar) {
+            botonAgregar.addEventListener("click", agregarRenglonAsiento);
+        }
+
+        document.addEventListener("click", (evento) => {
+            const botonQuitar = evento.target.closest(
+                ASIENTOS_SELECTOR_QUITAR_RENGLON
+            );
+
+            if (botonQuitar) {
+                quitarRenglonAsiento(botonQuitar);
+            }
+        });
+    }
+
+    function inicializarLookupCuentasImputablesAsiento() {
+        inicializarEventosLookupCuenta();
+        inicializarEventosRenglonesDinamicos();
+        reindexarRenglonesAsiento();
     }
 
     document.addEventListener(

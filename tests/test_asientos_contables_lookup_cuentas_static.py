@@ -19,3 +19,7 @@ def test_js_lookup_cuentas_imputables_asiento_tiene_contrato_identificable():
     assert "inicializarLookupCuentasImputablesAsiento" in contenido
     assert "DOMContentLoaded" in contenido
     assert "fetch(" in contenido
+    assert "obtenerRenglonesAsiento" in contenido
+    assert "agregarRenglonAsiento" in contenido
+    assert "quitarRenglonAsiento" in contenido
+    assert "reindexarRenglonesAsiento" in contenido
