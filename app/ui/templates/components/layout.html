@@ -1,6 +1,10 @@
 {% macro main_navbar(brand) %}
 {% set endpoint_actual = request.endpoint or "" %}
 {% set es_inicio = endpoint_actual == "ui.dashboard" %}
+{% set es_tablas_comunes = endpoint_actual.startswith("tablas_comunes.") %}
+{% set es_monedas = endpoint_actual in [
+    "tablas_comunes.ver_listado_monedas",
+] %}
 {% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
 {% set es_cuentas = endpoint_actual in [
     "contabilidad.ver_formulario_nueva_cuenta_contable",
@@ -65,6 +69,38 @@
                     >
                         Inicio
                     </a>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a
+                        id="ns-nav-tablas-comunes"
+                        class="nav-link dropdown-toggle {% if es_tablas_comunes %}active{% endif %}"
+                        href="#"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        data-component="navbar"
+                        data-action="abrir_menu"
+                        data-module="tablas_comunes"
+                        aria-expanded="false"
+                    >
+                        Tablas comunes
+                    </a>
+
+                    <ul class="dropdown-menu ns-dropdown-menu" aria-labelledby="ns-nav-tablas-comunes">
+                        <li>
+                            <a
+                                id="ns-nav-monedas"
+                                class="dropdown-item {% if es_monedas %}active{% endif %}"
+                                href="{{ url_for('tablas_comunes.ver_listado_monedas') }}"
+                                data-component="navbar"
+                                data-action="navegar"
+                                data-module="tablas_comunes"
+                                data-endpoint="tablas_comunes.ver_listado_monedas"
+                            >
+                                Monedas
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li class="nav-item dropdown">

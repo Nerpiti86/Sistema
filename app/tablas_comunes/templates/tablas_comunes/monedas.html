@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section
+    id="mo-listado"
+    data-table="monedas"
+    data-query="listar_monedas"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="mo-titulo" class="h3 mb-1">
+                    Monedas
+                </h1>
+                <p id="mo-descripcion" class="text-muted mb-0">
+                    Maestro transversal de monedas para gestion, contabilidad y operaciones.
+                </p>
+            </div>
+            <div id="mo-acciones-listado" class="d-flex gap-2">
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="mo-resumen"
+            data-table="monedas"
+            data-query="obtener_contexto_listado_monedas"
+        >
+            {% call card("Resumen", "Tablas comunes") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd
+                        id="mo-cantidad"
+                        data-table="monedas"
+                        data-query="obtener_contexto_listado_monedas"
+                        data-field="cantidad_monedas"
+                        class="col-sm-9"
+                    >
+                        {{ cantidad_monedas }}
+                    </dd>
+
+                    <dt class="col-sm-3">Activas</dt>
+                    <dd
+                        id="mo-cantidad-activas"
+                        data-table="monedas"
+                        data-query="obtener_contexto_listado_monedas"
+                        data-field="cantidad_monedas_activas"
+                        class="col-sm-9 mb-0"
+                    >
+                        {{ cantidad_monedas_activas }}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="mo-contenedor-tabla"
+            data-table="monedas"
+            data-query="listar_monedas"
+        >
+            {% call card("Listado", "monedas") %}
+                <div class="table-responsive">
+                    <table
+                        id="mo-tabla"
+                        data-table="monedas"
+                        data-query="listar_monedas"
+                        class="table table-sm align-middle mb-0"
+                    >
+                        <thead>
+                            <tr>
+                                <th data-field="codigo">Codigo</th>
+                                <th data-field="nombre">Nombre</th>
+                                <th data-field="simbolo">Simbolo</th>
+                                <th data-field="decimales" class="text-end">Decimales</th>
+                                <th data-field="activa" class="text-center">Activa</th>
+                                <th data-field="orden" class="text-end">Orden</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mo-tbody">
+                            {% for moneda in monedas %}
+                                <tr
+                                    id="mo-row-{{ moneda.codigo }}"
+                                    data-table="monedas"
+                                    data-query="listar_monedas"
+                                    data-row-codigo="{{ moneda.codigo }}"
+                                >
+                                    <td data-field="codigo" class="fw-semibold">
+                                        {{ moneda.codigo }}
+                                    </td>
+                                    <td data-field="nombre">
+                                        {{ moneda.nombre }}
+                                    </td>
+                                    <td data-field="simbolo">
+                                        {{ moneda.simbolo }}
+                                    </td>
+                                    <td data-field="decimales" class="text-end">
+                                        {{ moneda.decimales }}
+                                    </td>
+                                    <td data-field="activa" class="text-center">
+                                        {% if moneda.esta_activa %}
+                                            Si
+                                        {% else %}
+                                            No
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="orden" class="text-end">
+                                        {{ moneda.orden }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr
+                                    id="mo-row-sin-datos"
+                                    data-table="monedas"
+                                    data-query="listar_monedas"
+                                >
+                                    <td
+                                        id="mo-mensaje-sin-datos"
+                                        colspan="6"
+                                        class="text-center text-muted py-4"
+                                    >
+                                        No hay monedas cargadas.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
