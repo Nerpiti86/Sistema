@@ -4,20 +4,20 @@
     const SELECTOR_FECHA = '[data-datepicker="fecha-argentina"]';
     const SELECTOR_PERIODO = '[data-datepicker="periodo-argentino"]';
     const MESES = [
-        "enero",
-        "febrero",
-        "marzo",
-        "abril",
-        "mayo",
-        "junio",
-        "julio",
-        "agosto",
-        "septiembre",
-        "octubre",
-        "noviembre",
-        "diciembre",
+        "ENERO",
+        "FEBRERO",
+        "MARZO",
+        "ABRIL",
+        "MAYO",
+        "JUNIO",
+        "JULIO",
+        "AGOSTO",
+        "SEPTIEMBRE",
+        "OCTUBRE",
+        "NOVIEMBRE",
+        "DICIEMBRE",
     ];
-    const DIAS_SEMANA = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
+    const DIAS_SEMANA = ["L", "M", "M", "J", "V", "S", "D"];
 
     let datePickerAbierto = null;
 
