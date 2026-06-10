@@ -9,10 +9,15 @@ from app.contabilidad.cuentas_contables_repository import (
     validar_cuenta_contable_imputable,
 )
 from app.contabilidad.ejercicios_contables_repository import (
+    obtener_ejercicio_contable_activo,
     obtener_ejercicio_contable_por_fecha,
 )
 from app.shared.monedas_cotizaciones_repository import (
     obtener_ultima_moneda_cotizacion,
+)
+from app.shared.formatos import (
+    formatear_entero_escala_a_decimal_argentino,
+    formatear_fecha_iso_a_argentina,
 )
 
 _MONEDA_CONTABLE = "ARS"
@@ -68,6 +73,109 @@ def listar_asientos_contables(
 ) -> list[dict[str, Any]]:
     """Devuelve cabeceras de asientos contables para un ejercicio."""
     return listar_asientos_contables_por_ejercicio(ejercicio_id, limite)
+
+
+def obtener_contexto_listado_asientos_contables(
+    limite: int = 100,
+) -> dict[str, Any]:
+    """
+    Devuelve contexto de pantalla para listado inicial de asientos.
+
+    La pantalla lista cabeceras y totales calculados desde el detalle, sin
+    resolver carga ni confirmacion de asientos.
+    """
+    try:
+        ejercicio_contable_activo = obtener_ejercicio_contable_activo()
+    except ValueError:
+        return {
+            "ejercicio_contable_activo": None,
+            "asientos_contables": [],
+            "cantidad_asientos_contables": 0,
+            "mensaje_contexto_asientos": "Sin ejercicio contable activo.",
+        }
+
+    asientos = listar_asientos_contables_por_ejercicio(
+        ejercicio_contable_activo["id"],
+        limite,
+    )
+    asientos_pantalla = [
+        _preparar_asiento_contable_para_listado(asiento)
+        for asiento in asientos
+    ]
+
+    return {
+        "ejercicio_contable_activo": _preparar_ejercicio_contable_activo_para_listado(
+            ejercicio_contable_activo
+        ),
+        "asientos_contables": asientos_pantalla,
+        "cantidad_asientos_contables": len(asientos_pantalla),
+        "mensaje_contexto_asientos": "",
+    }
+
+
+def _preparar_ejercicio_contable_activo_para_listado(
+    ejercicio_contable: dict[str, Any],
+) -> dict[str, Any]:
+    ejercicio_contable_pantalla = dict(ejercicio_contable)
+    ejercicio_contable_pantalla["fecha_desde_argentina"] = (
+        formatear_fecha_iso_a_argentina(ejercicio_contable["fecha_desde"])
+    )
+    ejercicio_contable_pantalla["fecha_hasta_argentina"] = (
+        formatear_fecha_iso_a_argentina(ejercicio_contable["fecha_hasta"])
+    )
+
+    return ejercicio_contable_pantalla
+
+
+def _preparar_asiento_contable_para_listado(
+    asiento: dict[str, Any],
+) -> dict[str, Any]:
+    asiento_pantalla = dict(asiento)
+    asiento_con_detalle = obtener_asiento_contable_por_id(asiento["id"])
+    detalles = asiento_con_detalle["detalles"] if asiento_con_detalle else []
+
+    total_debe_centavos = sum(
+        int(detalle["debe_centavos"])
+        for detalle in detalles
+    )
+    total_haber_centavos = sum(
+        int(detalle["haber_centavos"])
+        for detalle in detalles
+    )
+
+    asiento_pantalla["fecha_argentina"] = formatear_fecha_iso_a_argentina(
+        asiento["fecha"]
+    )
+    asiento_pantalla["numero_asiento_mostrar"] = (
+        str(asiento["numero_asiento"])
+        if asiento["numero_asiento"] is not None
+        else "Borrador"
+    )
+    asiento_pantalla["estado_codigo"] = asiento["estado"]
+    asiento_pantalla["tipo_codigo"] = asiento["tipo"]
+    asiento_pantalla["moneda_operacion_codigo"] = asiento["moneda_origen_codigo"]
+    asiento_pantalla["par_monedas_codigo"] = (
+        f"{asiento['moneda_origen_codigo']}/{asiento['moneda_destino_codigo']}"
+    )
+    asiento_pantalla["cotizacion_mostrar"] = _formatear_cotizacion_asiento(asiento)
+    asiento_pantalla["total_debe_argentina"] = (
+        formatear_entero_escala_a_decimal_argentino(total_debe_centavos, 2)
+    )
+    asiento_pantalla["total_haber_argentina"] = (
+        formatear_entero_escala_a_decimal_argentino(total_haber_centavos, 2)
+    )
+
+    return asiento_pantalla
+
+
+def _formatear_cotizacion_asiento(asiento: dict[str, Any]) -> str:
+    if asiento["moneda_origen_codigo"] == _MONEDA_CONTABLE:
+        return "1,000000"
+
+    return formatear_entero_escala_a_decimal_argentino(
+        int(asiento["cotizacion_1000000"]),
+        6,
+    )
 
 
 def _validar_ejercicio_operacion(ejercicio_id: int, fecha: str) -> None:

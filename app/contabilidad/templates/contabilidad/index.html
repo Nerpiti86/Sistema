@@ -30,6 +30,13 @@
                 >
                     {{ secondary_link("Cuentas contables", url_for("contabilidad.ver_listado_cuentas_contables")) }}
                 </span>
+                <span
+                    id="as-acceso"
+                    data-table="asientos_contables"
+                    data-action="ver_listado_asientos_contables"
+                >
+                    {{ secondary_link("Asientos contables", url_for("contabilidad.ver_listado_asientos_contables")) }}
+                </span>
                 {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
             </div>
         {% endcall %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section
+    id="as-listado"
+    data-table="asientos_contables"
+    data-query="obtener_contexto_listado_asientos_contables"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="as-titulo" class="h3 mb-1">
+                    Asientos contables
+                </h1>
+                <p id="as-descripcion" class="text-muted mb-0">
+                    Listado inicial de asientos contables. La carga se habilitara en un paso posterior.
+                </p>
+            </div>
+            <div id="as-acciones-listado">
+                {{ secondary_link("Volver a contabilidad", url_for("contabilidad.index")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="as-resumen"
+            data-table="asientos_contables"
+            data-query="obtener_contexto_listado_asientos_contables"
+        >
+            {% call card("Resumen", "Contexto contable") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd
+                        id="as-cantidad"
+                        data-table="asientos_contables"
+                        data-query="obtener_contexto_listado_asientos_contables"
+                        data-field="cantidad_asientos_contables"
+                        class="col-sm-9"
+                    >
+                        {{ cantidad_asientos_contables }}
+                    </dd>
+
+                    <dt class="col-sm-3">Ejercicio activo</dt>
+                    <dd
+                        id="as-ejercicio-activo"
+                        data-table="ejercicios_contables"
+                        data-query="obtener_ejercicio_contable_activo"
+                        data-field="ejercicio_contable_activo"
+                        class="col-sm-9"
+                    >
+                        {% if ejercicio_contable_activo %}
+                            {{ ejercicio_contable_activo.codigo }}
+                            - {{ ejercicio_contable_activo.nombre }}
+                            ({{ ejercicio_contable_activo.fecha_desde_argentina }}
+                            a {{ ejercicio_contable_activo.fecha_hasta_argentina }})
+                        {% else %}
+                            Sin ejercicio contable activo
+                        {% endif %}
+                    </dd>
+
+                    {% if mensaje_contexto_asientos %}
+                        <dt class="col-sm-3">Observacion</dt>
+                        <dd
+                            id="as-mensaje-contexto"
+                            data-table="asientos_contables"
+                            data-query="obtener_contexto_listado_asientos_contables"
+                            data-field="mensaje_contexto_asientos"
+                            class="col-sm-9 text-muted"
+                        >
+                            {{ mensaje_contexto_asientos }}
+                        </dd>
+                    {% endif %}
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="as-contenedor-tabla"
+            data-table="asientos_contables"
+            data-query="listar_asientos_contables"
+        >
+            {% call card("Listado", "asientos_contables") %}
+                <div class="table-responsive">
+                    <table
+                        id="as-tabla"
+                        data-table="asientos_contables"
+                        data-query="listar_asientos_contables"
+                        class="table table-sm align-middle mb-0"
+                    >
+                        <thead>
+                            <tr>
+                                <th data-field="id">ID</th>
+                                <th data-field="numero_asiento">Numero</th>
+                                <th data-field="fecha">Fecha</th>
+                                <th data-field="descripcion">Descripcion</th>
+                                <th data-field="estado">Estado</th>
+                                <th data-field="tipo">Tipo</th>
+                                <th data-field="moneda_origen_codigo">Moneda</th>
+                                <th data-field="cotizacion_1000000" class="text-end">Cotizacion</th>
+                                <th data-field="debe_centavos" class="text-end">Debe ARS</th>
+                                <th data-field="haber_centavos" class="text-end">Haber ARS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="as-tbody">
+                            {% for asiento_contable in asientos_contables %}
+                                <tr
+                                    id="as-row-{{ asiento_contable.id }}"
+                                    data-table="asientos_contables"
+                                    data-query="listar_asientos_contables"
+                                    data-row-id="{{ asiento_contable.id }}"
+                                >
+                                    <td data-field="id" class="fw-semibold">
+                                        {{ asiento_contable.id }}
+                                    </td>
+                                    <td data-field="numero_asiento">
+                                        {{ asiento_contable.numero_asiento_mostrar }}
+                                    </td>
+                                    <td data-field="fecha">
+                                        {{ asiento_contable.fecha_argentina }}
+                                    </td>
+                                    <td data-field="descripcion">
+                                        {{ asiento_contable.descripcion }}
+                                    </td>
+                                    <td data-field="estado">
+                                        {{ asiento_contable.estado_codigo }}
+                                    </td>
+                                    <td data-field="tipo">
+                                        {{ asiento_contable.tipo_codigo }}
+                                    </td>
+                                    <td data-field="moneda_origen_codigo">
+                                        {{ asiento_contable.par_monedas_codigo }}
+                                    </td>
+                                    <td data-field="cotizacion_1000000" class="text-end">
+                                        {{ asiento_contable.cotizacion_mostrar }}
+                                    </td>
+                                    <td data-field="debe_centavos" class="text-end">
+                                        {{ asiento_contable.total_debe_argentina }}
+                                    </td>
+                                    <td data-field="haber_centavos" class="text-end">
+                                        {{ asiento_contable.total_haber_argentina }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr
+                                    id="as-row-sin-datos"
+                                    data-table="asientos_contables"
+                                    data-query="listar_asientos_contables"
+                                >
+                                    <td
+                                        id="as-mensaje-sin-datos"
+                                        colspan="10"
+                                        class="text-center text-muted py-4"
+                                    >
+                                        No hay asientos contables cargados.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
