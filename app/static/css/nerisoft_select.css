@@ -1,0 +1,124 @@
+.ns-select-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ns-select {
+    position: relative;
+}
+
+.ns-select__control {
+    display: flex;
+    width: 100%;
+    min-height: calc(1.5em + 0.75rem + 2px);
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font: inherit;
+    text-align: left;
+}
+
+.ns-select__control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    outline: 0;
+}
+
+.ns-select__label {
+    overflow: hidden;
+    min-width: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ns-select__placeholder {
+    color: var(--bs-secondary-color);
+}
+
+.ns-select__arrow {
+    flex: 0 0 auto;
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+}
+
+.ns-select__panel {
+    position: absolute;
+    z-index: 1056;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    width: 100%;
+    min-width: 12rem;
+    max-height: 18rem;
+    padding: 0.375rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+    background: var(--bs-body-bg);
+    box-shadow: 0 0.75rem 2rem rgba(15, 23, 42, 0.18);
+}
+
+.ns-select__panel[hidden] {
+    display: none;
+}
+
+.ns-select__search {
+    width: 100%;
+    margin-bottom: 0.375rem;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font: inherit;
+}
+
+.ns-select__search:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.18);
+    outline: 0;
+}
+
+.ns-select__options {
+    display: grid;
+    gap: 0.125rem;
+    max-height: 14rem;
+    overflow-y: auto;
+}
+
+.ns-select__option {
+    width: 100%;
+    padding: 0.375rem 0.5rem;
+    border: 0;
+    border-radius: var(--bs-border-radius);
+    background: transparent;
+    color: var(--bs-body-color);
+    font: inherit;
+    text-align: left;
+}
+
+.ns-select__option:hover,
+.ns-select__option:focus {
+    background: var(--bs-tertiary-bg);
+    outline: 0;
+}
+
+.ns-select__option--selected {
+    background: var(--bs-primary);
+    color: var(--bs-white);
+}
+
+.ns-select__empty {
+    padding: 0.375rem 0.5rem;
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
