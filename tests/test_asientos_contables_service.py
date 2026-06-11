@@ -622,3 +622,71 @@ def test_service_calcula_ars_con_cotizacion_manual_por_renglon_sin_tabla():
     assert asiento["detalles"][0]["nominal_debe_centavos"] == 10000
     assert asiento["detalles"][0]["debe_centavos"] == 12505000
     assert asiento["detalles"][1]["haber_centavos"] == 12505000
+
+
+def test_service_parser_formulario_acepta_cotizacion_manual_sin_decimales():
+    """
+    Valida cotizacion manual flexible desde formulario.
+
+    El usuario puede cargar 1250 y el parser lo interpreta como
+    1.250,000000 para el calculo ARS.
+    """
+    datos_asiento, detalles = preparar_asiento_contable_borrador_desde_formulario(
+        {
+            "ejercicio_id": "7",
+            "fecha": "10/06/2026",
+            "descripcion": "Parser cotizacion manual",
+            "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+            "detalles[0][moneda_codigo]": "USD",
+            "detalles[0][cotizacion_1000000]": "1250",
+            "detalles[0][debe_centavos]": "100,00",
+        }
+    )
+
+    assert datos_asiento["fecha"] == "2026-06-10"
+    assert detalles[0]["moneda_codigo"] == "USD"
+    assert detalles[0]["cotizacion_1000000"] == 1250000000
+    assert detalles[0]["nominal_debe_centavos"] == 10000
+
+
+def test_service_parser_formulario_acepta_cotizacion_manual_con_coma_decimal():
+    """
+    Valida cotizacion manual con coma decimal.
+
+    La cotizacion 1250,5 se interpreta como 1.250,500000.
+    """
+    _, detalles = preparar_asiento_contable_borrador_desde_formulario(
+        {
+            "ejercicio_id": "7",
+            "fecha": "10/06/2026",
+            "descripcion": "Parser cotizacion manual decimal",
+            "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+            "detalles[0][moneda_codigo]": "USD",
+            "detalles[0][cotizacion_1000000]": "1250,5",
+            "detalles[0][debe_centavos]": "100,00",
+        }
+    )
+
+    assert detalles[0]["cotizacion_1000000"] == 1250500000
+
+
+def test_service_parser_formulario_acepta_cotizacion_manual_con_punto_decimal():
+    """
+    Valida cotizacion manual con punto decimal.
+
+    El punto del teclado numerico se interpreta como coma decimal cuando no es
+    separador de miles.
+    """
+    _, detalles = preparar_asiento_contable_borrador_desde_formulario(
+        {
+            "ejercicio_id": "7",
+            "fecha": "10/06/2026",
+            "descripcion": "Parser cotizacion manual decimal punto",
+            "detalles[0][cuenta_contable_codigo]": "1.1.01.01.999",
+            "detalles[0][moneda_codigo]": "USD",
+            "detalles[0][cotizacion_1000000]": "1250.5",
+            "detalles[0][debe_centavos]": "100,00",
+        }
+    )
+
+    assert detalles[0]["cotizacion_1000000"] == 1250500000

@@ -518,7 +518,7 @@ def test_pantalla_post_nuevo_asiento_contable_fx_calcula_ars_en_backend():
                 "detalles[0][cuenta_contable_codigo]": cuenta_usd,
                 "detalles[0][descripcion]": "Caja USD",
                 "detalles[0][moneda_codigo]": "USD",
-                "detalles[0][cotizacion_1000000]": "1.250,500000",
+                "detalles[0][cotizacion_1000000]": "1250,5",
                 "detalles[0][debe_centavos]": "100,00",
                 "detalles[0][haber_centavos]": "",
                 "detalles[1][cuenta_contable_codigo]": cuenta_capital,

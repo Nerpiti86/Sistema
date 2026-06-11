@@ -343,10 +343,8 @@ def _normalizar_detalle_asiento_desde_formulario(
             detalle_formulario.get("moneda_codigo") or _MONEDA_CONTABLE,
             "La moneda del renglon es obligatoria.",
         ),
-        "cotizacion_1000000": _normalizar_importe_formulario_a_entero(
+        "cotizacion_1000000": _normalizar_cotizacion_formulario_a_1000000(
             detalle_formulario.get("cotizacion_1000000") or "1,000000",
-            6,
-            "La cotizacion del renglon es invalida.",
         ),
         "nominal_debe_centavos": nominal_debe_centavos,
         "nominal_haber_centavos": nominal_haber_centavos,
@@ -383,6 +381,61 @@ def _normalizar_importe_formulario_a_entero(
         )
     except ValueError as exc:
         raise ValueError(mensaje_error) from exc
+
+
+def _normalizar_cotizacion_formulario_a_1000000(valor: Any) -> int:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return 1000000
+
+    try:
+        return normalizar_decimal_argentino_a_entero_escala(
+            _normalizar_cotizacion_decimal_argentina(valor_normalizado),
+            6,
+        )
+    except ValueError as exc:
+        raise ValueError("La cotizacion del renglon es invalida.") from exc
+
+
+def _normalizar_cotizacion_decimal_argentina(valor: str) -> str:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return "1,000000"
+
+    if "," in valor_normalizado:
+        parte_entera, parte_decimal = valor_normalizado.split(",", 1)
+        parte_entera = parte_entera.replace(".", "")
+    else:
+        puntos = [indice for indice, caracter in enumerate(valor_normalizado) if caracter == "."]
+
+        if len(puntos) == 1:
+            indice_punto = puntos[0]
+            decimales_posibles = valor_normalizado[indice_punto + 1:]
+
+            if 0 < len(decimales_posibles) <= 6 and len(decimales_posibles) != 3:
+                parte_entera = valor_normalizado[:indice_punto].replace(".", "")
+                parte_decimal = decimales_posibles
+            else:
+                parte_entera = valor_normalizado.replace(".", "")
+                parte_decimal = ""
+        else:
+            parte_entera = valor_normalizado.replace(".", "")
+            parte_decimal = ""
+
+    if not parte_entera.isdigit():
+        raise ValueError("La cotizacion del renglon es invalida.")
+
+    if parte_decimal and not parte_decimal.isdigit():
+        raise ValueError("La cotizacion del renglon es invalida.")
+
+    if len(parte_decimal) > 6:
+        raise ValueError("La cotizacion del renglon es invalida.")
+
+    parte_decimal = parte_decimal.ljust(6, "0")
+
+    return f"{parte_entera},{parte_decimal}"
 
 
 
