@@ -109,3 +109,32 @@ def test_js_money_ar_centavos_formatea_en_vivo():
     assert "innerHTML" not in contenido
     assert ".style" not in contenido
     assert 'setAttribute("style"' not in contenido
+
+
+def test_js_numero_argentino_declara_contrato_global_cotizacion_ar():
+    """
+    Contrato: las cotizaciones argentinas viven en el asset global.
+
+    El hook data-cotizacion-ar="1000000" maneja formato argentino con miles,
+    hasta seis decimales y exporta normalizacion entera escalada para otros JS.
+    """
+    contenido = Path("app/static/js/numero_argentino.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'input[data-cotizacion-ar="1000000"]' in contenido
+    assert "window.NeriSoftNumeroArgentino" in contenido
+    assert "decimalArAEnteroEscala" in contenido
+    assert "cotizacionArA1000000" in contenido
+    assert "normalizarPartesCotizacionArgentina" in contenido
+    assert "formatearCotizacionArgentinaEnVivo" in contenido
+    assert "obtenerIndiceSeparadorDecimalCotizacion" in contenido
+    assert "manejarKeydownCotizacionArgentina" in contenido
+    assert "manejarBeforeInputCotizacionArgentina" in contenido
+    assert "manejarInputCotizacionArgentina" in contenido
+    assert "manejarPasteCotizacionArgentina" in contenido
+    assert "inicializarCotizacionesArgentinas" in contenido
+    assert "1000000" in contenido
+    assert "innerHTML" not in contenido
+    assert ".style" not in contenido
+    assert 'setAttribute("style"' not in contenido

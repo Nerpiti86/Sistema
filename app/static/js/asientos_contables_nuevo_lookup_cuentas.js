@@ -392,96 +392,6 @@
         );
     }
 
-    function normalizarSeparadorDecimalArgentino(valor, escala) {
-        const valorTexto = String(valor || "").trim();
-
-        if (valorTexto.includes(",")) {
-            return valorTexto;
-        }
-
-        const indicesPunto = Array.from(valorTexto)
-            .map((caracter, indice) => (caracter === "." ? indice : -1))
-            .filter((indice) => indice >= 0);
-
-        if (indicesPunto.length !== 1) {
-            return valorTexto;
-        }
-
-        const indicePunto = indicesPunto[0];
-        const decimales = valorTexto.slice(indicePunto + 1).replace(/\D/g, "");
-
-        if (decimales.length === 0 || decimales.length > escala) {
-            return valorTexto;
-        }
-
-        return `${valorTexto.slice(0, indicePunto)},${valorTexto.slice(indicePunto + 1)}`;
-    }
-
-    function normalizarDecimalArgentinoAEnteroEscala(valor, escala) {
-        const valorTexto = normalizarSeparadorDecimalArgentino(valor, escala);
-
-        if (!valorTexto) {
-            return 0;
-        }
-
-        const partes = valorTexto.split(",");
-
-        if (partes.length > 2) {
-            return null;
-        }
-
-        const parteEntera = partes[0].replace(/\./g, "");
-        const parteDecimal = partes.length === 2 ? partes[1] : "";
-
-        if (!/^\d*$/.test(parteEntera) || !/^\d*$/.test(parteDecimal)) {
-            return null;
-        }
-
-        const multiplicadorEscala = 10 ** escala;
-        const enteros = Number.parseInt(parteEntera || "0", 10);
-        const decimales = Number.parseInt(
-            parteDecimal.padEnd(escala, "0").slice(0, escala) || "0",
-            10
-        );
-
-        return (enteros * multiplicadorEscala) + decimales;
-    }
-
-    function insertarComaDecimalCotizacion(inputCotizacion) {
-        const inicio = inputCotizacion.selectionStart ?? inputCotizacion.value.length;
-        const fin = inputCotizacion.selectionEnd ?? inputCotizacion.value.length;
-
-        if (typeof inputCotizacion.setRangeText === "function") {
-            inputCotizacion.setRangeText(",", inicio, fin, "end");
-        } else {
-            inputCotizacion.value = `${inputCotizacion.value.slice(0, inicio)},${inputCotizacion.value.slice(fin)}`;
-            inputCotizacion.selectionStart = inicio + 1;
-            inputCotizacion.selectionEnd = inicio + 1;
-        }
-
-        inputCotizacion.dispatchEvent(new Event("input", { bubbles: true }));
-        inputCotizacion.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-
-    function manejarKeydownCotizacionRenglon(evento) {
-        const inputCotizacion = evento.target.closest(
-            ASIENTOS_SELECTOR_INPUT_COTIZACION_RENGLON
-        );
-
-        if (
-            !inputCotizacion ||
-            evento.ctrlKey ||
-            evento.altKey ||
-            evento.metaKey ||
-            (evento.key !== "." && evento.code !== "NumpadDecimal")
-        ) {
-            return;
-        }
-
-        evento.preventDefault();
-        insertarComaDecimalCotizacion(inputCotizacion);
-    }
-
     function obtenerInputCotizacionRenglon(renglonAsiento) {
         return renglonAsiento.querySelector(
             ASIENTOS_SELECTOR_INPUT_COTIZACION_RENGLON
@@ -490,12 +400,16 @@
 
     function obtenerCotizacionRenglonAsiento(renglonAsiento) {
         const inputCotizacion = obtenerInputCotizacionRenglon(renglonAsiento);
+        const numeroArgentino = window.NeriSoftNumeroArgentino || {};
 
-        if (!inputCotizacion) {
+        if (
+            !inputCotizacion ||
+            typeof numeroArgentino.cotizacionArA1000000 !== "function"
+        ) {
             return null;
         }
 
-        return normalizarDecimalArgentinoAEnteroEscala(inputCotizacion.value, 6);
+        return numeroArgentino.cotizacionArA1000000(inputCotizacion.value);
     }
 
     function calcularEquivalenteArsCentavos(
@@ -859,11 +773,6 @@
         if (!contenedorRenglones) {
             return;
         }
-
-        contenedorRenglones.addEventListener(
-            "keydown",
-            manejarKeydownCotizacionRenglon
-        );
 
         contenedorRenglones.addEventListener("input", (evento) => {
             const inputCuentaContable = evento.target.closest(

@@ -110,10 +110,27 @@ def test_js_nuevo_asiento_fx_calcula_ars_con_cotizacion_manual():
 
     assert "ASIENTOS_SELECTOR_INPUT_COTIZACION_RENGLON" in contenido
     assert "ASIENTOS_COTIZACION_ESCALA" in contenido
-    assert "normalizarDecimalArgentinoAEnteroEscala" in contenido
-    assert "manejarKeydownCotizacionRenglon" in contenido
+    assert "window.NeriSoftNumeroArgentino" in contenido
+    assert "cotizacionArA1000000" in contenido
+    assert "normalizarDecimalArgentinoAEnteroEscala" not in contenido
+    assert "manejarKeydownCotizacionRenglon" not in contenido
+    assert "insertarComaDecimalCotizacion" not in contenido
     assert "calcularEquivalenteArsCentavos" in contenido
     assert "existeCotizacionInvalida" in contenido
     assert "ASIENTOS_MENSAJE_COTIZACION_INVALIDA" in contenido
     assert "Al guardar" not in contenido
     assert "preview-renglon" not in contenido
+
+
+def test_template_nuevo_asiento_cotizacion_declara_contrato_global():
+    """
+    Valida contrato HTML de cotizacion por renglon.
+
+    La pantalla declara el hook global de cotizacion argentina y conserva el
+    name enviado por POST al backend.
+    """
+    contenido = TEMPLATE_NUEVO_ASIENTO.read_text(encoding="utf-8")
+
+    assert 'data-field="cotizacion_1000000"' in contenido
+    assert 'data-cotizacion-ar="1000000"' in contenido
+    assert 'name="detalles[{{ renglon_idx }}][cotizacion_1000000]"' in contenido
