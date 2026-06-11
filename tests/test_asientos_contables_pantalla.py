@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 from app import create_app
 from app.config import TestConfig
@@ -389,6 +390,21 @@ def test_pantalla_nuevo_asiento_contable_muestra_renglones_base():
     assert b'id="as-guardar"' in response.data
     assert b'type="submit"' in response.data
 
+
+
+def test_pantalla_nuevo_asiento_contable_separa_totales_de_tabla():
+    """
+    Valida separacion visual entre tabla de renglones y cards de totales.
+
+    La pantalla mantiene la tabla dentro del bloque Renglones, pero los totales
+    Debe/Haber/Diferencia deben tener aire propio respecto de la tabla.
+    """
+    contenido = Path(
+        "app/contabilidad/templates/contabilidad/asientos_contables_nuevo.html"
+    ).read_text(encoding="utf-8")
+
+    assert 'id="as-totales"' in contenido
+    assert 'class="row g-2 justify-content-end mt-3 pt-2 mb-2"' in contenido
 
 
 def test_pantalla_post_nuevo_asiento_contable_crea_borrador_y_redirige_detalle():
