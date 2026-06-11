@@ -1,13 +1,35 @@
 :root {
-    --ns-font-sans: "Inter";
-    --ns-font-numeric: "Inter";
+    --ns-font-family-base: "Inter";
+    --ns-font-family-numeric: "Inter";
+
+    --ns-font-sans: var(--ns-font-family-base);
+    --ns-font-numeric: var(--ns-font-family-numeric);
+
+    --ns-font-size-micro: 0.6875rem;
+    --ns-font-size-secondary: 0.75rem;
+    --ns-font-size-table-dense: 0.75rem;
+    --ns-font-size-form-dense: 0.75rem;
+    --ns-font-size-base: 0.875rem;
+    --ns-font-size-form: 0.875rem;
+    --ns-font-size-title-section: 1.125rem;
+    --ns-font-size-title-page: 1.625rem;
+
+    --ns-font-weight-normal: 400;
+    --ns-font-weight-medium: 500;
+    --ns-font-weight-semibold: 600;
+    --ns-font-weight-bold: 700;
 }
 
 html,
 body {
-    font-family: var(--ns-font-sans);
+    font-family: var(--ns-font-family-base);
+    font-size: var(--ns-font-size-base);
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+body {
+    font-weight: var(--ns-font-weight-normal);
 }
 
 input,
@@ -21,14 +43,71 @@ button,
     font-family: inherit;
 }
 
+.form-control,
+.form-select,
+.btn {
+    font-size: var(--ns-font-size-form);
+}
+
+.form-control-sm,
+.form-select-sm,
+.btn-sm {
+    font-size: var(--ns-font-size-form-dense);
+}
+
+.table {
+    font-size: var(--ns-font-size-table-dense);
+}
+
+.table .form-control,
+.table .form-select,
+.table .btn {
+    font-size: var(--ns-font-size-form-dense);
+}
+
+.h3,
+.ns-title-page {
+    font-size: var(--ns-font-size-title-page);
+    font-weight: var(--ns-font-weight-semibold);
+}
+
+.h5,
+.ns-title-section,
+.ns-card .card-title {
+    font-size: var(--ns-font-size-title-section);
+    font-weight: var(--ns-font-weight-semibold);
+}
+
+.small,
+small,
+.ns-text-secondary {
+    font-size: var(--ns-font-size-secondary);
+}
+
+.badge,
+.ns-text-micro {
+    font-size: var(--ns-font-size-micro);
+}
+
 [data-field],
 [data-row-codigo],
 .ns-tabular-num,
 .ns-numero,
+.ns-importe,
 .ns-codigo,
 .text-end,
 .table td,
 .table th {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.ns-numero,
+.ns-importe {
+    font-family: var(--ns-font-family-numeric);
+    text-align: right;
+}
+
+.ns-codigo {
+    font-family: var(--ns-font-family-numeric);
 }
