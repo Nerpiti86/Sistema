@@ -302,8 +302,13 @@ def test_service_rechaza_cuenta_no_imputable():
             )
 
 
-def test_service_resuelve_cotizacion_usd_en_cabecera_y_detalle():
-    """Valida resolucion de ultima cotizacion disponible para moneda extranjera."""
+def test_service_calcula_ars_desde_nominal_usd_por_renglon():
+    """
+    Valida conversion FX por renglon.
+
+    La cabecera queda en ARS/ARS; la moneda extranjera vive en el detalle,
+    donde se conserva nominal USD y se calcula el equivalente ARS contable.
+    """
     app = _crear_app()
 
     with app.app_context():
@@ -319,32 +324,38 @@ def test_service_resuelve_cotizacion_usd_en_cabecera_y_detalle():
                 **_datos_asiento_base(ejercicio_id),
                 "descripcion": "Compra USD",
                 "moneda_origen_codigo": "USD",
+                "cotizacion_tipo": "CIERRE",
             },
             [
                 {
                     "cuenta_contable_codigo": cuenta_usd,
                     "moneda_codigo": "USD",
                     "nominal_debe_centavos": 10000,
-                    "debe_centavos": 12505000,
                 },
                 {
                     "cuenta_contable_codigo": cuenta_ars,
                     "moneda_codigo": "ARS",
                     "nominal_haber_centavos": 12505000,
-                    "haber_centavos": 12505000,
                 },
             ],
         )
 
-    assert asiento["moneda_origen_codigo"] == "USD"
-    assert asiento["cotizacion_id"] == cotizacion_id
-    assert asiento["cotizacion_1000000"] == 1250500000
+    assert asiento["moneda_origen_codigo"] == "ARS"
+    assert asiento["moneda_destino_codigo"] == "ARS"
+    assert asiento["cotizacion_id"] is None
+    assert asiento["cotizacion_1000000"] == 1000000
+
     assert asiento["detalles"][0]["moneda_codigo"] == "USD"
     assert asiento["detalles"][0]["cotizacion_id"] == cotizacion_id
     assert asiento["detalles"][0]["cotizacion_1000000"] == 1250500000
+    assert asiento["detalles"][0]["nominal_debe_centavos"] == 10000
+    assert asiento["detalles"][0]["debe_centavos"] == 12505000
+
     assert asiento["detalles"][1]["moneda_codigo"] == "ARS"
     assert asiento["detalles"][1]["cotizacion_id"] is None
     assert asiento["detalles"][1]["cotizacion_1000000"] == 1000000
+    assert asiento["detalles"][1]["nominal_haber_centavos"] == 12505000
+    assert asiento["detalles"][1]["haber_centavos"] == 12505000
 
 
 def test_service_rechaza_moneda_extranjera_sin_cotizacion():
@@ -535,7 +546,7 @@ def test_service_parser_formulario_rechaza_importe_invalido():
 
     La conversion queda centralizada antes del futuro POST.
     """
-    with pytest.raises(ValueError, match="debe del renglon es invalido"):
+    with pytest.raises(ValueError, match="debe nominal del renglon es invalido"):
         preparar_asiento_contable_borrador_desde_formulario(
             {
                 "ejercicio_id": "7",

@@ -97,3 +97,20 @@ def test_template_nuevo_asiento_totales_indican_ars():
     assert "Haber nominal" in contenido
     assert "Debe ARS" in contenido
     assert "Haber ARS" in contenido
+
+
+def test_js_nuevo_asiento_fx_no_muestra_ars_falso():
+    """
+    Valida contrato visual transitorio para renglones FX.
+
+    Mientras no exista preview AJAX de cotizacion, la UI no debe copiar nominal
+    extranjero como si fuera ARS; debe indicar que se calcula al guardar.
+    """
+    contenido = JS_NUEVO_ASIENTO.read_text(encoding="utf-8")
+
+    assert "ASIENTOS_SELECTOR_MONEDA_RENGLON" in contenido
+    assert "ASIENTOS_MONEDA_CONTABLE" in contenido
+    assert "ASIENTOS_TEXTO_CALCULO_AL_GUARDAR" in contenido
+    assert "existeRenglonMonedaExtranjera" in contenido
+    assert "obtenerMonedaRenglonAsiento" in contenido
+    assert "Al guardar" in contenido

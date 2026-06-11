@@ -18,6 +18,8 @@
         '[data-role="asiento-total-haber"]';
     const ASIENTOS_SELECTOR_DIFERENCIA =
         '[data-role="asiento-diferencia"]';
+    const ASIENTOS_SELECTOR_MONEDA_RENGLON =
+        '[data-role="asiento-moneda-renglon"]';
     const ASIENTOS_SELECTOR_INPUT_DEBE_NOMINAL =
         'input[data-field="nominal_debe_centavos"]';
     const ASIENTOS_SELECTOR_INPUT_HABER_NOMINAL =
@@ -35,6 +37,8 @@
         "No se pudo buscar la cuenta contable.";
     const ASIENTOS_MENSAJE_ASIENTO_DESBALANCEADO =
         "El asiento debe balancear para guardar.";
+    const ASIENTOS_MONEDA_CONTABLE = "ARS";
+    const ASIENTOS_TEXTO_CALCULO_AL_GUARDAR = "Al guardar";
 
     const ASIENTOS_MINIMO_CARACTERES_LOOKUP_CUENTA = 2;
     const ASIENTOS_MINIMO_RENGLONES = 2;
@@ -360,12 +364,36 @@
         );
     }
 
-    function asignarImporteCalculado(inputImporteCalculado, importeCentavos) {
+    function asignarValorCalculado(inputImporteCalculado, valorCalculado) {
         if (!inputImporteCalculado) {
             return;
         }
 
-        inputImporteCalculado.value = formatearCentavosArgentino(importeCentavos);
+        inputImporteCalculado.value = valorCalculado;
+    }
+
+    function asignarImporteCalculado(inputImporteCalculado, importeCentavos) {
+        asignarValorCalculado(
+            inputImporteCalculado,
+            formatearCentavosArgentino(importeCentavos)
+        );
+    }
+
+    function obtenerMonedaRenglonAsiento(renglonAsiento) {
+        const inputMoneda = renglonAsiento.querySelector(
+            ASIENTOS_SELECTOR_MONEDA_RENGLON
+        );
+
+        return String(
+            inputMoneda ? inputMoneda.value : ASIENTOS_MONEDA_CONTABLE
+        ).trim().toUpperCase();
+    }
+
+    function existeRenglonMonedaExtranjera() {
+        return obtenerRenglonesAsiento().some(
+            (renglonAsiento) => obtenerMonedaRenglonAsiento(renglonAsiento) !==
+                ASIENTOS_MONEDA_CONTABLE
+        );
     }
 
     function actualizarImportesArsRenglon(renglonAsiento) {
@@ -377,15 +405,27 @@
             renglonAsiento,
             ASIENTOS_SELECTOR_INPUT_HABER_NOMINAL
         );
+        const inputDebeArs = renglonAsiento.querySelector(
+            ASIENTOS_SELECTOR_INPUT_DEBE_ARS
+        );
+        const inputHaberArs = renglonAsiento.querySelector(
+            ASIENTOS_SELECTOR_INPUT_HABER_ARS
+        );
 
-        asignarImporteCalculado(
-            renglonAsiento.querySelector(ASIENTOS_SELECTOR_INPUT_DEBE_ARS),
-            debeNominalCentavos
-        );
-        asignarImporteCalculado(
-            renglonAsiento.querySelector(ASIENTOS_SELECTOR_INPUT_HABER_ARS),
-            haberNominalCentavos
-        );
+        if (obtenerMonedaRenglonAsiento(renglonAsiento) !== ASIENTOS_MONEDA_CONTABLE) {
+            asignarValorCalculado(
+                inputDebeArs,
+                debeNominalCentavos > 0 ? ASIENTOS_TEXTO_CALCULO_AL_GUARDAR : ""
+            );
+            asignarValorCalculado(
+                inputHaberArs,
+                haberNominalCentavos > 0 ? ASIENTOS_TEXTO_CALCULO_AL_GUARDAR : ""
+            );
+            return;
+        }
+
+        asignarImporteCalculado(inputDebeArs, debeNominalCentavos);
+        asignarImporteCalculado(inputHaberArs, haberNominalCentavos);
     }
 
     function actualizarImportesArsRenglones() {
@@ -450,6 +490,15 @@
         }
 
         actualizarImportesArsRenglones();
+
+        if (existeRenglonMonedaExtranjera()) {
+            totalDebe.textContent = ASIENTOS_TEXTO_CALCULO_AL_GUARDAR;
+            totalHaber.textContent = ASIENTOS_TEXTO_CALCULO_AL_GUARDAR;
+            diferencia.textContent = ASIENTOS_TEXTO_CALCULO_AL_GUARDAR;
+            diferencia.classList.remove("text-success", "text-danger");
+            actualizarEstadoBotonGuardarBorrador(0);
+            return;
+        }
 
         const totalDebeCentavos = sumarImportesRenglones(
             ASIENTOS_SELECTOR_INPUT_DEBE_ARS
@@ -573,6 +622,14 @@
         });
 
         contenedorRenglones.addEventListener("change", (evento) => {
+            const inputMonedaRenglon = evento.target.closest(
+                ASIENTOS_SELECTOR_MONEDA_RENGLON
+            );
+
+            if (inputMonedaRenglon) {
+                actualizarTotalesAsiento();
+            }
+
             const inputCuentaContable = evento.target.closest(
                 ASIENTOS_SELECTOR_LOOKUP_CUENTAS
             );

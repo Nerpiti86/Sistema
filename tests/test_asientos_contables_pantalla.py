@@ -458,6 +458,118 @@ def test_pantalla_post_nuevo_asiento_contable_crea_borrador_y_redirige_detalle()
     )
 
 
+def test_pantalla_post_nuevo_asiento_contable_fx_calcula_ars_en_backend():
+    """
+    Valida POST FX desde formulario.
+
+    La route recibe importes nominales por renglon; el service busca cotizacion
+    y guarda el equivalente ARS contable sin que la pantalla envie Debe/Haber ARS.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _insertar_ejercicio_contable_pantalla_para_asientos(db)
+        cuenta_usd = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "1.1.01.01.999",
+        )
+        cuenta_capital = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "3.1.01.01.999",
+        )
+
+        db.execute(
+            """
+            INSERT INTO monedas_cotizaciones (
+                moneda_origen_codigo,
+                moneda_destino_codigo,
+                fecha,
+                tipo,
+                cotizacion_1000000,
+                fuente,
+                creado_en
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "USD",
+                "ARS",
+                "2026-06-10",
+                "CIERRE",
+                1250500000,
+                "Manual test",
+                "2026-06-10 10:00:00",
+            ),
+        )
+
+        response = client.post(
+            "/contabilidad/asientos-contables/nuevo/",
+            data={
+                "ejercicio_id": str(ejercicio_id),
+                "fecha": "2026-06-10",
+                "descripcion": "Asiento FX desde POST",
+                "tipo": "MANUAL",
+                "moneda_origen_codigo": "ARS",
+                "moneda_destino_codigo": "ARS",
+                "cotizacion_tipo": "CIERRE",
+                "detalles[0][cuenta_contable_codigo]": cuenta_usd,
+                "detalles[0][descripcion]": "Caja USD",
+                "detalles[0][moneda_codigo]": "USD",
+                "detalles[0][debe_centavos]": "100,00",
+                "detalles[0][haber_centavos]": "",
+                "detalles[1][cuenta_contable_codigo]": cuenta_capital,
+                "detalles[1][descripcion]": "Capital ARS",
+                "detalles[1][moneda_codigo]": "ARS",
+                "detalles[1][debe_centavos]": "",
+                "detalles[1][haber_centavos]": "125.050,00",
+            },
+        )
+
+        asiento = db.execute(
+            """
+            SELECT id,
+                   moneda_origen_codigo,
+                   moneda_destino_codigo,
+                   cotizacion_1000000
+            FROM asientos_contables
+            WHERE descripcion = ?
+            """,
+            ("Asiento FX desde POST",),
+        ).fetchone()
+
+        detalles = db.execute(
+            """
+            SELECT moneda_codigo,
+                   cotizacion_1000000,
+                   nominal_debe_centavos,
+                   nominal_haber_centavos,
+                   debe_centavos,
+                   haber_centavos
+            FROM asientos_contables_detalle
+            WHERE asiento_id = ?
+            ORDER BY renglon
+            """,
+            (asiento["id"],),
+        ).fetchall()
+
+    assert response.status_code == 302
+    assert asiento["moneda_origen_codigo"] == "ARS"
+    assert asiento["moneda_destino_codigo"] == "ARS"
+    assert asiento["cotizacion_1000000"] == 1000000
+
+    assert detalles[0]["moneda_codigo"] == "USD"
+    assert detalles[0]["cotizacion_1000000"] == 1250500000
+    assert detalles[0]["nominal_debe_centavos"] == 10000
+    assert detalles[0]["debe_centavos"] == 12505000
+
+    assert detalles[1]["moneda_codigo"] == "ARS"
+    assert detalles[1]["nominal_haber_centavos"] == 12505000
+    assert detalles[1]["haber_centavos"] == 12505000
+
+
 def test_pantalla_post_nuevo_asiento_contable_con_error_retorna_formulario():
     """
     Valida error de POST sin exponer excepcion tecnica.
@@ -795,3 +907,33 @@ def test_pantalla_nuevo_asiento_contable_moneda_por_renglon_editable():
         "Define el criterio por defecto para buscar cotizacion en renglones "
         "con moneda distinta de ARS."
     ) in html
+
+
+def test_pantalla_nuevo_asiento_cotizacion_renglon_visual_no_post():
+    """
+    Valida que la cotizacion del renglon sea visual en el alta.
+
+    El backend resuelve la cotizacion real por moneda, fecha y tipo; por eso el
+    formulario no debe enviar una cotizacion manual por renglon desde la UI.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    html = response.get_data(as_text=True)
+
+    inicio_cotizacion = html.index('id="as-det-0-cotizacion"')
+    inicio_td = html.rfind("<td", 0, inicio_cotizacion)
+    fin_td = html.index("</td>", inicio_cotizacion)
+    bloque_cotizacion = html[inicio_td:fin_td]
+
+    assert response.status_code == 200
+    assert 'data-field="cotizacion_1000000"' in bloque_cotizacion
+    assert 'readonly' in bloque_cotizacion
+    assert 'name="detalles[0][cotizacion_1000000]"' not in bloque_cotizacion

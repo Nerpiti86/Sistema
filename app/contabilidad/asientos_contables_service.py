@@ -25,6 +25,7 @@ from app.shared.formatos import (
 )
 
 _MONEDA_CONTABLE = "ARS"
+_ESCALA_COTIZACION = 1_000_000
 _TIPO_COTIZACION_DEFAULT = "CIERRE"
 _DETALLE_FORM_RE = re.compile(r"^detalles\[(\d+)\]\[([a-zA-Z0-9_]+)\]$")
 _DETALLE_FORM_CAMPOS = {
@@ -66,7 +67,7 @@ def crear_asiento_contable_borrador(
     datos_validados["ejercicio_id"] = ejercicio_id
     datos_validados["estado"] = "BORRADOR"
     datos_validados.setdefault("tipo", "MANUAL")
-    datos_validados.setdefault("moneda_origen_codigo", _MONEDA_CONTABLE)
+    datos_validados["moneda_origen_codigo"] = _MONEDA_CONTABLE
     datos_validados["moneda_destino_codigo"] = _MONEDA_CONTABLE
     datos_validados.setdefault("cotizacion_tipo", _TIPO_COTIZACION_DEFAULT)
     datos_validados = _resolver_cotizacion_cabecera(datos_validados, fecha)
@@ -225,14 +226,8 @@ def preparar_asiento_contable_borrador_desde_formulario(
         "descripcion": str(datos_formulario.get("descripcion") or "").strip(),
         "tipo": str(datos_formulario.get("tipo") or "MANUAL").strip().upper(),
         "estado": "BORRADOR",
-        "moneda_origen_codigo": _validar_codigo_moneda(
-            datos_formulario.get("moneda_origen_codigo") or _MONEDA_CONTABLE,
-            "La moneda origen es obligatoria.",
-        ),
-        "moneda_destino_codigo": _validar_codigo_moneda(
-            datos_formulario.get("moneda_destino_codigo") or _MONEDA_CONTABLE,
-            "La moneda destino es obligatoria.",
-        ),
+        "moneda_origen_codigo": _MONEDA_CONTABLE,
+        "moneda_destino_codigo": _MONEDA_CONTABLE,
         "cotizacion_tipo": cotizacion_tipo,
     }
 
@@ -324,21 +319,21 @@ def _normalizar_detalle_asiento_desde_formulario(
     if not cuenta_contable_codigo:
         raise ValueError("La cuenta del renglon es obligatoria.")
 
-    debe_centavos = _normalizar_importe_formulario_a_entero(
+    nominal_debe_centavos = _normalizar_importe_formulario_a_entero(
         detalle_formulario.get("debe_centavos"),
         2,
-        "El debe del renglon es invalido.",
+        "El debe nominal del renglon es invalido.",
     )
-    haber_centavos = _normalizar_importe_formulario_a_entero(
+    nominal_haber_centavos = _normalizar_importe_formulario_a_entero(
         detalle_formulario.get("haber_centavos"),
         2,
-        "El haber del renglon es invalido.",
+        "El haber nominal del renglon es invalido.",
     )
 
-    if debe_centavos > 0 and haber_centavos > 0:
+    if nominal_debe_centavos > 0 and nominal_haber_centavos > 0:
         raise ValueError("Un renglon no puede tener debe y haber simultaneamente.")
 
-    if debe_centavos == 0 and haber_centavos == 0:
+    if nominal_debe_centavos == 0 and nominal_haber_centavos == 0:
         raise ValueError("Cada renglon debe tener importe.")
 
     return {
@@ -353,10 +348,10 @@ def _normalizar_detalle_asiento_desde_formulario(
             6,
             "La cotizacion del renglon es invalida.",
         ),
-        "nominal_debe_centavos": debe_centavos,
-        "nominal_haber_centavos": haber_centavos,
-        "debe_centavos": debe_centavos,
-        "haber_centavos": haber_centavos,
+        "nominal_debe_centavos": nominal_debe_centavos,
+        "nominal_haber_centavos": nominal_haber_centavos,
+        "debe_centavos": nominal_debe_centavos,
+        "haber_centavos": nominal_haber_centavos,
     }
 
 
@@ -627,6 +622,9 @@ def _resolver_cotizacion_cabecera(
         datos_asiento.get("moneda_destino_codigo", _MONEDA_CONTABLE),
         "La moneda destino es obligatoria.",
     )
+    cotizacion_tipo = _validar_tipo_cotizacion(
+        datos_asiento.get("cotizacion_tipo") or _TIPO_COTIZACION_DEFAULT
+    )
 
     if moneda_destino_codigo != _MONEDA_CONTABLE:
         raise ValueError("La moneda contable destino debe ser ARS.")
@@ -637,13 +635,9 @@ def _resolver_cotizacion_cabecera(
     if moneda_origen_codigo == _MONEDA_CONTABLE:
         datos_asiento["cotizacion_id"] = None
         datos_asiento["cotizacion_fecha"] = fecha
-        datos_asiento["cotizacion_tipo"] = _TIPO_COTIZACION_DEFAULT
+        datos_asiento["cotizacion_tipo"] = cotizacion_tipo
         datos_asiento["cotizacion_1000000"] = 1000000
         return datos_asiento
-
-    cotizacion_tipo = str(
-        datos_asiento.get("cotizacion_tipo") or _TIPO_COTIZACION_DEFAULT
-    ).strip().upper()
 
     if _tiene_cotizacion_completa(datos_asiento):
         datos_asiento["cotizacion_tipo"] = cotizacion_tipo
@@ -700,6 +694,7 @@ def _validar_y_completar_detalles(
             datos_asiento,
             fecha,
         )
+        detalle_validado = _calcular_importes_contables_detalle(detalle_validado)
 
         detalles_validados.append(detalle_validado)
 
@@ -724,11 +719,11 @@ def _resolver_cotizacion_detalle(
         detalle["cotizacion_1000000"] = 1000000
         return detalle
 
-    cotizacion_tipo = str(
+    cotizacion_tipo = _validar_tipo_cotizacion(
         detalle.get("cotizacion_tipo")
         or datos_asiento.get("cotizacion_tipo")
         or _TIPO_COTIZACION_DEFAULT
-    ).strip().upper()
+    )
 
     if _tiene_cotizacion_completa(detalle):
         detalle["cotizacion_tipo"] = cotizacion_tipo
@@ -759,6 +754,84 @@ def _resolver_cotizacion_detalle(
     detalle["cotizacion_1000000"] = cotizacion["cotizacion_1000000"]
 
     return detalle
+
+
+def _calcular_importes_contables_detalle(
+    detalle: dict[str, Any],
+) -> dict[str, Any]:
+    nominal_debe_centavos = _validar_centavos(
+        _obtener_valor_nominal_detalle(
+            detalle,
+            "nominal_debe_centavos",
+            "debe_centavos",
+        ),
+        "El debe nominal del renglon es invalido.",
+    )
+    nominal_haber_centavos = _validar_centavos(
+        _obtener_valor_nominal_detalle(
+            detalle,
+            "nominal_haber_centavos",
+            "haber_centavos",
+        ),
+        "El haber nominal del renglon es invalido.",
+    )
+
+    if nominal_debe_centavos > 0 and nominal_haber_centavos > 0:
+        raise ValueError("Un renglon no puede tener debe y haber simultaneamente.")
+
+    if nominal_debe_centavos == 0 and nominal_haber_centavos == 0:
+        raise ValueError("Cada renglon debe tener importe.")
+
+    cotizacion_1000000 = _validar_entero_positivo(
+        detalle.get("cotizacion_1000000"),
+        "La cotizacion del renglon es invalida.",
+    )
+
+    debe_centavos = _calcular_equivalente_ars_centavos(
+        nominal_debe_centavos,
+        cotizacion_1000000,
+    )
+    haber_centavos = _calcular_equivalente_ars_centavos(
+        nominal_haber_centavos,
+        cotizacion_1000000,
+    )
+
+    if (nominal_debe_centavos > 0 and debe_centavos <= 0) or (
+        nominal_haber_centavos > 0 and haber_centavos <= 0
+    ):
+        raise ValueError("El importe ARS calculado del renglon debe ser mayor a cero.")
+
+    detalle["nominal_debe_centavos"] = nominal_debe_centavos
+    detalle["nominal_haber_centavos"] = nominal_haber_centavos
+    detalle["debe_centavos"] = debe_centavos
+    detalle["haber_centavos"] = haber_centavos
+
+    return detalle
+
+
+def _obtener_valor_nominal_detalle(
+    detalle: dict[str, Any],
+    campo_nominal: str,
+    campo_compatibilidad: str,
+) -> Any:
+    valor = detalle.get(campo_nominal)
+
+    if valor in (None, ""):
+        return detalle.get(campo_compatibilidad, 0)
+
+    return valor
+
+
+def _calcular_equivalente_ars_centavos(
+    nominal_centavos: int,
+    cotizacion_1000000: int,
+) -> int:
+    if nominal_centavos == 0:
+        return 0
+
+    return (
+        nominal_centavos * cotizacion_1000000 + (_ESCALA_COTIZACION // 2)
+    ) // _ESCALA_COTIZACION
 
 
 def _validar_balance_ars(detalles: list[dict[str, Any]]) -> None:
@@ -804,6 +877,19 @@ def _validar_codigo_moneda(codigo_moneda: Any, mensaje_obligatorio: str) -> str:
         raise ValueError("El codigo de moneda debe tener formato AAA.")
 
     return codigo_moneda_validado
+
+
+def _validar_tipo_cotizacion(tipo: Any) -> str:
+    tipo_validado = str(tipo or "").strip().upper()
+    tipos_validos = {
+        cotizacion_tipo["codigo"]
+        for cotizacion_tipo in _COTIZACION_TIPOS_FORM
+    }
+
+    if tipo_validado not in tipos_validos:
+        raise ValueError("El tipo de cotizacion es invalido.")
+
+    return tipo_validado
 
 
 def _validar_entero_positivo(valor: Any, mensaje_error: str) -> int:
