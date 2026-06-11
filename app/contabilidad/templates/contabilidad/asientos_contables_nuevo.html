@@ -314,14 +314,7 @@
                                                         autocomplete="off"
                                                     >
 
-                                                    <datalist
-                                                        id="as-det-{{ renglon_idx }}-cuenta-opciones"
-                                                        data-table="cuentas_contables"
-                                                        data-field="cuenta_contable_lookup_opciones"
-                                                    ></datalist>
-                                                </td>
-                                                <td>
-                                                    {# Mantiene compatibilidad con el POST actual; visualmente la cuenta se describe en Nombre cuenta. #}
+                                                    {# Hidden tecnico: conserva contrato POST sin ocupar columna visual. #}
                                                     <input
                                                         id="as-det-{{ renglon_idx }}-descripcion"
                                                         data-row-index="{{ renglon_idx }}"
@@ -330,6 +323,14 @@
                                                         name="detalles[{{ renglon_idx }}][descripcion]"
                                                         value="{{ detalle_asiento.descripcion }}"
                                                     >
+
+                                                    <datalist
+                                                        id="as-det-{{ renglon_idx }}-cuenta-opciones"
+                                                        data-table="cuentas_contables"
+                                                        data-field="cuenta_contable_lookup_opciones"
+                                                    ></datalist>
+                                                </td>
+                                                <td data-field="cuenta_contable_descripcion">
                                                     <input
                                                         id="as-det-{{ renglon_idx }}-cuenta-nombre"
                                                         data-row-index="{{ renglon_idx }}"
@@ -475,7 +476,7 @@
                             </div>
 
                             <p id="as-renglones-ayuda" class="small text-muted mb-0">
-                                Se muestran dos renglones base para iniciar el asiento. La persistencia se habilitara en un paso posterior.
+                                Agrega o quita renglones segun sea necesario. El asiento debe balancear para poder guardarse.
                             </p>
                         </div>
                     </div>

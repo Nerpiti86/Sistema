@@ -647,3 +647,47 @@ def test_pantalla_nuevo_asiento_contable_expone_contador_renglones():
     assert response.status_code == 200
     assert 'id="as-renglones-cantidad"' in html
     assert 'data-role="asiento-renglones-cantidad"' in html
+
+
+def test_pantalla_nuevo_asiento_limpia_html_cuenta_y_nombre_cuenta():
+    """
+    Valida housekeeping HTML de renglones del nuevo asiento.
+
+    El hidden descripcion conserva el contrato POST junto a Cuenta, mientras
+    Nombre cuenta queda como campo visual readonly sin inputs tecnicos mezclados.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+
+    inicio_cuenta = html.index('<td data-field="cuenta_contable_codigo">')
+    fin_cuenta = html.index("</td>", inicio_cuenta)
+    bloque_cuenta = html[inicio_cuenta:fin_cuenta]
+
+    assert 'id="as-det-0-cuenta"' in bloque_cuenta
+    assert 'id="as-det-0-descripcion"' in bloque_cuenta
+    assert 'name="detalles[0][descripcion]"' in bloque_cuenta
+    assert 'type="hidden"' in bloque_cuenta
+    assert 'id="as-det-0-cuenta-opciones"' in bloque_cuenta
+
+    inicio_nombre = html.index('<td data-field="cuenta_contable_descripcion">')
+    fin_nombre = html.index("</td>", inicio_nombre)
+    bloque_nombre = html[inicio_nombre:fin_nombre]
+
+    assert 'id="as-det-0-cuenta-nombre"' in bloque_nombre
+    assert 'readonly' in bloque_nombre
+    assert 'type="hidden"' not in bloque_nombre
+    assert 'name="detalles[0][descripcion]"' not in bloque_nombre
+
+    assert "Agrega o quita renglones segun sea necesario." in html
+    assert "La persistencia se habilitara en un paso posterior." not in html
