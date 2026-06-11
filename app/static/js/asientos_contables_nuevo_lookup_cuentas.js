@@ -20,6 +20,8 @@
         '[data-role="asiento-diferencia"]';
     const ASIENTOS_SELECTOR_MONEDA_RENGLON =
         '[data-role="asiento-moneda-renglon"]';
+    const ASIENTOS_SELECTOR_MONEDA_BADGE =
+        '[data-role="asiento-moneda-badge"]';
     const ASIENTOS_SELECTOR_INPUT_DEBE_NOMINAL =
         'input[data-field="nominal_debe_centavos"]';
     const ASIENTOS_SELECTOR_INPUT_HABER_NOMINAL =
@@ -312,6 +314,8 @@
         datalistsRenglon.forEach((datalistRenglon) => {
             datalistRenglon.innerHTML = "";
         });
+
+        sincronizarBadgeMonedaRenglon(renglonAsiento);
     }
 
 
@@ -511,6 +515,67 @@
         ).trim().toUpperCase();
     }
 
+    function obtenerBadgeMonedaRenglon(renglonAsiento) {
+        return renglonAsiento.querySelector(
+            ASIENTOS_SELECTOR_MONEDA_BADGE
+        );
+    }
+
+    function sincronizarBadgeMonedaRenglon(renglonAsiento) {
+        const badgeMoneda = obtenerBadgeMonedaRenglon(renglonAsiento);
+
+        if (!badgeMoneda) {
+            return;
+        }
+
+        const monedaRenglon = obtenerMonedaRenglonAsiento(renglonAsiento);
+        const numeroRenglon = (
+            Number.parseInt(renglonAsiento.dataset.rowIndex || "0", 10) + 1
+        );
+
+        badgeMoneda.textContent = monedaRenglon;
+        badgeMoneda.dataset.value = monedaRenglon;
+        badgeMoneda.classList.toggle(
+            "text-bg-light",
+            monedaRenglon === ASIENTOS_MONEDA_CONTABLE
+        );
+        badgeMoneda.classList.toggle(
+            "text-bg-secondary",
+            monedaRenglon !== ASIENTOS_MONEDA_CONTABLE
+        );
+        badgeMoneda.setAttribute(
+            "aria-label",
+            `Moneda ${monedaRenglon} del renglon ${numeroRenglon}. Click para cambiar moneda`
+        );
+        badgeMoneda.setAttribute("title", `Moneda ${monedaRenglon}`);
+    }
+
+    function ciclarMonedaRenglon(badgeMoneda) {
+        const renglonAsiento = badgeMoneda.closest(ASIENTOS_SELECTOR_RENGLON);
+
+        if (!renglonAsiento) {
+            return;
+        }
+
+        const inputMoneda = renglonAsiento.querySelector(
+            ASIENTOS_SELECTOR_MONEDA_RENGLON
+        );
+
+        if (!inputMoneda || inputMoneda.options.length === 0) {
+            return;
+        }
+
+        const cantidadOpciones = inputMoneda.options.length;
+        const indiceActual = inputMoneda.selectedIndex < 0
+            ? cantidadOpciones - 1
+            : inputMoneda.selectedIndex;
+
+        inputMoneda.selectedIndex = (indiceActual + 1) % cantidadOpciones;
+
+        sincronizarBadgeMonedaRenglon(renglonAsiento);
+        inputMoneda.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
     function aplicarCotizacionInvalida(renglonAsiento) {
         const inputCotizacion = obtenerInputCotizacionRenglon(renglonAsiento);
 
@@ -567,6 +632,8 @@
         } else if (inputCotizacion) {
             inputCotizacion.readOnly = false;
         }
+
+        sincronizarBadgeMonedaRenglon(renglonAsiento);
 
         if (!cotizacion1000000 || cotizacion1000000 <= 0) {
             aplicarCotizacionInvalida(renglonAsiento);
@@ -828,6 +895,15 @@
         }
 
         document.addEventListener("click", (evento) => {
+            const botonMoneda = evento.target.closest(
+                ASIENTOS_SELECTOR_MONEDA_BADGE
+            );
+
+            if (botonMoneda) {
+                ciclarMonedaRenglon(botonMoneda);
+                return;
+            }
+
             const botonQuitar = evento.target.closest(
                 ASIENTOS_SELECTOR_QUITAR_RENGLON
             );

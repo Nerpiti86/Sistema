@@ -341,14 +341,16 @@
                                                         readonly
                                                     >
                                                 </td>
-                                                <td data-field="moneda_codigo">
+                                                <td data-field="moneda_codigo" class="text-center">
                                                     <select
                                                         id="as-det-{{ renglon_idx }}-moneda"
                                                         data-field="moneda_codigo"
                                                         data-role="asiento-moneda-renglon"
                                                         name="detalles[{{ renglon_idx }}][moneda_codigo]"
-                                                        class="form-select form-select-sm text-center px-1"
+                                                        class="visually-hidden"
                                                         aria-label="Moneda del renglon {{ renglon_idx + 1 }}"
+                                                        aria-hidden="true"
+                                                        tabindex="-1"
                                                     >
                                                         {% for moneda in monedas_activas %}
                                                             <option
@@ -359,6 +361,18 @@
                                                             </option>
                                                         {% endfor %}
                                                     </select>
+                                                    <button
+                                                        id="as-det-{{ renglon_idx }}-moneda-badge"
+                                                        data-row-index="{{ renglon_idx }}"
+                                                        data-role="asiento-moneda-badge"
+                                                        data-action="ciclar-moneda-renglon"
+                                                        type="button"
+                                                        class="btn btn-sm badge rounded-pill text-bg-light border border-secondary ns-moneda-badge px-2 py-1"
+                                                        aria-label="Moneda {{ detalle_asiento.moneda_codigo }} del renglon {{ renglon_idx + 1 }}. Click para cambiar moneda"
+                                                        title="Click para cambiar moneda"
+                                                    >
+                                                        {{ detalle_asiento.moneda_codigo }}
+                                                    </button>
                                                 </td>
                                                 <td data-field="cotizacion_1000000">
                                                     <input
