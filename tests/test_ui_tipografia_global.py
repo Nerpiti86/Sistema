@@ -62,21 +62,19 @@ def test_css_global_declara_contrato_de_tamanios_tipograficos():
     """
     Valida contrato de tamanios tipograficos NeriSoft.
 
-    La app usa base compacta de 14px, tablas densas de 12px, formularios
-    normales de 14px y titulos controlados por tokens propios.
     """
     css = Path("app/static/css/nerisoft_typography.css").read_text(
         encoding="utf-8"
     )
 
-    assert "--ns-font-size-micro: 0.6875rem;" in css
-    assert "--ns-font-size-secondary: 0.75rem;" in css
-    assert "--ns-font-size-table-dense: 0.75rem;" in css
-    assert "--ns-font-size-form-dense: 0.75rem;" in css
-    assert "--ns-font-size-base: 0.875rem;" in css
-    assert "--ns-font-size-form: 0.875rem;" in css
-    assert "--ns-font-size-title-section: 1.125rem;" in css
-    assert "--ns-font-size-title-page: 1.625rem;" in css
+    assert "--ns-font-size-micro: 0.7rem;" in css
+    assert "--ns-font-size-secondary: 0.8rem;" in css
+    assert "--ns-font-size-table-dense: 0.8rem;" in css
+    assert "--ns-font-size-form-dense: 0.8rem;" in css
+    assert "--ns-font-size-base: 0.9rem;" in css
+    assert "--ns-font-size-form: 0.9rem;" in css
+    assert "--ns-font-size-title-section: 1.1rem;" in css
+    assert "--ns-font-size-title-page: 1.5rem;" in css
 
     assert "font-size: var(--ns-font-size-base);" in css
     assert "font-size: var(--ns-font-size-form);" in css
