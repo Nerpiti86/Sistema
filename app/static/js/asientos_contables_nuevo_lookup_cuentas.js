@@ -12,6 +12,18 @@
         '[data-action="quitar-renglon"]';
     const ASIENTOS_SELECTOR_CANTIDAD_RENGLONES =
         '[data-role="asiento-renglones-cantidad"]';
+    const ASIENTOS_SELECTOR_TOTAL_DEBE =
+        '[data-role="asiento-total-debe"]';
+    const ASIENTOS_SELECTOR_TOTAL_HABER =
+        '[data-role="asiento-total-haber"]';
+    const ASIENTOS_SELECTOR_DIFERENCIA =
+        '[data-role="asiento-diferencia"]';
+    const ASIENTOS_SELECTOR_INPUT_DEBE =
+        'input[data-field="debe_centavos"]';
+    const ASIENTOS_SELECTOR_INPUT_HABER =
+        'input[data-field="haber_centavos"]';
+    const ASIENTOS_SELECTOR_IMPORTE_CONTABLE =
+        'input[data-field="debe_centavos"], input[data-field="haber_centavos"]';
 
     const ASIENTOS_MENSAJE_LOOKUP_CUENTA_ERROR =
         "No se pudo buscar la cuenta contable.";
@@ -286,6 +298,87 @@
     }
 
 
+    function normalizarImporteArgentinoACentavos(valor) {
+        const valorNormalizado = String(valor || "")
+            .trim()
+            .replace(/\./g, "")
+            .replace(",", ".");
+
+        if (!valorNormalizado) {
+            return 0;
+        }
+
+        const valorDecimal = Number.parseFloat(valorNormalizado);
+
+        if (!Number.isFinite(valorDecimal)) {
+            return 0;
+        }
+
+        return Math.round(valorDecimal * 100);
+    }
+
+    function formatearCentavosArgentino(importeCentavos) {
+        const signo = importeCentavos < 0 ? "-" : "";
+        const importeAbsoluto = Math.abs(importeCentavos);
+        const parteEntera = Math.trunc(importeAbsoluto / 100);
+        const parteDecimal = String(importeAbsoluto % 100).padStart(2, "0");
+        const parteEnteraFormateada = String(parteEntera).replace(
+            /\B(?=(\d{3})+(?!\d))/g,
+            "."
+        );
+
+        return `${signo}${parteEnteraFormateada},${parteDecimal}`;
+    }
+
+    function obtenerImporteRenglonAsiento(renglonAsiento, selectorImporte) {
+        const inputImporte = renglonAsiento.querySelector(selectorImporte);
+
+        if (!inputImporte) {
+            return 0;
+        }
+
+        return normalizarImporteArgentinoACentavos(inputImporte.value);
+    }
+
+    function sumarImportesRenglones(selectorImporte) {
+        return obtenerRenglonesAsiento().reduce(
+            (totalImporte, renglonAsiento) => totalImporte + obtenerImporteRenglonAsiento(
+                renglonAsiento,
+                selectorImporte
+            ),
+            0
+        );
+    }
+
+    function actualizarClaseDiferencia(elementoDiferencia, diferenciaCentavos) {
+        elementoDiferencia.classList.toggle("text-success", diferenciaCentavos === 0);
+        elementoDiferencia.classList.toggle("text-danger", diferenciaCentavos !== 0);
+    }
+
+    function actualizarTotalesAsiento() {
+        const totalDebe = document.querySelector(ASIENTOS_SELECTOR_TOTAL_DEBE);
+        const totalHaber = document.querySelector(ASIENTOS_SELECTOR_TOTAL_HABER);
+        const diferencia = document.querySelector(ASIENTOS_SELECTOR_DIFERENCIA);
+
+        if (!totalDebe || !totalHaber || !diferencia) {
+            return;
+        }
+
+        const totalDebeCentavos = sumarImportesRenglones(
+            ASIENTOS_SELECTOR_INPUT_DEBE
+        );
+        const totalHaberCentavos = sumarImportesRenglones(
+            ASIENTOS_SELECTOR_INPUT_HABER
+        );
+        const diferenciaCentavos = totalDebeCentavos - totalHaberCentavos;
+
+        totalDebe.textContent = formatearCentavosArgentino(totalDebeCentavos);
+        totalHaber.textContent = formatearCentavosArgentino(totalHaberCentavos);
+        diferencia.textContent = formatearCentavosArgentino(diferenciaCentavos);
+
+        actualizarClaseDiferencia(diferencia, diferenciaCentavos);
+    }
+
     function actualizarCantidadRenglonesAsiento() {
         const contadorRenglones = document.querySelector(
             ASIENTOS_SELECTOR_CANTIDAD_RENGLONES
@@ -325,6 +418,7 @@
 
         actualizarEstadoBotonesQuitarRenglon();
         actualizarCantidadRenglonesAsiento();
+        actualizarTotalesAsiento();
     }
 
     function agregarRenglonAsiento() {
@@ -379,6 +473,14 @@
 
             if (inputCuentaContable) {
                 buscarCuentasConDebounce(inputCuentaContable);
+            }
+
+            const inputImporteContable = evento.target.closest(
+                ASIENTOS_SELECTOR_IMPORTE_CONTABLE
+            );
+
+            if (inputImporteContable) {
+                actualizarTotalesAsiento();
             }
         });
 
