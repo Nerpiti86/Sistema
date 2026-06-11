@@ -1,3 +1,5 @@
+from pathlib import Path
+
 def test_js_renglones_dinamicos_nuevo_asiento_tiene_contrato_identificable():
     """
     Valida JS de agregar/quitar renglones del asiento.
@@ -148,3 +150,29 @@ def test_moneda_badge_tiene_formato_visual_por_moneda():
         not in template
     )
     assert "ns-moneda-badge--{{ detalle_asiento.moneda_codigo|lower }}" in template
+
+
+def test_js_campos_cotizacion_y_nominales_borran_al_hacer_focus():
+    """
+    Contrato UX: cotizacion, debe nominal y haber nominal se limpian al foco.
+
+    El borrado se delega desde el contenedor de renglones para cubrir renglones
+    dinamicos, respeta readonly/disabled y dispara eventos para recalcular.
+    """
+    contenido = Path(
+        "app/static/js/asientos_contables_nuevo_lookup_cuentas.js"
+    ).read_text(encoding="utf-8")
+
+    assert "ASIENTOS_SELECTOR_INPUT_BORRAR_FOCUS_RENGLON" in contenido
+    assert "ASIENTOS_SELECTOR_IMPORTE_NOMINAL" in contenido
+    assert "function manejarFocusinInputBorrableRenglon" in contenido
+    assert '"focusin"' in contenido
+    assert "manejarFocusinInputBorrableRenglon" in contenido
+    assert "inputRenglon.readOnly" in contenido
+    assert "inputRenglon.disabled" in contenido
+    assert 'inputRenglon.value = "";' in contenido
+    assert 'dispatchEvent(new Event("input", { bubbles: true }))' in contenido
+    assert 'dispatchEvent(new Event("change", { bubbles: true }))' in contenido
+    assert 'input[data-field="nominal_debe_centavos"]' in contenido
+    assert 'input[data-field="nominal_haber_centavos"]' in contenido
+    assert 'input[data-field="cotizacion_1000000"]' in contenido

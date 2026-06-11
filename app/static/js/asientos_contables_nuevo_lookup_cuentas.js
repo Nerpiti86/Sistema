@@ -34,6 +34,8 @@
         'input[data-field="cotizacion_1000000"]';
     const ASIENTOS_SELECTOR_IMPORTE_NOMINAL =
         'input[data-field="nominal_debe_centavos"], input[data-field="nominal_haber_centavos"], input[data-field="cotizacion_1000000"]';
+    const ASIENTOS_SELECTOR_INPUT_BORRAR_FOCUS_RENGLON =
+        ASIENTOS_SELECTOR_IMPORTE_NOMINAL;
     const ASIENTOS_SELECTOR_GUARDAR_BORRADOR =
         "#as-guardar";
 
@@ -517,6 +519,28 @@
         inputMoneda.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
+    function manejarFocusinInputBorrableRenglon(evento) {
+        if (!(evento.target instanceof Element)) {
+            return;
+        }
+
+        const inputRenglon = evento.target.closest(
+            ASIENTOS_SELECTOR_INPUT_BORRAR_FOCUS_RENGLON
+        );
+
+        if (!inputRenglon || inputRenglon.readOnly || inputRenglon.disabled) {
+            return;
+        }
+
+        if (inputRenglon.value === "") {
+            return;
+        }
+
+        inputRenglon.value = "";
+        inputRenglon.dispatchEvent(new Event("input", { bubbles: true }));
+        inputRenglon.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
     function aplicarCotizacionInvalida(renglonAsiento) {
         const inputCotizacion = obtenerInputCotizacionRenglon(renglonAsiento);
 
@@ -773,6 +797,11 @@
         if (!contenedorRenglones) {
             return;
         }
+
+        contenedorRenglones.addEventListener(
+            "focusin",
+            manejarFocusinInputBorrableRenglon
+        );
 
         contenedorRenglones.addEventListener("input", (evento) => {
             const inputCuentaContable = evento.target.closest(
