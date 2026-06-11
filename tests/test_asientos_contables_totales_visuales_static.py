@@ -99,18 +99,21 @@ def test_template_nuevo_asiento_totales_indican_ars():
     assert "Haber ARS" in contenido
 
 
-def test_js_nuevo_asiento_fx_no_muestra_ars_falso():
+def test_js_nuevo_asiento_fx_calcula_ars_con_cotizacion_manual():
     """
-    Valida contrato visual transitorio para renglones FX.
+    Valida contrato JS para FX manual.
 
-    Mientras no exista preview AJAX de cotizacion, la UI no debe copiar nominal
-    extranjero como si fuera ARS; debe indicar que se calcula al guardar.
+    La pantalla calcula ARS al vuelo con moneda, cotizacion manual y nominal,
+    sin consultar endpoints ni copiar nominal extranjero como si fuera ARS.
     """
     contenido = JS_NUEVO_ASIENTO.read_text(encoding="utf-8")
 
-    assert "ASIENTOS_SELECTOR_MONEDA_RENGLON" in contenido
-    assert "ASIENTOS_MONEDA_CONTABLE" in contenido
-    assert "ASIENTOS_TEXTO_CALCULO_AL_GUARDAR" in contenido
-    assert "existeRenglonMonedaExtranjera" in contenido
-    assert "obtenerMonedaRenglonAsiento" in contenido
-    assert "Al guardar" in contenido
+    assert "ASIENTOS_SELECTOR_INPUT_COTIZACION_RENGLON" in contenido
+    assert "ASIENTOS_COTIZACION_ESCALA" in contenido
+    assert "normalizarDecimalArgentinoAEnteroEscala" in contenido
+    assert "manejarKeydownCotizacionRenglon" in contenido
+    assert "calcularEquivalenteArsCentavos" in contenido
+    assert "existeCotizacionInvalida" in contenido
+    assert "ASIENTOS_MENSAJE_COTIZACION_INVALIDA" in contenido
+    assert "Al guardar" not in contenido
+    assert "preview-renglon" not in contenido

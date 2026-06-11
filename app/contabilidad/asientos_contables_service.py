@@ -729,6 +729,16 @@ def _resolver_cotizacion_detalle(
         detalle["cotizacion_tipo"] = cotizacion_tipo
         return detalle
 
+    if detalle.get("cotizacion_1000000") not in (None, ""):
+        detalle["cotizacion_id"] = None
+        detalle["cotizacion_fecha"] = fecha
+        detalle["cotizacion_tipo"] = cotizacion_tipo
+        detalle["cotizacion_1000000"] = _validar_entero_positivo(
+            detalle.get("cotizacion_1000000"),
+            "La cotizacion del renglon es invalida.",
+        )
+        return detalle
+
     if moneda_codigo == datos_asiento["moneda_origen_codigo"] and _tiene_cotizacion_completa(
         datos_asiento
     ):

@@ -575,3 +575,50 @@ def test_service_parser_formulario_normaliza_fecha_argentina():
     )
 
     assert datos_asiento["fecha"] == "2026-06-10"
+
+
+def test_service_calcula_ars_con_cotizacion_manual_por_renglon_sin_tabla():
+    """
+    Valida que un asiento FX pueda usar cotizacion manual del renglon.
+
+    La carga manual no depende de monedas_cotizaciones: se conserva la moneda
+    nominal y se calcula ARS con la cotizacion enviada por el formulario.
+    """
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _crear_ejercicio(db)
+        cuenta_usd = _crear_cuenta(db, "1.1.01.01.997")
+        cuenta_ars = _crear_cuenta(db, "1.1.01.01.996")
+
+        asiento = crear_asiento_contable_borrador(
+            {
+                **_datos_asiento_base(ejercicio_id),
+                "descripcion": "Compra USD manual",
+                "cotizacion_tipo": "CIERRE",
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_usd,
+                    "moneda_codigo": "USD",
+                    "cotizacion_1000000": 1250500000,
+                    "nominal_debe_centavos": 10000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_ars,
+                    "moneda_codigo": "ARS",
+                    "nominal_haber_centavos": 12505000,
+                },
+            ],
+        )
+
+    assert asiento["detalles"][0]["moneda_codigo"] == "USD"
+    assert asiento["detalles"][0]["cotizacion_id"] is None
+    assert asiento["detalles"][0]["cotizacion_fecha"] == "2026-06-10"
+    assert asiento["detalles"][0]["cotizacion_tipo"] == "CIERRE"
+    assert asiento["detalles"][0]["cotizacion_1000000"] == 1250500000
+    assert asiento["detalles"][0]["nominal_debe_centavos"] == 10000
+    assert asiento["detalles"][0]["debe_centavos"] == 12505000
+    assert asiento["detalles"][1]["haber_centavos"] == 12505000

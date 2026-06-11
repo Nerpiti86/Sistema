@@ -28,8 +28,10 @@
         'input[data-field="debe_ars_centavos"]';
     const ASIENTOS_SELECTOR_INPUT_HABER_ARS =
         'input[data-field="haber_ars_centavos"]';
+    const ASIENTOS_SELECTOR_INPUT_COTIZACION_RENGLON =
+        'input[data-field="cotizacion_1000000"]';
     const ASIENTOS_SELECTOR_IMPORTE_NOMINAL =
-        'input[data-field="nominal_debe_centavos"], input[data-field="nominal_haber_centavos"]';
+        'input[data-field="nominal_debe_centavos"], input[data-field="nominal_haber_centavos"], input[data-field="cotizacion_1000000"]';
     const ASIENTOS_SELECTOR_GUARDAR_BORRADOR =
         "#as-guardar";
 
@@ -38,7 +40,8 @@
     const ASIENTOS_MENSAJE_ASIENTO_DESBALANCEADO =
         "El asiento debe balancear para guardar.";
     const ASIENTOS_MONEDA_CONTABLE = "ARS";
-    const ASIENTOS_TEXTO_CALCULO_AL_GUARDAR = "Al guardar";
+    const ASIENTOS_COTIZACION_ESCALA = 1000000;
+    const ASIENTOS_MENSAJE_COTIZACION_INVALIDA = "Revisar cotizacion";
 
     const ASIENTOS_MINIMO_CARACTERES_LOOKUP_CUENTA = 2;
     const ASIENTOS_MINIMO_RENGLONES = 2;
@@ -379,6 +382,125 @@
         );
     }
 
+    function normalizarSeparadorDecimalArgentino(valor, escala) {
+        const valorTexto = String(valor || "").trim();
+
+        if (valorTexto.includes(",")) {
+            return valorTexto;
+        }
+
+        const indicesPunto = Array.from(valorTexto)
+            .map((caracter, indice) => (caracter === "." ? indice : -1))
+            .filter((indice) => indice >= 0);
+
+        if (indicesPunto.length !== 1) {
+            return valorTexto;
+        }
+
+        const indicePunto = indicesPunto[0];
+        const decimales = valorTexto.slice(indicePunto + 1).replace(/\D/g, "");
+
+        if (decimales.length === 0 || decimales.length > escala) {
+            return valorTexto;
+        }
+
+        return `${valorTexto.slice(0, indicePunto)},${valorTexto.slice(indicePunto + 1)}`;
+    }
+
+    function normalizarDecimalArgentinoAEnteroEscala(valor, escala) {
+        const valorTexto = normalizarSeparadorDecimalArgentino(valor, escala);
+
+        if (!valorTexto) {
+            return 0;
+        }
+
+        const partes = valorTexto.split(",");
+
+        if (partes.length > 2) {
+            return null;
+        }
+
+        const parteEntera = partes[0].replace(/\./g, "");
+        const parteDecimal = partes.length === 2 ? partes[1] : "";
+
+        if (!/^\d*$/.test(parteEntera) || !/^\d*$/.test(parteDecimal)) {
+            return null;
+        }
+
+        const multiplicadorEscala = 10 ** escala;
+        const enteros = Number.parseInt(parteEntera || "0", 10);
+        const decimales = Number.parseInt(
+            parteDecimal.padEnd(escala, "0").slice(0, escala) || "0",
+            10
+        );
+
+        return (enteros * multiplicadorEscala) + decimales;
+    }
+
+    function insertarComaDecimalCotizacion(inputCotizacion) {
+        const inicio = inputCotizacion.selectionStart ?? inputCotizacion.value.length;
+        const fin = inputCotizacion.selectionEnd ?? inputCotizacion.value.length;
+
+        if (typeof inputCotizacion.setRangeText === "function") {
+            inputCotizacion.setRangeText(",", inicio, fin, "end");
+        } else {
+            inputCotizacion.value = `${inputCotizacion.value.slice(0, inicio)},${inputCotizacion.value.slice(fin)}`;
+            inputCotizacion.selectionStart = inicio + 1;
+            inputCotizacion.selectionEnd = inicio + 1;
+        }
+
+        inputCotizacion.dispatchEvent(new Event("input", { bubbles: true }));
+        inputCotizacion.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function manejarKeydownCotizacionRenglon(evento) {
+        const inputCotizacion = evento.target.closest(
+            ASIENTOS_SELECTOR_INPUT_COTIZACION_RENGLON
+        );
+
+        if (
+            !inputCotizacion ||
+            evento.ctrlKey ||
+            evento.altKey ||
+            evento.metaKey ||
+            (evento.key !== "." && evento.code !== "NumpadDecimal")
+        ) {
+            return;
+        }
+
+        evento.preventDefault();
+        insertarComaDecimalCotizacion(inputCotizacion);
+    }
+
+    function obtenerInputCotizacionRenglon(renglonAsiento) {
+        return renglonAsiento.querySelector(
+            ASIENTOS_SELECTOR_INPUT_COTIZACION_RENGLON
+        );
+    }
+
+    function obtenerCotizacionRenglonAsiento(renglonAsiento) {
+        const inputCotizacion = obtenerInputCotizacionRenglon(renglonAsiento);
+
+        if (!inputCotizacion) {
+            return null;
+        }
+
+        return normalizarDecimalArgentinoAEnteroEscala(inputCotizacion.value, 6);
+    }
+
+    function calcularEquivalenteArsCentavos(
+        nominalCentavos,
+        cotizacion1000000
+    ) {
+        if (nominalCentavos === 0) {
+            return 0;
+        }
+
+        return Math.round(
+            (nominalCentavos * cotizacion1000000) / ASIENTOS_COTIZACION_ESCALA
+        );
+    }
+
     function obtenerMonedaRenglonAsiento(renglonAsiento) {
         const inputMoneda = renglonAsiento.querySelector(
             ASIENTOS_SELECTOR_MONEDA_RENGLON
@@ -389,14 +511,41 @@
         ).trim().toUpperCase();
     }
 
-    function existeRenglonMonedaExtranjera() {
-        return obtenerRenglonesAsiento().some(
-            (renglonAsiento) => obtenerMonedaRenglonAsiento(renglonAsiento) !==
-                ASIENTOS_MONEDA_CONTABLE
+    function aplicarCotizacionInvalida(renglonAsiento) {
+        const inputCotizacion = obtenerInputCotizacionRenglon(renglonAsiento);
+
+        renglonAsiento.dataset.cotizacionValida = "0";
+
+        asignarValorCalculado(
+            renglonAsiento.querySelector(ASIENTOS_SELECTOR_INPUT_DEBE_ARS),
+            ""
         );
+        asignarValorCalculado(
+            renglonAsiento.querySelector(ASIENTOS_SELECTOR_INPUT_HABER_ARS),
+            ""
+        );
+
+        if (inputCotizacion) {
+            inputCotizacion.classList.add("is-invalid");
+            inputCotizacion.classList.remove("is-valid");
+        }
+    }
+
+    function aplicarCotizacionValida(renglonAsiento, cotizacion1000000) {
+        const inputCotizacion = obtenerInputCotizacionRenglon(renglonAsiento);
+
+        renglonAsiento.dataset.cotizacionValida = "1";
+
+        if (inputCotizacion) {
+            inputCotizacion.classList.remove("is-invalid");
+            inputCotizacion.classList.add("is-valid");
+            inputCotizacion.dataset.cotizacion1000000 = String(cotizacion1000000);
+        }
     }
 
     function actualizarImportesArsRenglon(renglonAsiento) {
+        const monedaRenglon = obtenerMonedaRenglonAsiento(renglonAsiento);
+        const inputCotizacion = obtenerInputCotizacionRenglon(renglonAsiento);
         const debeNominalCentavos = obtenerImporteRenglonAsiento(
             renglonAsiento,
             ASIENTOS_SELECTOR_INPUT_DEBE_NOMINAL
@@ -405,31 +554,45 @@
             renglonAsiento,
             ASIENTOS_SELECTOR_INPUT_HABER_NOMINAL
         );
-        const inputDebeArs = renglonAsiento.querySelector(
-            ASIENTOS_SELECTOR_INPUT_DEBE_ARS
-        );
-        const inputHaberArs = renglonAsiento.querySelector(
-            ASIENTOS_SELECTOR_INPUT_HABER_ARS
-        );
 
-        if (obtenerMonedaRenglonAsiento(renglonAsiento) !== ASIENTOS_MONEDA_CONTABLE) {
-            asignarValorCalculado(
-                inputDebeArs,
-                debeNominalCentavos > 0 ? ASIENTOS_TEXTO_CALCULO_AL_GUARDAR : ""
-            );
-            asignarValorCalculado(
-                inputHaberArs,
-                haberNominalCentavos > 0 ? ASIENTOS_TEXTO_CALCULO_AL_GUARDAR : ""
-            );
+        let cotizacion1000000 = obtenerCotizacionRenglonAsiento(renglonAsiento);
+
+        if (monedaRenglon === ASIENTOS_MONEDA_CONTABLE) {
+            cotizacion1000000 = ASIENTOS_COTIZACION_ESCALA;
+
+            if (inputCotizacion) {
+                inputCotizacion.value = "1,000000";
+                inputCotizacion.readOnly = true;
+            }
+        } else if (inputCotizacion) {
+            inputCotizacion.readOnly = false;
+        }
+
+        if (!cotizacion1000000 || cotizacion1000000 <= 0) {
+            aplicarCotizacionInvalida(renglonAsiento);
             return;
         }
 
-        asignarImporteCalculado(inputDebeArs, debeNominalCentavos);
-        asignarImporteCalculado(inputHaberArs, haberNominalCentavos);
+        aplicarCotizacionValida(renglonAsiento, cotizacion1000000);
+
+        asignarImporteCalculado(
+            renglonAsiento.querySelector(ASIENTOS_SELECTOR_INPUT_DEBE_ARS),
+            calcularEquivalenteArsCentavos(debeNominalCentavos, cotizacion1000000)
+        );
+        asignarImporteCalculado(
+            renglonAsiento.querySelector(ASIENTOS_SELECTOR_INPUT_HABER_ARS),
+            calcularEquivalenteArsCentavos(haberNominalCentavos, cotizacion1000000)
+        );
     }
 
     function actualizarImportesArsRenglones() {
         obtenerRenglonesAsiento().forEach(actualizarImportesArsRenglon);
+    }
+
+    function existeCotizacionInvalida() {
+        return obtenerRenglonesAsiento().some(
+            (renglonAsiento) => renglonAsiento.dataset.cotizacionValida === "0"
+        );
     }
 
     function actualizarClaseDiferencia(elementoDiferencia, diferenciaCentavos) {
@@ -491,12 +654,12 @@
 
         actualizarImportesArsRenglones();
 
-        if (existeRenglonMonedaExtranjera()) {
-            totalDebe.textContent = ASIENTOS_TEXTO_CALCULO_AL_GUARDAR;
-            totalHaber.textContent = ASIENTOS_TEXTO_CALCULO_AL_GUARDAR;
-            diferencia.textContent = ASIENTOS_TEXTO_CALCULO_AL_GUARDAR;
+        if (existeCotizacionInvalida()) {
+            totalDebe.textContent = ASIENTOS_MENSAJE_COTIZACION_INVALIDA;
+            totalHaber.textContent = ASIENTOS_MENSAJE_COTIZACION_INVALIDA;
+            diferencia.textContent = ASIENTOS_MENSAJE_COTIZACION_INVALIDA;
             diferencia.classList.remove("text-success", "text-danger");
-            actualizarEstadoBotonGuardarBorrador(0);
+            actualizarEstadoBotonGuardarBorrador(1);
             return;
         }
 
@@ -602,6 +765,11 @@
         if (!contenedorRenglones) {
             return;
         }
+
+        contenedorRenglones.addEventListener(
+            "keydown",
+            manejarKeydownCotizacionRenglon
+        );
 
         contenedorRenglones.addEventListener("input", (evento) => {
             const inputCuentaContable = evento.target.closest(

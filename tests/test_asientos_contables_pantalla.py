@@ -518,6 +518,7 @@ def test_pantalla_post_nuevo_asiento_contable_fx_calcula_ars_en_backend():
                 "detalles[0][cuenta_contable_codigo]": cuenta_usd,
                 "detalles[0][descripcion]": "Caja USD",
                 "detalles[0][moneda_codigo]": "USD",
+                "detalles[0][cotizacion_1000000]": "1.250,500000",
                 "detalles[0][debe_centavos]": "100,00",
                 "detalles[0][haber_centavos]": "",
                 "detalles[1][cuenta_contable_codigo]": cuenta_capital,
@@ -909,12 +910,12 @@ def test_pantalla_nuevo_asiento_contable_moneda_por_renglon_editable():
     ) in html
 
 
-def test_pantalla_nuevo_asiento_cotizacion_renglon_visual_no_post():
+def test_pantalla_nuevo_asiento_cotizacion_renglon_manual_y_posteable():
     """
-    Valida que la cotizacion del renglon sea visual en el alta.
+    Valida que la cotizacion del renglon se cargue manualmente.
 
-    El backend resuelve la cotizacion real por moneda, fecha y tipo; por eso el
-    formulario no debe enviar una cotizacion manual por renglon desde la UI.
+    El formulario envia cotizacion_1000000 para que el service recalcule ARS
+    desde nominal sin depender de una cotizacion precargada en otra pantalla.
     """
     app = create_app(TestConfig)
     client = app.test_client()
@@ -935,5 +936,6 @@ def test_pantalla_nuevo_asiento_cotizacion_renglon_visual_no_post():
 
     assert response.status_code == 200
     assert 'data-field="cotizacion_1000000"' in bloque_cotizacion
-    assert 'readonly' in bloque_cotizacion
-    assert 'name="detalles[0][cotizacion_1000000]"' not in bloque_cotizacion
+    assert 'inputmode="decimal"' in bloque_cotizacion
+    assert 'name="detalles[0][cotizacion_1000000]"' in bloque_cotizacion
+    assert 'readonly' not in bloque_cotizacion
