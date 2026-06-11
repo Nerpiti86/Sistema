@@ -78,7 +78,7 @@
     </div>
 
     <div class="col-12">
-        {% call card("Cabecera", "asientos_contables") %}
+        {% call card("Cabecera", "Asiento manual") %}
             {% if mensaje_contexto_asiento %}
                 <div
                     id="as-nuevo-mensaje-contexto"
@@ -202,13 +202,13 @@
                             for="as-cotizacion-tipo"
                             class="form-label d-flex align-items-center gap-1"
                         >
-                            <span>Cotizacion por defecto</span>
+                            <span>Cotización por defecto</span>
                             <span
                                 id="as-cotizacion-ayuda"
                                 data-field="cotizacion_ayuda"
                                 class="badge rounded-pill text-bg-secondary"
-                                title="Define el criterio por defecto para buscar cotizacion en renglones con moneda distinta de ARS."
-                                aria-label="Define el criterio por defecto para buscar cotizacion en renglones con moneda distinta de ARS."
+                                title="Define el criterio por defecto para buscar cotización en renglones con moneda distinta de ARS."
+                                aria-label="Define el criterio por defecto para buscar cotización en renglones con moneda distinta de ARS."
                             >?</span>
                         </label>
                         <select
@@ -276,12 +276,12 @@
                                             <th data-field="cuenta_contable_codigo" class="text-nowrap">Cuenta</th>
                                             <th data-field="cuenta_contable_descripcion" class="text-nowrap">Nombre cuenta</th>
                                             <th data-field="moneda_codigo" class="text-nowrap">Moneda</th>
-                                            <th data-field="cotizacion_1000000" class="text-end text-nowrap">Cotizacion</th>
+                                            <th data-field="cotizacion_1000000" class="text-end text-nowrap">Cotización</th>
                                             <th data-field="nominal_debe_centavos" class="text-end text-nowrap">Debe nominal</th>
                                             <th data-field="nominal_haber_centavos" class="text-end text-nowrap">Haber nominal</th>
                                             <th data-field="debe_centavos" class="text-end text-nowrap">Debe ARS</th>
                                             <th data-field="haber_centavos" class="text-end text-nowrap">Haber ARS</th>
-                                            <th data-field="accion" class="text-center text-nowrap">Accion</th>
+                                            <th data-field="accion" class="text-center text-nowrap">Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody id="as-det-renglones" data-role="asiento-renglones">
@@ -307,11 +307,11 @@
                                                         value="{{ detalle_asiento.cuenta_contable_codigo }}"
                                                         class="form-control form-control-sm"
                                                         placeholder="Codigo de cuenta"
-                                                        aria-label="Cuenta del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Cuenta del renglón {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
 
-                                                    {# Hidden tecnico: conserva contrato POST sin ocupar columna visual. #}
+                                                    {# Hidden técnico: conserva contrato POST sin ocupar columna visual. #}
                                                     <input
                                                         id="as-det-{{ renglon_idx }}-descripcion"
                                                         data-row-index="{{ renglon_idx }}"
@@ -348,7 +348,7 @@
                                                         data-role="asiento-moneda-renglon"
                                                         name="detalles[{{ renglon_idx }}][moneda_codigo]"
                                                         class="visually-hidden"
-                                                        aria-label="Moneda del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Moneda del renglón {{ renglon_idx + 1 }}"
                                                         aria-hidden="true"
                                                         tabindex="-1"
                                                     >
@@ -384,7 +384,7 @@
                                                         name="detalles[{{ renglon_idx }}][cotizacion_1000000]"
                                                         value="{{ detalle_asiento.cotizacion_1000000 }}"
                                                         class="form-control form-control-sm text-end"
-                                                        aria-label="Cotizacion del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Cotización del renglón {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
                                                 </td>
@@ -400,7 +400,7 @@
                                                         value="{{ detalle_asiento.debe_centavos }}"
                                                         class="form-control form-control-sm text-end"
                                                         placeholder="0,00"
-                                                        aria-label="Debe nominal del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Debe nominal del renglón {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
                                                 </td>
@@ -416,7 +416,7 @@
                                                         value="{{ detalle_asiento.haber_centavos }}"
                                                         class="form-control form-control-sm text-end"
                                                         placeholder="0,00"
-                                                        aria-label="Haber nominal del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Haber nominal del renglón {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
                                                 </td>
@@ -429,7 +429,7 @@
                                                         value="{{ detalle_asiento.debe_centavos }}"
                                                         class="form-control form-control-sm text-end bg-body-secondary"
                                                         placeholder="0,00"
-                                                        aria-label="Debe ARS calculado del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Debe ARS calculado del renglón {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                         readonly
                                                         tabindex="-1"
@@ -444,7 +444,7 @@
                                                         value="{{ detalle_asiento.haber_centavos }}"
                                                         class="form-control form-control-sm text-end bg-body-secondary"
                                                         placeholder="0,00"
-                                                        aria-label="Haber ARS calculado del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Haber ARS calculado del renglón {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                         readonly
                                                         tabindex="-1"
@@ -457,8 +457,8 @@
                                                         data-row-index="{{ renglon_idx }}"
                                                         type="button"
                                                         class="btn btn-outline-danger btn-sm px-2"
-                                                        title="Quitar renglon"
-                                                        aria-label="Quitar renglon {{ renglon_idx + 1 }}"
+                                                        title="Quitar renglón"
+                                                        aria-label="Quitar renglón {{ renglon_idx + 1 }}"
                                                     >
                                                         ×
                                                     </button>
@@ -522,12 +522,12 @@
                                     type="button"
                                     class="btn btn-outline-primary btn-sm"
                                 >
-                                    Agregar renglon
+                                    Agregar renglón
                                 </button>
                             </div>
 
                             <p id="as-renglones-ayuda" class="small text-muted mb-0">
-                                Agrega o quita renglones segun sea necesario. El asiento debe balancear para poder guardarse.
+                                Agregue o quite renglones según sea necesario. El asiento debe balancear para poder guardarse.
                             </p>
                         </div>
                     </div>

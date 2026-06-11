@@ -646,7 +646,7 @@ def test_pantalla_nuevo_asiento_contable_tooltip_y_columnas_renglones():
     assert b'id="as-cotizacion-ayuda"' in response.data
     assert b'class="badge rounded-pill text-bg-secondary"' in response.data
     assert (
-        b'title="Define el criterio por defecto para buscar cotizacion en renglones con moneda distinta de ARS."'
+        'title="Define el criterio por defecto para buscar cotización en renglones con moneda distinta de ARS."'.encode("utf-8")
         in response.data
     )
     assert b'id="as-det-col-nombre-cuenta"' in response.data
@@ -753,9 +753,9 @@ def test_pantalla_nuevo_asiento_contable_quitar_renglon_en_columna_accion():
     assert response.status_code == 200
     assert 'id="as-det-col-accion"' in html
     assert 'data-field="accion"' in html
-    assert 'class="text-center text-nowrap">Accion</th>' in html
+    assert 'class="text-center text-nowrap">Acción</th>' in html
     assert 'class="btn btn-outline-danger btn-sm px-2"' in html
-    assert 'title="Quitar renglon"' in html
+    assert 'title="Quitar renglón"' in html
     assert 'id="as-det-renglones" data-role="asiento-renglones">' in html
     assert 'id="as-det-renglones" data-role="asiento-renglones" id=' not in html
 
@@ -825,7 +825,7 @@ def test_pantalla_nuevo_asiento_limpia_html_cuenta_y_nombre_cuenta():
     assert 'type="hidden"' not in bloque_nombre
     assert 'name="detalles[0][descripcion]"' not in bloque_nombre
 
-    assert "Agrega o quita renglones segun sea necesario." in html
+    assert "Agregue o quite renglones según sea necesario." in html
     assert "La persistencia se habilitara en un paso posterior." not in html
 
 
@@ -859,20 +859,20 @@ def test_pantalla_nuevo_asiento_contable_expone_nominal_y_ars_calculado():
     assert 'id="as-det-0-debe"' in html
     assert 'name="detalles[0][debe_centavos]"' in html
     assert 'data-post-field="debe_centavos"' in html
-    assert 'aria-label="Debe nominal del renglon 1"' in html
+    assert 'aria-label="Debe nominal del renglón 1"' in html
 
     assert 'id="as-det-0-haber"' in html
     assert 'name="detalles[0][haber_centavos]"' in html
     assert 'data-post-field="haber_centavos"' in html
-    assert 'aria-label="Haber nominal del renglon 1"' in html
+    assert 'aria-label="Haber nominal del renglón 1"' in html
 
     assert 'id="as-det-0-debe-ars"' in html
     assert 'data-role="asiento-debe-ars"' in html
-    assert 'aria-label="Debe ARS calculado del renglon 1"' in html
+    assert 'aria-label="Debe ARS calculado del renglón 1"' in html
 
     assert 'id="as-det-0-haber-ars"' in html
     assert 'data-role="asiento-haber-ars"' in html
-    assert 'aria-label="Haber ARS calculado del renglon 1"' in html
+    assert 'aria-label="Haber ARS calculado del renglón 1"' in html
 
     assert 'name="detalles[0][debe_ars_centavos]"' not in html
     assert 'name="detalles[0][haber_ars_centavos]"' not in html
@@ -919,9 +919,9 @@ def test_pantalla_nuevo_asiento_contable_moneda_por_renglon_editable():
     assert "readonly" not in bloque_moneda
     assert "maxlength" not in bloque_moneda
 
-    assert "Cotizacion por defecto" in html
+    assert "Cotización por defecto" in html
     assert (
-        "Define el criterio por defecto para buscar cotizacion en renglones "
+        "Define el criterio por defecto para buscar cotización en renglones "
         "con moneda distinta de ARS."
     ) in html
 

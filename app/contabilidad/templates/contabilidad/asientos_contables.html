@@ -16,7 +16,7 @@
                     Asientos contables
                 </h1>
                 <p id="as-descripcion" class="text-muted mb-0">
-                    Listado inicial de asientos contables. La carga se habilitara en un paso posterior.
+                    Listado de asientos contables.
                 </p>
             </div>
             <div id="as-acciones-listado" class="d-flex gap-2">
@@ -72,7 +72,7 @@
                     </dd>
 
                     {% if mensaje_contexto_asientos %}
-                        <dt class="col-sm-3">Observacion</dt>
+                        <dt class="col-sm-3">Observación</dt>
                         <dd
                             id="as-mensaje-contexto"
                             data-table="asientos_contables"
@@ -94,7 +94,7 @@
             data-table="asientos_contables"
             data-query="listar_asientos_contables"
         >
-            {% call card("Listado", "asientos_contables") %}
+            {% call card("Listado", "Asientos contables") %}
                 <div class="table-responsive">
                     <table
                         id="as-tabla"
@@ -105,13 +105,13 @@
                         <thead>
                             <tr>
                                 <th data-field="id">ID</th>
-                                <th data-field="numero_asiento">Numero</th>
+                                <th data-field="numero_asiento">Número</th>
                                 <th data-field="fecha">Fecha</th>
-                                <th data-field="descripcion">Descripcion</th>
+                                <th data-field="descripcion">Descripción</th>
                                 <th data-field="estado">Estado</th>
                                 <th data-field="tipo">Tipo</th>
                                 <th data-field="moneda_origen_codigo">Moneda</th>
-                                <th data-field="cotizacion_1000000" class="text-end">Cotizacion</th>
+                                <th data-field="cotizacion_1000000" class="text-end">Cotización</th>
                                 <th data-field="debe_centavos" class="text-end">Debe ARS</th>
                                 <th data-field="haber_centavos" class="text-end">Haber ARS</th>
                                 <th data-field="acciones" class="text-end">Acciones</th>

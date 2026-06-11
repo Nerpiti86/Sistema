@@ -15,7 +15,7 @@
                     {{ form_titulo|default('Crear ejercicio contable') }}
                 </h1>
                 <p id="ec-form-descripcion" class="text-muted mb-0">
-                    {{ form_descripcion|default('Alta de registro en ejercicios_contables.') }}
+                    {{ form_descripcion|default('Alta de ejercicio contable.') }}
                 </p>
             </div>
             <div id="ec-form-acciones-superiores">
@@ -31,7 +31,7 @@
     </div>
 
     <div class="col-12">
-        {% call card("Datos del ejercicio", "ejercicios_contables") %}
+        {% call card("Datos del ejercicio", "Ejercicio contable") %}
             <form
                 id="ec-form"
                 data-table="ejercicios_contables"
@@ -41,7 +41,7 @@
             >
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label for="ec-codigo" class="form-label">Codigo</label>
+                        <label for="ec-codigo" class="form-label">Código</label>
                         <input
                             id="ec-codigo"
                             name="codigo"

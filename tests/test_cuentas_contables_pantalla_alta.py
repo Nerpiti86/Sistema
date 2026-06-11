@@ -188,7 +188,7 @@ def test_formulario_cuenta_contable_respeta_disposicion_de_componentes():
     assert sumarizadora_pos < descripcion_sumarizadora_pos
 
     assert 'data-field="descripcion_sumarizadora"' in html
-    assert 'placeholder="Descripcion de la cuenta padre"' in html
+    assert 'placeholder="Descripción de la cuenta padre"' in html
     assert 'readonly' in html
 
 

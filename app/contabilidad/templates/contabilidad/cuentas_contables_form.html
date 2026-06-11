@@ -26,7 +26,7 @@
     </div>
 
     <div class="col-12">
-        {% call card("Datos de la cuenta", "cuentas_contables") %}
+        {% call card("Datos de la cuenta", "Maestro contable") %}
             <form
                 id="cc-formulario"
                 data-table="cuentas_contables"
@@ -69,7 +69,7 @@
                     </div>
 
                     <div class="col-12">
-                        <label for="cc-descripcion-input" class="form-label">Descripcion</label>
+                        <label for="cc-descripcion-input" class="form-label">Descripción</label>
                         <input
                             id="cc-descripcion-input"
                             data-table="cuentas_contables"
@@ -170,7 +170,7 @@
                             type="text"
                             class="form-control"
                             value="{{ cuenta_contable.get('sumarizadora') or '' }}"
-                            placeholder="Codigo de cuenta padre"
+                            placeholder="Código de cuenta padre"
                             autocomplete="off"
                             readonly
                         >
@@ -178,7 +178,7 @@
 
                     <div class="col-md-8">
                         <label for="cc-descripcion-sumarizadora" class="form-label">
-                            Descripcion sumarizadora
+                            Descripción sumarizadora
                         </label>
                         <input
                             id="cc-descripcion-sumarizadora"
@@ -188,7 +188,7 @@
                             type="text"
                             class="form-control"
                             value="{{ cuenta_contable.get('descripcion_sumarizadora') or '' }}"
-                            placeholder="Descripcion de la cuenta padre"
+                            placeholder="Descripción de la cuenta padre"
                             autocomplete="off"
                             readonly
                         >

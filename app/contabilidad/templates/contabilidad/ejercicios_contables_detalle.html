@@ -64,9 +64,9 @@
             data-query="obtener_contexto_detalle_ejercicio_contable"
             data-row-codigo="{{ ejercicio_contable.codigo }}"
         >
-            {% call card("Datos del ejercicio", "ejercicios_contables") %}
+            {% call card("Datos del ejercicio", "Ejercicio contable") %}
                 <dl class="row mb-0">
-                    <dt class="col-sm-3">Codigo</dt>
+                    <dt class="col-sm-3">Código</dt>
                     <dd class="col-sm-9" data-field="codigo">
                         {{ ejercicio_contable.codigo }}
                     </dd>
@@ -154,7 +154,7 @@
             data-query="obtener_contexto_coeficientes_inflacion_ejercicio"
             data-row-codigo="{{ ejercicio_contable.codigo }}"
         >
-            {% call card("Coeficientes de inflacion", "ejercicios_coeficientes_inflacion") %}
+            {% call card("Coeficientes de inflación", "Ajuste contable") %}
                 {% if tiene_coeficientes_inflacion %}
                     <div class="table-responsive">
                         <table
@@ -164,10 +164,10 @@
                         >
                             <thead>
                                 <tr>
-                                    <th scope="col">Periodo</th>
-                                    <th scope="col" class="text-end">Indice inicio</th>
-                                    <th scope="col" class="text-center">Periodo cierre</th>
-                                    <th scope="col" class="text-end">Indice cierre</th>
+                                    <th scope="col">Período</th>
+                                    <th scope="col" class="text-end">Índice inicio</th>
+                                    <th scope="col" class="text-center">Período cierre</th>
+                                    <th scope="col" class="text-end">Índice cierre</th>
                                     <th scope="col" class="text-end">Coeficiente</th>
                                     <th scope="col" class="text-end">Calculado en</th>
                                 </tr>

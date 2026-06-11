@@ -31,7 +31,7 @@
     </div>
 
     <div class="col-12 col-lg-5">
-        {% call card("Cargar índice", "indices_inflacion") %}
+        {% call card("Cargar índice", "Carga mensual") %}
             <form
                 id="ec-indice-form"
                 data-table="indices_inflacion"
@@ -97,7 +97,7 @@
             data-table="indices_inflacion"
             data-query="obtener_contexto_indices_inflacion"
         >
-            {% call card("Índices cargados", "indices_inflacion") %}
+            {% call card("Índices cargados", "Listado mensual") %}
                 {% if tiene_indices_inflacion %}
                     <div class="table-responsive">
                         <table

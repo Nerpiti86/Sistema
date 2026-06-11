@@ -109,7 +109,7 @@ def test_detalle_muestra_coeficientes_generados_con_formatos_argentinos():
     assert b"1.000,0000" in response.data
     assert b"2.000,0000" in response.data
     assert b"2,000000000000" in response.data
-    assert b'<th scope="col" class="text-center">Periodo cierre</th>' in response.data
+    assert '<th scope="col" class="text-center">Período cierre</th>'.encode("utf-8") in response.data
     assert b'<th scope="col" class="text-end">Calculado en</th>' in response.data
     assert b'data-field="indice_cierre_periodo" class="text-center"' in response.data
     assert b'data-field="calculado_en" class="text-end"' in response.data

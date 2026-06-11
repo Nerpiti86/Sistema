@@ -38,14 +38,14 @@
             data-query="obtener_contexto_detalle_asiento_contable"
             data-row-id="{{ asiento_contable.id }}"
         >
-            {% call card("Datos del asiento", "asientos_contables") %}
+            {% call card("Datos del asiento", "Asiento contable") %}
                 <dl class="row mb-0">
                     <dt class="col-sm-3">ID</dt>
                     <dd class="col-sm-9" data-field="id">
                         {{ asiento_contable.id }}
                     </dd>
 
-                    <dt class="col-sm-3">Numero</dt>
+                    <dt class="col-sm-3">Número</dt>
                     <dd class="col-sm-9" data-field="numero_asiento">
                         {{ asiento_contable.numero_asiento_mostrar }}
                     </dd>
@@ -55,7 +55,7 @@
                         {{ asiento_contable.fecha_argentina }}
                     </dd>
 
-                    <dt class="col-sm-3">Descripcion</dt>
+                    <dt class="col-sm-3">Descripción</dt>
                     <dd class="col-sm-9" data-field="descripcion">
                         {{ asiento_contable.descripcion }}
                     </dd>
@@ -75,7 +75,7 @@
                         {{ asiento_contable.par_monedas_codigo }}
                     </dd>
 
-                    <dt class="col-sm-3">Cotizacion</dt>
+                    <dt class="col-sm-3">Cotización</dt>
                     <dd class="col-sm-9" data-field="cotizacion_1000000">
                         {{ asiento_contable.cotizacion_mostrar }}
                     </dd>
@@ -110,7 +110,7 @@
             data-query="obtener_contexto_detalle_asiento_contable"
             data-row-id="{{ asiento_contable.id }}"
         >
-            {% call card("Renglones", "asientos_contables_detalle") %}
+            {% call card("Renglones", "Detalle del asiento") %}
                 <div class="table-responsive">
                     <table
                         id="as-detalle-tabla"
@@ -120,11 +120,11 @@
                     >
                         <thead>
                             <tr>
-                                <th data-field="renglon">Renglon</th>
+                                <th data-field="renglon">Renglón</th>
                                 <th data-field="cuenta_contable_codigo">Cuenta</th>
-                                <th data-field="descripcion">Descripcion</th>
+                                <th data-field="descripcion">Descripción</th>
                                 <th data-field="moneda_codigo">Moneda</th>
-                                <th data-field="cotizacion_1000000" class="text-end">Cotizacion</th>
+                                <th data-field="cotizacion_1000000" class="text-end">Cotización</th>
                                 <th data-field="nominal_debe_centavos" class="text-end">Nominal debe</th>
                                 <th data-field="nominal_haber_centavos" class="text-end">Nominal haber</th>
                                 <th data-field="debe_centavos" class="text-end">Debe ARS</th>
