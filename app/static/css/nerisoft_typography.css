@@ -5,14 +5,14 @@
     --ns-font-sans: var(--ns-font-family-base);
     --ns-font-numeric: var(--ns-font-family-numeric);
 
-    --ns-font-size-micro: 0.6875rem;
-    --ns-font-size-secondary: 0.75rem;
-    --ns-font-size-table-dense: 0.75rem;
-    --ns-font-size-form-dense: 0.75rem;
-    --ns-font-size-base: 0.875rem;
-    --ns-font-size-form: 0.875rem;
-    --ns-font-size-title-section: 1.125rem;
-    --ns-font-size-title-page: 1.625rem;
+    --ns-font-size-micro: 0.7rem;
+    --ns-font-size-secondary: 0.8rem;
+    --ns-font-size-table-dense: 0.8rem;
+    --ns-font-size-form-dense: 0.8rem;
+    --ns-font-size-base: 0.9rem;
+    --ns-font-size-form: 0.9rem;
+    --ns-font-size-title-section: 1.1rem;
+    --ns-font-size-title-page: 1.5rem;
 
     --ns-font-weight-normal: 400;
     --ns-font-weight-medium: 500;
