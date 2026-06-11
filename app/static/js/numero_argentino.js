@@ -286,8 +286,12 @@
 
     const activarDecimalMonedaArgentina = (input) => {
         const partes = normalizarPartesMonedaArgentina(input.value);
+        const partesConEnteroInicial = {
+            ...partes,
+            parteEntera: partes.parteEntera || "0",
+        };
 
-        input.value = formatearMonedaArgentinaCentavos(partes);
+        input.value = formatearMonedaArgentinaCentavos(partesConEnteroInicial);
 
         const indiceComa = input.value.indexOf(",");
 

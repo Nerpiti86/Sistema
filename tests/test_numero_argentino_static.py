@@ -96,6 +96,8 @@ def test_js_money_ar_centavos_formatea_en_vivo():
     assert "formatearMonedaArgentinaEnVivo" in contenido
     assert "formatearMonedaArgentinaCentavos" in contenido
     assert "normalizarPartesMonedaArgentina" in contenido
+    assert "partesConEnteroInicial" in contenido
+    assert 'parteEntera: partes.parteEntera || "0"' in contenido
     assert "obtenerIndiceSeparadorDecimal" in contenido
     assert "formatearMilesArgentinos" in contenido
     assert "setSelectionRange" in contenido
