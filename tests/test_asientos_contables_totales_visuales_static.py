@@ -44,3 +44,35 @@ def test_js_nuevo_asiento_actualiza_totales_visuales():
     assert "actualizarTotalesAsiento" in contenido
     assert "actualizarClaseDiferencia" in contenido
     assert "actualizarTotalesAsiento();" in contenido
+
+
+def test_template_nuevo_asiento_expone_boton_guardar_borrador_real():
+    """
+    Valida contrato HTML del boton real de guardado del nuevo asiento.
+
+    El bloqueo visual debe apoyarse en hooks existentes sin renombrar la accion
+    del POST ni cambiar el contrato del formulario.
+    """
+    contenido = TEMPLATE_NUEVO_ASIENTO.read_text(encoding="utf-8")
+
+    assert 'id="as-guardar"' in contenido
+    assert 'data-action="crear_asiento_contable_borrador"' in contenido
+    assert 'type="submit"' in contenido
+    assert "Guardar borrador" in contenido
+
+
+def test_js_nuevo_asiento_bloquea_guardar_borrador_si_no_balancea():
+    """
+    Valida contrato JS del bloqueo visual de guardado.
+
+    El boton Guardar borrador debe deshabilitarse cuando la diferencia calculada
+    en frontend sea distinta de cero, manteniendo el backend como control final.
+    """
+    contenido = JS_NUEVO_ASIENTO.read_text(encoding="utf-8")
+
+    assert "ASIENTOS_SELECTOR_GUARDAR_BORRADOR" in contenido
+    assert "#as-guardar" in contenido
+    assert "ASIENTOS_MENSAJE_ASIENTO_DESBALANCEADO" in contenido
+    assert "function actualizarEstadoBotonGuardarBorrador" in contenido
+    assert "botonGuardarBorrador.disabled = debeBloquearGuardar;" in contenido
+    assert "actualizarEstadoBotonGuardarBorrador(diferenciaCentavos);" in contenido

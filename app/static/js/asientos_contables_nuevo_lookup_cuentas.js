@@ -24,9 +24,13 @@
         'input[data-field="haber_centavos"]';
     const ASIENTOS_SELECTOR_IMPORTE_CONTABLE =
         'input[data-field="debe_centavos"], input[data-field="haber_centavos"]';
+    const ASIENTOS_SELECTOR_GUARDAR_BORRADOR =
+        "#as-guardar";
 
     const ASIENTOS_MENSAJE_LOOKUP_CUENTA_ERROR =
         "No se pudo buscar la cuenta contable.";
+    const ASIENTOS_MENSAJE_ASIENTO_DESBALANCEADO =
+        "El asiento debe balancear para guardar.";
 
     const ASIENTOS_MINIMO_CARACTERES_LOOKUP_CUENTA = 2;
     const ASIENTOS_MINIMO_RENGLONES = 2;
@@ -355,6 +359,49 @@
         elementoDiferencia.classList.toggle("text-danger", diferenciaCentavos !== 0);
     }
 
+    function obtenerBotonGuardarBorrador() {
+        return document.querySelector(ASIENTOS_SELECTOR_GUARDAR_BORRADOR);
+    }
+
+    function inicializarEstadoOriginalBotonGuardarBorrador(botonGuardarBorrador) {
+        if (!botonGuardarBorrador || botonGuardarBorrador.dataset.disabledOriginal) {
+            return;
+        }
+
+        botonGuardarBorrador.dataset.disabledOriginal = botonGuardarBorrador.disabled
+            ? "true"
+            : "false";
+    }
+
+    function actualizarEstadoBotonGuardarBorrador(diferenciaCentavos) {
+        const botonGuardarBorrador = obtenerBotonGuardarBorrador();
+
+        if (!botonGuardarBorrador) {
+            return;
+        }
+
+        inicializarEstadoOriginalBotonGuardarBorrador(botonGuardarBorrador);
+
+        if (botonGuardarBorrador.dataset.disabledOriginal === "true") {
+            botonGuardarBorrador.disabled = true;
+            return;
+        }
+
+        const debeBloquearGuardar = diferenciaCentavos !== 0;
+
+        botonGuardarBorrador.disabled = debeBloquearGuardar;
+        botonGuardarBorrador.classList.toggle("disabled", debeBloquearGuardar);
+
+        if (debeBloquearGuardar) {
+            botonGuardarBorrador.title = ASIENTOS_MENSAJE_ASIENTO_DESBALANCEADO;
+            botonGuardarBorrador.setAttribute("aria-disabled", "true");
+            return;
+        }
+
+        botonGuardarBorrador.removeAttribute("title");
+        botonGuardarBorrador.removeAttribute("aria-disabled");
+    }
+
     function actualizarTotalesAsiento() {
         const totalDebe = document.querySelector(ASIENTOS_SELECTOR_TOTAL_DEBE);
         const totalHaber = document.querySelector(ASIENTOS_SELECTOR_TOTAL_HABER);
@@ -377,6 +424,7 @@
         diferencia.textContent = formatearCentavosArgentino(diferenciaCentavos);
 
         actualizarClaseDiferencia(diferencia, diferenciaCentavos);
+        actualizarEstadoBotonGuardarBorrador(diferenciaCentavos);
     }
 
     function actualizarCantidadRenglonesAsiento() {
