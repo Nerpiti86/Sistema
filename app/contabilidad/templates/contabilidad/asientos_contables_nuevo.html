@@ -268,12 +268,14 @@
                                     style="table-layout: fixed;"
                                 >
                                     <colgroup>
-                                        <col id="as-det-col-cuenta" style="width: 16%;">
-                                        <col id="as-det-col-nombre-cuenta" style="width: 32%;">
-                                        <col id="as-det-col-moneda" style="width: 8%;">
-                                        <col id="as-det-col-cotizacion" style="width: 13%;">
-                                        <col id="as-det-col-debe" style="width: 12%;">
-                                        <col id="as-det-col-haber" style="width: 12%;">
+                                        <col id="as-det-col-cuenta" style="width: 11%;">
+                                        <col id="as-det-col-nombre-cuenta" style="width: 23%;">
+                                        <col id="as-det-col-moneda" style="width: 7%;">
+                                        <col id="as-det-col-cotizacion" style="width: 10%;">
+                                        <col id="as-det-col-debe-nominal" style="width: 11%;">
+                                        <col id="as-det-col-haber-nominal" style="width: 11%;">
+                                        <col id="as-det-col-debe-ars" style="width: 10%;">
+                                        <col id="as-det-col-haber-ars" style="width: 10%;">
                                         <col id="as-det-col-accion" style="width: 7%;">
                                     </colgroup>
                                     <thead>
@@ -282,8 +284,10 @@
                                             <th data-field="cuenta_contable_descripcion" class="text-nowrap">Nombre cuenta</th>
                                             <th data-field="moneda_codigo" class="text-nowrap">Moneda</th>
                                             <th data-field="cotizacion_1000000" class="text-end text-nowrap">Cotizacion</th>
-                                            <th data-field="debe_centavos" class="text-end text-nowrap">Debe</th>
-                                            <th data-field="haber_centavos" class="text-end text-nowrap">Haber</th>
+                                            <th data-field="nominal_debe_centavos" class="text-end text-nowrap">Debe nominal</th>
+                                            <th data-field="nominal_haber_centavos" class="text-end text-nowrap">Haber nominal</th>
+                                            <th data-field="debe_centavos" class="text-end text-nowrap">Debe ARS</th>
+                                            <th data-field="haber_centavos" class="text-end text-nowrap">Haber ARS</th>
                                             <th data-field="accion" class="text-center text-nowrap">Accion</th>
                                         </tr>
                                     </thead>
@@ -369,10 +373,11 @@
                                                         readonly
                                                     >
                                                 </td>
-                                                <td data-field="debe_centavos">
+                                                <td data-field="nominal_debe_centavos">
                                                     <input
                                                         id="as-det-{{ renglon_idx }}-debe"
-                                                        data-field="debe_centavos"
+                                                        data-field="nominal_debe_centavos"
+                                                        data-post-field="debe_centavos"
                                                         data-money-ar="centavos"
                                                         type="text"
                                                         inputmode="decimal"
@@ -380,14 +385,15 @@
                                                         value="{{ detalle_asiento.debe_centavos }}"
                                                         class="form-control form-control-sm text-end"
                                                         placeholder="0,00"
-                                                        aria-label="Debe del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Debe nominal del renglon {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
                                                     >
                                                 </td>
-                                                <td data-field="haber_centavos">
+                                                <td data-field="nominal_haber_centavos">
                                                     <input
                                                         id="as-det-{{ renglon_idx }}-haber"
-                                                        data-field="haber_centavos"
+                                                        data-field="nominal_haber_centavos"
+                                                        data-post-field="haber_centavos"
                                                         data-money-ar="centavos"
                                                         type="text"
                                                         inputmode="decimal"
@@ -395,8 +401,38 @@
                                                         value="{{ detalle_asiento.haber_centavos }}"
                                                         class="form-control form-control-sm text-end"
                                                         placeholder="0,00"
-                                                        aria-label="Haber del renglon {{ renglon_idx + 1 }}"
+                                                        aria-label="Haber nominal del renglon {{ renglon_idx + 1 }}"
                                                         autocomplete="off"
+                                                    >
+                                                </td>
+                                                <td data-field="debe_centavos">
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-debe-ars"
+                                                        data-field="debe_ars_centavos"
+                                                        data-role="asiento-debe-ars"
+                                                        type="text"
+                                                        value="{{ detalle_asiento.debe_centavos }}"
+                                                        class="form-control form-control-sm text-end bg-body-secondary"
+                                                        placeholder="0,00"
+                                                        aria-label="Debe ARS calculado del renglon {{ renglon_idx + 1 }}"
+                                                        autocomplete="off"
+                                                        readonly
+                                                        tabindex="-1"
+                                                    >
+                                                </td>
+                                                <td data-field="haber_centavos">
+                                                    <input
+                                                        id="as-det-{{ renglon_idx }}-haber-ars"
+                                                        data-field="haber_ars_centavos"
+                                                        data-role="asiento-haber-ars"
+                                                        type="text"
+                                                        value="{{ detalle_asiento.haber_centavos }}"
+                                                        class="form-control form-control-sm text-end bg-body-secondary"
+                                                        placeholder="0,00"
+                                                        aria-label="Haber ARS calculado del renglon {{ renglon_idx + 1 }}"
+                                                        autocomplete="off"
+                                                        readonly
+                                                        tabindex="-1"
                                                     >
                                                 </td>
                                                 <td data-field="accion" class="text-center">
@@ -425,7 +461,7 @@
                             >
                                 <div class="col-12 col-md-3">
                                     <div class="border rounded-3 p-2 bg-body">
-                                        <div class="small text-muted">Total Debe</div>
+                                        <div class="small text-muted">Total Debe ARS</div>
                                         <div
                                             id="as-total-debe"
                                             data-role="asiento-total-debe"
@@ -438,7 +474,7 @@
                                 </div>
                                 <div class="col-12 col-md-3">
                                     <div class="border rounded-3 p-2 bg-body">
-                                        <div class="small text-muted">Total Haber</div>
+                                        <div class="small text-muted">Total Haber ARS</div>
                                         <div
                                             id="as-total-haber"
                                             data-role="asiento-total-haber"

@@ -18,12 +18,16 @@
         '[data-role="asiento-total-haber"]';
     const ASIENTOS_SELECTOR_DIFERENCIA =
         '[data-role="asiento-diferencia"]';
-    const ASIENTOS_SELECTOR_INPUT_DEBE =
-        'input[data-field="debe_centavos"]';
-    const ASIENTOS_SELECTOR_INPUT_HABER =
-        'input[data-field="haber_centavos"]';
-    const ASIENTOS_SELECTOR_IMPORTE_CONTABLE =
-        'input[data-field="debe_centavos"], input[data-field="haber_centavos"]';
+    const ASIENTOS_SELECTOR_INPUT_DEBE_NOMINAL =
+        'input[data-field="nominal_debe_centavos"]';
+    const ASIENTOS_SELECTOR_INPUT_HABER_NOMINAL =
+        'input[data-field="nominal_haber_centavos"]';
+    const ASIENTOS_SELECTOR_INPUT_DEBE_ARS =
+        'input[data-field="debe_ars_centavos"]';
+    const ASIENTOS_SELECTOR_INPUT_HABER_ARS =
+        'input[data-field="haber_ars_centavos"]';
+    const ASIENTOS_SELECTOR_IMPORTE_NOMINAL =
+        'input[data-field="nominal_debe_centavos"], input[data-field="nominal_haber_centavos"]';
     const ASIENTOS_SELECTOR_GUARDAR_BORRADOR =
         "#as-guardar";
 
@@ -270,8 +274,10 @@
             campo === "cuenta_contable_codigo" ||
             campo === "cuenta_contable_descripcion" ||
             campo === "descripcion" ||
-            campo === "debe_centavos" ||
-            campo === "haber_centavos"
+            campo === "nominal_debe_centavos" ||
+            campo === "nominal_haber_centavos" ||
+            campo === "debe_ars_centavos" ||
+            campo === "haber_ars_centavos"
         ) {
             campoRenglon.value = "";
         }
@@ -354,6 +360,38 @@
         );
     }
 
+    function asignarImporteCalculado(inputImporteCalculado, importeCentavos) {
+        if (!inputImporteCalculado) {
+            return;
+        }
+
+        inputImporteCalculado.value = formatearCentavosArgentino(importeCentavos);
+    }
+
+    function actualizarImportesArsRenglon(renglonAsiento) {
+        const debeNominalCentavos = obtenerImporteRenglonAsiento(
+            renglonAsiento,
+            ASIENTOS_SELECTOR_INPUT_DEBE_NOMINAL
+        );
+        const haberNominalCentavos = obtenerImporteRenglonAsiento(
+            renglonAsiento,
+            ASIENTOS_SELECTOR_INPUT_HABER_NOMINAL
+        );
+
+        asignarImporteCalculado(
+            renglonAsiento.querySelector(ASIENTOS_SELECTOR_INPUT_DEBE_ARS),
+            debeNominalCentavos
+        );
+        asignarImporteCalculado(
+            renglonAsiento.querySelector(ASIENTOS_SELECTOR_INPUT_HABER_ARS),
+            haberNominalCentavos
+        );
+    }
+
+    function actualizarImportesArsRenglones() {
+        obtenerRenglonesAsiento().forEach(actualizarImportesArsRenglon);
+    }
+
     function actualizarClaseDiferencia(elementoDiferencia, diferenciaCentavos) {
         elementoDiferencia.classList.toggle("text-success", diferenciaCentavos === 0);
         elementoDiferencia.classList.toggle("text-danger", diferenciaCentavos !== 0);
@@ -411,11 +449,13 @@
             return;
         }
 
+        actualizarImportesArsRenglones();
+
         const totalDebeCentavos = sumarImportesRenglones(
-            ASIENTOS_SELECTOR_INPUT_DEBE
+            ASIENTOS_SELECTOR_INPUT_DEBE_ARS
         );
         const totalHaberCentavos = sumarImportesRenglones(
-            ASIENTOS_SELECTOR_INPUT_HABER
+            ASIENTOS_SELECTOR_INPUT_HABER_ARS
         );
         const diferenciaCentavos = totalDebeCentavos - totalHaberCentavos;
 
@@ -523,11 +563,11 @@
                 buscarCuentasConDebounce(inputCuentaContable);
             }
 
-            const inputImporteContable = evento.target.closest(
-                ASIENTOS_SELECTOR_IMPORTE_CONTABLE
+            const inputImporteNominal = evento.target.closest(
+                ASIENTOS_SELECTOR_IMPORTE_NOMINAL
             );
 
-            if (inputImporteContable) {
+            if (inputImporteNominal) {
                 actualizarTotalesAsiento();
             }
         });

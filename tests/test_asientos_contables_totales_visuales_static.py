@@ -38,7 +38,11 @@ def test_js_nuevo_asiento_actualiza_totales_visuales():
     assert "ASIENTOS_SELECTOR_TOTAL_DEBE" in contenido
     assert "ASIENTOS_SELECTOR_TOTAL_HABER" in contenido
     assert "ASIENTOS_SELECTOR_DIFERENCIA" in contenido
-    assert "ASIENTOS_SELECTOR_IMPORTE_CONTABLE" in contenido
+    assert "ASIENTOS_SELECTOR_IMPORTE_NOMINAL" in contenido
+    assert "ASIENTOS_SELECTOR_INPUT_DEBE_ARS" in contenido
+    assert "ASIENTOS_SELECTOR_INPUT_HABER_ARS" in contenido
+    assert "actualizarImportesArsRenglon" in contenido
+    assert "actualizarImportesArsRenglones" in contenido
     assert "normalizarImporteArgentinoACentavos" in contenido
     assert "formatearCentavosArgentino" in contenido
     assert "actualizarTotalesAsiento" in contenido
@@ -76,3 +80,20 @@ def test_js_nuevo_asiento_bloquea_guardar_borrador_si_no_balancea():
     assert "function actualizarEstadoBotonGuardarBorrador" in contenido
     assert "botonGuardarBorrador.disabled = debeBloquearGuardar;" in contenido
     assert "actualizarEstadoBotonGuardarBorrador(diferenciaCentavos);" in contenido
+
+
+def test_template_nuevo_asiento_totales_indican_ars():
+    """
+    Valida que los totales visibles sean explicitamente contables en ARS.
+
+    Los importes nominales son la entrada del usuario, pero la diferencia y el
+    bloqueo de guardado deben apoyarse visualmente en los importes ARS.
+    """
+    contenido = TEMPLATE_NUEVO_ASIENTO.read_text(encoding="utf-8")
+
+    assert "Total Debe ARS" in contenido
+    assert "Total Haber ARS" in contenido
+    assert "Debe nominal" in contenido
+    assert "Haber nominal" in contenido
+    assert "Debe ARS" in contenido
+    assert "Haber ARS" in contenido

@@ -521,11 +521,17 @@ def test_pantalla_nuevo_asiento_contable_tooltip_y_columnas_renglones():
         in response.data
     )
     assert b'id="as-det-col-nombre-cuenta"' in response.data
-    assert b'style="width: 32%;"' in response.data
+    assert b'id="as-det-col-debe-nominal"' in response.data
+    assert b'id="as-det-col-haber-nominal"' in response.data
+    assert b'id="as-det-col-debe-ars"' in response.data
+    assert b'id="as-det-col-haber-ars"' in response.data
     assert b'id="as-det-col-moneda"' in response.data
-    assert b'style="width: 8%;"' in response.data
     assert b'style="table-layout: fixed;"' in response.data
     assert b'maxlength="3"' in response.data
+    assert b'Debe nominal' in response.data
+    assert b'Haber nominal' in response.data
+    assert b'Debe ARS' in response.data
+    assert b'Haber ARS' in response.data
 
 
 
@@ -691,3 +697,52 @@ def test_pantalla_nuevo_asiento_limpia_html_cuenta_y_nombre_cuenta():
 
     assert "Agrega o quita renglones segun sea necesario." in html
     assert "La persistencia se habilitara en un paso posterior." not in html
+
+
+def test_pantalla_nuevo_asiento_contable_expone_nominal_y_ars_calculado():
+    """
+    Valida contrato visual de carga nominal y calculo ARS.
+
+    La carga del usuario queda en Debe/Haber nominal, mientras Debe/Haber ARS
+    queda readonly para representar el importe contable sobre el que opera
+    contabilidad.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+
+    assert 'data-field="nominal_debe_centavos"' in html
+    assert 'data-field="nominal_haber_centavos"' in html
+    assert 'data-field="debe_ars_centavos"' in html
+    assert 'data-field="haber_ars_centavos"' in html
+
+    assert 'id="as-det-0-debe"' in html
+    assert 'name="detalles[0][debe_centavos]"' in html
+    assert 'data-post-field="debe_centavos"' in html
+    assert 'aria-label="Debe nominal del renglon 1"' in html
+
+    assert 'id="as-det-0-haber"' in html
+    assert 'name="detalles[0][haber_centavos]"' in html
+    assert 'data-post-field="haber_centavos"' in html
+    assert 'aria-label="Haber nominal del renglon 1"' in html
+
+    assert 'id="as-det-0-debe-ars"' in html
+    assert 'data-role="asiento-debe-ars"' in html
+    assert 'aria-label="Debe ARS calculado del renglon 1"' in html
+
+    assert 'id="as-det-0-haber-ars"' in html
+    assert 'data-role="asiento-haber-ars"' in html
+    assert 'aria-label="Haber ARS calculado del renglon 1"' in html
+
+    assert 'name="detalles[0][debe_ars_centavos]"' not in html
+    assert 'name="detalles[0][haber_ars_centavos]"' not in html
