@@ -295,7 +295,7 @@
     }
 
     function limpiarRenglonClonado(renglonAsiento) {
-        const camposRenglon = renglonAsiento.querySelectorAll("input");
+        const camposRenglon = renglonAsiento.querySelectorAll("input, select");
         const datalistsRenglon = renglonAsiento.querySelectorAll("datalist");
 
         camposRenglon.forEach((campoRenglon) => {

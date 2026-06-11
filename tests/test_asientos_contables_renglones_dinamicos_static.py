@@ -24,3 +24,21 @@ def test_js_renglones_dinamicos_nuevo_asiento_tiene_contrato_identificable():
     assert "ASIENTOS_SELECTOR_CANTIDAD_RENGLONES" in contenido
     assert "actualizarCantidadRenglonesAsiento" in contenido
     assert "textContent = String(obtenerRenglonesAsiento().length)" in contenido
+
+
+def test_js_renglones_dinamicos_limpia_select_moneda_al_clonar():
+    """
+    Valida que el clonado contemple selects de moneda por renglon.
+
+    Al agregar un renglon nuevo, la moneda debe volver a ARS para no heredar
+    accidentalmente la moneda nominal del renglon anterior.
+    """
+    with open(
+        "app/static/js/asientos_contables_nuevo_lookup_cuentas.js",
+        encoding="utf-8",
+    ) as archivo_js:
+        contenido = archivo_js.read()
+
+    assert 'querySelectorAll("input, select")' in contenido
+    assert 'campo === "moneda_codigo"' in contenido
+    assert 'campoRenglon.value = "ARS";' in contenido

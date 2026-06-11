@@ -168,25 +168,18 @@
 
                     <div class="col-12 col-md-4">
                         <label for="as-moneda-origen" class="form-label">
-                            Moneda origen
+                            Moneda contable
                         </label>
-                        <select
+                        <input
                             id="as-moneda-origen"
-                            data-ns-select="normal"
                             data-table="asientos_contables"
                             data-field="moneda_origen_codigo"
+                            type="text"
                             name="moneda_origen_codigo"
-                            class="form-select"
+                            value="ARS"
+                            class="form-control"
+                            readonly
                         >
-                            {% for moneda in monedas_activas %}
-                                <option
-                                    value="{{ moneda.codigo }}"
-                                    {% if moneda.codigo == asiento_contable_form.moneda_origen_codigo %}selected{% endif %}
-                                >
-                                    {{ moneda.descripcion_select }}
-                                </option>
-                            {% endfor %}
-                        </select>
                     </div>
 
                     <div class="col-12 col-md-4">
@@ -209,13 +202,13 @@
                             for="as-cotizacion-tipo"
                             class="form-label d-flex align-items-center gap-1"
                         >
-                            <span>Cotizacion</span>
+                            <span>Cotizacion por defecto</span>
                             <span
                                 id="as-cotizacion-ayuda"
                                 data-field="cotizacion_ayuda"
                                 class="badge rounded-pill text-bg-secondary"
-                                title="Define el criterio para buscar cotizacion cuando la moneda origen no es ARS."
-                                aria-label="Define el criterio para buscar cotizacion cuando la moneda origen no es ARS."
+                                title="Define el criterio por defecto para buscar cotizacion en renglones con moneda distinta de ARS."
+                                aria-label="Define el criterio por defecto para buscar cotizacion en renglones con moneda distinta de ARS."
                             >?</span>
                         </label>
                         <select
@@ -349,17 +342,23 @@
                                                     >
                                                 </td>
                                                 <td data-field="moneda_codigo">
-                                                    <input
+                                                    <select
                                                         id="as-det-{{ renglon_idx }}-moneda"
                                                         data-field="moneda_codigo"
-                                                        type="text"
+                                                        data-role="asiento-moneda-renglon"
                                                         name="detalles[{{ renglon_idx }}][moneda_codigo]"
-                                                        value="{{ detalle_asiento.moneda_codigo }}"
-                                                        class="form-control form-control-sm text-center px-1"
+                                                        class="form-select form-select-sm text-center px-1"
                                                         aria-label="Moneda del renglon {{ renglon_idx + 1 }}"
-                                                        maxlength="3"
-                                                        readonly
                                                     >
+                                                        {% for moneda in monedas_activas %}
+                                                            <option
+                                                                value="{{ moneda.codigo }}"
+                                                                {% if moneda.codigo == detalle_asiento.moneda_codigo %}selected{% endif %}
+                                                            >
+                                                                {{ moneda.codigo }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
                                                 </td>
                                                 <td data-field="cotizacion_1000000">
                                                     <input

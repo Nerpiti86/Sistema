@@ -517,7 +517,7 @@ def test_pantalla_nuevo_asiento_contable_tooltip_y_columnas_renglones():
     assert b'id="as-cotizacion-ayuda"' in response.data
     assert b'class="badge rounded-pill text-bg-secondary"' in response.data
     assert (
-        b'title="Define el criterio para buscar cotizacion cuando la moneda origen no es ARS."'
+        b'title="Define el criterio por defecto para buscar cotizacion en renglones con moneda distinta de ARS."'
         in response.data
     )
     assert b'id="as-det-col-nombre-cuenta"' in response.data
@@ -527,7 +527,8 @@ def test_pantalla_nuevo_asiento_contable_tooltip_y_columnas_renglones():
     assert b'id="as-det-col-haber-ars"' in response.data
     assert b'id="as-det-col-moneda"' in response.data
     assert b'style="table-layout: fixed;"' in response.data
-    assert b'maxlength="3"' in response.data
+    assert b'id="as-det-0-moneda"' in response.data
+    assert b'data-role="asiento-moneda-renglon"' in response.data
     assert b'Debe nominal' in response.data
     assert b'Haber nominal' in response.data
     assert b'Debe ARS' in response.data
@@ -746,3 +747,51 @@ def test_pantalla_nuevo_asiento_contable_expone_nominal_y_ars_calculado():
 
     assert 'name="detalles[0][debe_ars_centavos]"' not in html
     assert 'name="detalles[0][haber_ars_centavos]"' not in html
+
+
+def test_pantalla_nuevo_asiento_contable_moneda_por_renglon_editable():
+    """
+    Valida que la moneda operativa se defina por renglon.
+
+    La cabecera queda fija en ARS como moneda contable, mientras cada renglon
+    expone un select editable para moneda nominal.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_contable_pantalla_para_asientos(db)
+
+        response = client.get("/contabilidad/asientos-contables/nuevo/")
+
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+
+    assert "Moneda contable" in html
+    assert 'id="as-moneda-origen"' in html
+    assert 'name="moneda_origen_codigo"' in html
+    assert 'value="ARS"' in html
+
+    inicio_moneda = html.index('id="as-det-0-moneda"')
+    inicio_td = html.rfind("<td", 0, inicio_moneda)
+    fin_td = html.index("</td>", inicio_moneda)
+    bloque_moneda = html[inicio_td:fin_td]
+
+    assert "<select" in bloque_moneda
+    assert 'data-field="moneda_codigo"' in bloque_moneda
+    assert 'data-role="asiento-moneda-renglon"' in bloque_moneda
+    assert 'name="detalles[0][moneda_codigo]"' in bloque_moneda
+    assert 'value="ARS"' in bloque_moneda
+    assert 'value="USD"' in bloque_moneda
+    assert 'value="EUR"' in bloque_moneda
+    assert "readonly" not in bloque_moneda
+    assert "maxlength" not in bloque_moneda
+
+    assert "Cotizacion por defecto" in html
+    assert (
+        "Define el criterio por defecto para buscar cotizacion en renglones "
+        "con moneda distinta de ARS."
+    ) in html
