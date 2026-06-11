@@ -89,3 +89,62 @@ def test_js_renglon_moneda_badge_cicla_select_y_dispara_change():
     assert "(indiceActual + 1) % cantidadOpciones" in contenido
     assert 'dispatchEvent(new Event("change", { bubbles: true }))' in contenido
     assert "sincronizarBadgeMonedaRenglon(renglonAsiento);" in contenido
+
+
+def test_moneda_badge_tiene_formato_visual_por_moneda():
+    """
+    Valida contrato visual del badge de moneda por renglon.
+
+    ARS, USD y EUR deben tener colores propios y usar Roboto Mono importada
+    desde Google Fonts, sin cambiar el contrato POST del select real.
+    """
+    with open("app/ui/templates/base.html", encoding="utf-8") as archivo_base:
+        base = archivo_base.read()
+
+    with open(
+        "app/static/css/nerisoft_typography.css",
+        encoding="utf-8",
+    ) as archivo_tipografia:
+        tipografia = archivo_tipografia.read()
+
+    with open(
+        "app/static/css/nerisoft_theme.css",
+        encoding="utf-8",
+    ) as archivo_theme:
+        theme = archivo_theme.read()
+
+    with open(
+        "app/contabilidad/templates/contabilidad/asientos_contables_nuevo.html",
+        encoding="utf-8",
+    ) as archivo_template:
+        template = archivo_template.read()
+
+    with open(
+        "app/static/js/asientos_contables_nuevo_lookup_cuentas.js",
+        encoding="utf-8",
+    ) as archivo_js:
+        js = archivo_js.read()
+
+    assert "Roboto+Mono:wght@500;600;700&display=swap" in base
+    assert '--ns-font-family-mono: "Roboto Mono";' in tipografia
+
+    assert "font-family: var(--ns-font-family-mono);" in theme
+    assert ".ns-moneda-badge--ars" in theme
+    assert "#e0f2fe" in theme
+    assert "#0284c7" in theme
+    assert ".ns-moneda-badge--usd" in theme
+    assert "#dcfce7" in theme
+    assert "#16a34a" in theme
+    assert ".ns-moneda-badge--eur" in theme
+    assert "#f3e8ff" in theme
+    assert "#9333ea" in theme
+
+    assert "ASIENTOS_MONEDA_BADGE_CLASES" in js
+    assert "function obtenerClaseBadgeMoneda" in js
+    assert "classList.add(obtenerClaseBadgeMoneda(monedaRenglon))" in js
+    assert (
+        'class="btn btn-sm badge rounded-pill text-bg-light border '
+        'border-secondary ns-moneda-badge px-2 py-1"'
+        not in template
+    )
+    assert "ns-moneda-badge--{{ detalle_asiento.moneda_codigo|lower }}" in template

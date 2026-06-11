@@ -367,7 +367,7 @@
                                                         data-role="asiento-moneda-badge"
                                                         data-action="ciclar-moneda-renglon"
                                                         type="button"
-                                                        class="btn btn-sm badge rounded-pill text-bg-light border border-secondary ns-moneda-badge px-2 py-1"
+                                                        class="btn btn-sm badge rounded-pill ns-moneda-badge ns-moneda-badge--{{ detalle_asiento.moneda_codigo|lower }} px-2 py-1"
                                                         aria-label="Moneda {{ detalle_asiento.moneda_codigo }} del renglon {{ renglon_idx + 1 }}. Click para cambiar moneda"
                                                         title="Click para cambiar moneda"
                                                     >

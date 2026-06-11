@@ -22,6 +22,7 @@ def test_base_carga_google_fonts_inter_y_css_global_de_tipografia():
     assert "https://fonts.googleapis.com" in html
     assert "https://fonts.gstatic.com" in html
     assert "family=Inter:wght@400;500;600;700&display=swap" in html
+    assert "Roboto+Mono:wght@500;600;700&display=swap" in html
     assert "css/nerisoft_typography.css" in html
     assert html.index("fonts.googleapis.com") < html.index("css/nerisoft_typography.css")
 
@@ -47,7 +48,8 @@ def test_css_global_define_inter_sin_fallbacks_y_tabular_nums():
     assert "-apple-system" not in css
     assert "BlinkMacSystemFont" not in css
     assert "Segoe UI" not in css
-    assert "Roboto" not in css
+    assert "Roboto," not in css
+    assert '--ns-font-family-mono: "Roboto Mono";' in css
     assert "Arial" not in css
     assert "sans-serif" not in css
     assert "font-variant-numeric: tabular-nums;" in css

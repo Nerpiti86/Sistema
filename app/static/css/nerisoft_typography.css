@@ -1,6 +1,7 @@
 :root {
     --ns-font-family-base: "Inter";
     --ns-font-family-numeric: "Inter";
+    --ns-font-family-mono: "Roboto Mono";
 
     --ns-font-sans: var(--ns-font-family-base);
     --ns-font-numeric: var(--ns-font-family-numeric);

@@ -42,6 +42,12 @@
     const ASIENTOS_MENSAJE_ASIENTO_DESBALANCEADO =
         "El asiento debe balancear para guardar.";
     const ASIENTOS_MONEDA_CONTABLE = "ARS";
+    const ASIENTOS_MONEDA_BADGE_CLASES = [
+        "ns-moneda-badge--ars",
+        "ns-moneda-badge--usd",
+        "ns-moneda-badge--eur",
+        "ns-moneda-badge--default",
+    ];
     const ASIENTOS_COTIZACION_ESCALA = 1000000;
     const ASIENTOS_MENSAJE_COTIZACION_INVALIDA = "Revisar cotizacion";
 
@@ -521,6 +527,26 @@
         );
     }
 
+    function obtenerClaseBadgeMoneda(monedaRenglon) {
+        const monedaNormalizada = String(monedaRenglon || "")
+            .trim()
+            .toLowerCase();
+
+        if (monedaNormalizada === "ars") {
+            return "ns-moneda-badge--ars";
+        }
+
+        if (monedaNormalizada === "usd") {
+            return "ns-moneda-badge--usd";
+        }
+
+        if (monedaNormalizada === "eur") {
+            return "ns-moneda-badge--eur";
+        }
+
+        return "ns-moneda-badge--default";
+    }
+
     function sincronizarBadgeMonedaRenglon(renglonAsiento) {
         const badgeMoneda = obtenerBadgeMonedaRenglon(renglonAsiento);
 
@@ -535,14 +561,15 @@
 
         badgeMoneda.textContent = monedaRenglon;
         badgeMoneda.dataset.value = monedaRenglon;
-        badgeMoneda.classList.toggle(
+        ASIENTOS_MONEDA_BADGE_CLASES.forEach((claseBadge) => {
+            badgeMoneda.classList.remove(claseBadge);
+        });
+        badgeMoneda.classList.remove(
             "text-bg-light",
-            monedaRenglon === ASIENTOS_MONEDA_CONTABLE
-        );
-        badgeMoneda.classList.toggle(
             "text-bg-secondary",
-            monedaRenglon !== ASIENTOS_MONEDA_CONTABLE
+            "border-secondary"
         );
+        badgeMoneda.classList.add(obtenerClaseBadgeMoneda(monedaRenglon));
         badgeMoneda.setAttribute(
             "aria-label",
             `Moneda ${monedaRenglon} del renglon ${numeroRenglon}. Click para cambiar moneda`

@@ -247,3 +247,56 @@ main.container-fluid {
 .ns-card .table thead th:last-child {
     border-top-right-radius: calc(var(--ns-radius-subtle) - 0.15rem);
 }
+
+/* NS_MONEDA_BADGE_START */
+.ns-moneda-badge {
+    --ns-moneda-badge-bg: #f8f9fa;
+    --ns-moneda-badge-border: #adb5bd;
+    --ns-moneda-badge-color: #343a40;
+
+    min-width: 3.25rem;
+    font-family: var(--ns-font-family-mono);
+    font-size: var(--ns-font-size-form-dense);
+    font-weight: var(--ns-font-weight-bold);
+    line-height: 1;
+    letter-spacing: 0.03em;
+    color: var(--ns-moneda-badge-color);
+    background-color: var(--ns-moneda-badge-bg);
+    border: 1px solid var(--ns-moneda-badge-border);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+    user-select: none;
+}
+
+.ns-moneda-badge:hover,
+.ns-moneda-badge:focus {
+    color: var(--ns-moneda-badge-color);
+    background-color: var(--ns-moneda-badge-bg);
+    border-color: var(--ns-moneda-badge-border);
+    filter: brightness(0.98);
+}
+
+.ns-moneda-badge--ars {
+    --ns-moneda-badge-bg: #e0f2fe;
+    --ns-moneda-badge-border: #0284c7;
+    --ns-moneda-badge-color: #075985;
+}
+
+.ns-moneda-badge--usd {
+    --ns-moneda-badge-bg: #dcfce7;
+    --ns-moneda-badge-border: #16a34a;
+    --ns-moneda-badge-color: #166534;
+}
+
+.ns-moneda-badge--eur {
+    --ns-moneda-badge-bg: #f3e8ff;
+    --ns-moneda-badge-border: #9333ea;
+    --ns-moneda-badge-color: #6b21a8;
+}
+
+.ns-moneda-badge--default {
+    --ns-moneda-badge-bg: #f8f9fa;
+    --ns-moneda-badge-border: #6c757d;
+    --ns-moneda-badge-color: #343a40;
+}
+/* NS_MONEDA_BADGE_END */
