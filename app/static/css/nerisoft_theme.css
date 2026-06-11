@@ -11,6 +11,11 @@
     --ns-radius-subtle: 0.45rem;
 }
 
+html {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
 body {
     background-color: var(--ns-color-soft);
 }
