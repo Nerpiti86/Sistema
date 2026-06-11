@@ -43,6 +43,23 @@ def test_input_indice_inflacion_declara_decimal_argentino():
     assert b'inputmode="decimal"' in response.data
 
 
+def test_inputs_asiento_debe_haber_declaran_money_ar_centavos():
+    """
+    Contrato: debe/haber usan formatter AR en vivo sin cambiar name de POST.
+
+    El backend sigue recibiendo el mismo nombre de campo y normaliza a centavos.
+    """
+    contenido = Path(
+        "app/contabilidad/templates/contabilidad/asientos_contables_nuevo.html"
+    ).read_text(encoding="utf-8")
+
+    assert contenido.count('data-money-ar="centavos"') == 2
+    assert 'data-field="debe_centavos"' in contenido
+    assert 'data-field="haber_centavos"' in contenido
+    assert 'name="detalles[{{ renglon_idx }}][debe_centavos]"' in contenido
+    assert 'name="detalles[{{ renglon_idx }}][haber_centavos]"' in contenido
+
+
 def test_js_numero_argentino_convierte_punto_a_coma_sin_dom_inseguro():
     """
     Contrato: el punto decimal se transforma en coma desde JS global.
@@ -60,6 +77,33 @@ def test_js_numero_argentino_convierte_punto_a_coma_sin_dom_inseguro():
     assert 'input.setRangeText(",",' in contenido
     assert 'replaceAll(".", ",")' in contenido
     assert "normalizarPegadoDecimalArgentino" in contenido
+    assert "innerHTML" not in contenido
+    assert ".style" not in contenido
+    assert 'setAttribute("style"' not in contenido
+
+
+def test_js_money_ar_centavos_formatea_en_vivo():
+    """
+    Contrato: money AR acepta punto como decimal y formatea miles en vivo.
+
+    Los campos dinamicos quedan cubiertos por delegacion de eventos global.
+    """
+    contenido = Path("app/static/js/numero_argentino.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'input[data-money-ar="centavos"]' in contenido
+    assert "formatearMonedaArgentinaEnVivo" in contenido
+    assert "formatearMonedaArgentinaCentavos" in contenido
+    assert "normalizarPartesMonedaArgentina" in contenido
+    assert "obtenerIndiceSeparadorDecimal" in contenido
+    assert "formatearMilesArgentinos" in contenido
+    assert "setSelectionRange" in contenido
+    assert "keydown" in contenido
+    assert "beforeinput" in contenido
+    assert "input" in contenido
+    assert "paste" in contenido
+    assert 'replace(/\\B(?=(\\d{3})+(?!\\d))/g, ".")' in contenido
     assert "innerHTML" not in contenido
     assert ".style" not in contenido
     assert 'setAttribute("style"' not in contenido
