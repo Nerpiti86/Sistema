@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_button, secondary_link %}
+
+{% block content %}
+<section id="mope-form" data-table="medios_operativos" data-action="{{ modo_formulario }}" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="mope-form-titulo" class="h3 mb-1">{{ form_titulo }}</h1>
+                <p id="mope-form-descripcion" class="text-muted mb-0">
+                    Parametrización de medios para cobros, pagos y movimientos de tesorería.
+                </p>
+            </div>
+            <div id="mope-form-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver a medios", form_cancelar_url) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        {% call card(form_titulo, "medios operativos") %}
+            <form id="mope-formulario" method="post" action="{{ action_url }}" data-table="medios_operativos">
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
+                        <label for="mope-codigo" class="form-label">Código</label>
+                        <input id="mope-codigo" data-field="codigo" name="codigo" type="text" class="form-control" value="{{ medio_operativo.codigo | default('', true) }}" {% if codigo_solo_lectura %}readonly{% endif %} required>
+                    </div>
+
+                    <div class="col-12 col-md-5">
+                        <label for="mope-nombre" class="form-label">Nombre</label>
+                        <input id="mope-nombre" data-field="nombre" name="nombre" type="text" class="form-control" value="{{ medio_operativo.nombre | default('', true) }}" required>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="mope-tipo" class="form-label">Tipo</label>
+                        <select id="mope-tipo" data-field="tipo" name="tipo" class="form-select" required>
+                            {% for tipo in tipos_medios_operativos %}
+                                <option value="{{ tipo.codigo }}" {% if medio_operativo.tipo | default('EFECTIVO', true) == tipo.codigo %}selected{% endif %}>{{ tipo.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="mope-moneda" class="form-label">Moneda</label>
+                        <select id="mope-moneda" data-field="moneda_codigo" name="moneda_codigo" class="form-select" required>
+                            <option value="">Seleccionar moneda...</option>
+                            {% for moneda in monedas %}
+                                <option value="{{ moneda.codigo }}" {% if medio_operativo.moneda_codigo | default('', true) == moneda.codigo %}selected{% endif %}>{{ moneda.codigo }} - {{ moneda.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="mope-cuenta-contable" class="form-label">Cuenta contable</label>
+                        <input id="mope-cuenta-contable" data-field="cuenta_contable_codigo" name="cuenta_contable_codigo" type="text" class="form-control" value="{{ medio_operativo.cuenta_contable_codigo | default('', true) }}" placeholder="9.9.99.99.999" required>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="mope-banco" class="form-label">Banco</label>
+                        <select id="mope-banco" data-field="banco_codigo" name="banco_codigo" class="form-select">
+                            <option value="">Sin banco</option>
+                            {% for banco in bancos %}
+                                <option value="{{ banco.codigo }}" {% if medio_operativo.banco_codigo | default('', true) == banco.codigo %}selected{% endif %}>{{ banco.codigo }} - {{ banco.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="mope-plaza" class="form-label">Plaza</label>
+                        <input id="mope-plaza" data-field="plaza" name="plaza" type="text" class="form-control" value="{{ medio_operativo.plaza | default('', true) }}">
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="mope-sucursal" class="form-label">Sucursal</label>
+                        <input id="mope-sucursal" data-field="sucursal" name="sucursal" type="text" class="form-control" value="{{ medio_operativo.sucursal | default('', true) }}">
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="mope-numero-cuenta" class="form-label">Número de cuenta</label>
+                        <input id="mope-numero-cuenta" data-field="numero_cuenta" name="numero_cuenta" type="text" class="form-control" value="{{ medio_operativo.numero_cuenta | default('', true) }}">
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="mope-cuit" class="form-label">CUIT</label>
+                        <input id="mope-cuit" data-field="cuit" name="cuit" type="text" class="form-control" value="{{ medio_operativo.cuit | default('', true) }}">
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="mope-cotizacion" class="form-label">Cotización default centavos</label>
+                        <input id="mope-cotizacion" data-field="cotizacion_default_centavos" name="cotizacion_default_centavos" type="number" min="0" step="1" class="form-control" value="{{ medio_operativo.cotizacion_default_centavos | default('', true) }}">
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="mope-orden" class="form-label">Orden</label>
+                        <input id="mope-orden" data-field="orden" name="orden" type="number" min="0" step="1" class="form-control" value="{{ medio_operativo.orden | default(0, true) }}" required>
+                    </div>
+
+                    <div class="col-12 col-md-3 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input id="mope-requiere-cotizacion" data-field="requiere_cotizacion" name="requiere_cotizacion" type="checkbox" class="form-check-input" value="1" {% if medio_operativo.requiere_cotizacion | default(0, true) | int == 1 %}checked{% endif %}>
+                            <label for="mope-requiere-cotizacion" class="form-check-label">Cambio</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-3 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input id="mope-activo" data-field="activo" name="activo" type="checkbox" class="form-check-input" value="1" {% if medio_operativo.activo | default(1, true) | int == 1 %}checked{% endif %}>
+                            <label for="mope-activo" class="form-check-label">Activo</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        {{ secondary_link("Cancelar", form_cancelar_url) }}
+                        {{ primary_button(form_submit_label) }}
+                    </div>
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+</section>
+{% endblock %}
