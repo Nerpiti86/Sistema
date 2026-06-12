@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
+
+{% block content %}
+<section id="mope-listado" data-table="medios_operativos" data-query="listar_medios_operativos" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="mope-titulo" class="h3 mb-1">Medios operativos</h1>
+                <p id="mope-descripcion" class="text-muted mb-0">
+                    Maestro de fondos para cobros, pagos y movimientos de tesorería.
+                </p>
+            </div>
+            <div id="mope-acciones-listado" class="d-flex gap-2">
+                {{ primary_link("Nuevo medio", url_for("tablas_comunes.ver_formulario_nuevo_medio_operativo")) }}
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="mope-resumen" data-table="medios_operativos" data-query="obtener_contexto_listado_medios_operativos">
+            {% call card("Resumen", "Tablas comunes") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd id="mope-cantidad" data-field="cantidad_medios_operativos" class="col-sm-9">{{ cantidad_medios_operativos }}</dd>
+                    <dt class="col-sm-3">Activos</dt>
+                    <dd id="mope-cantidad-activos" data-field="cantidad_medios_operativos_activos" class="col-sm-9 mb-0">{{ cantidad_medios_operativos_activos }}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="mope-contenedor-tabla" data-table="medios_operativos" data-query="listar_medios_operativos">
+            {% call card("Listado", "medios operativos") %}
+                <div class="table-responsive">
+                    <table id="mope-tabla" data-table="medios_operativos" data-query="listar_medios_operativos" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="codigo">Código</th>
+                                <th data-field="nombre">Nombre</th>
+                                <th data-field="tipo">Tipo</th>
+                                <th data-field="moneda_codigo">Moneda</th>
+                                <th data-field="cuenta_contable_codigo">Cuenta contable</th>
+                                <th data-field="banco_codigo">Banco</th>
+                                <th data-field="requiere_cotizacion" class="text-center">Cambio</th>
+                                <th data-field="activo" class="text-center">Activo</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mope-tbody">
+                            {% for medio in medios_operativos %}
+                                <tr id="mope-row-{{ medio.codigo }}" data-table="medios_operativos" data-row-codigo="{{ medio.codigo }}">
+                                    <td data-field="codigo" class="fw-semibold">{{ medio.codigo }}</td>
+                                    <td data-field="nombre">{{ medio.nombre }}</td>
+                                    <td data-field="tipo">{{ medio.tipo }}</td>
+                                    <td data-field="moneda_codigo">{{ medio.moneda_codigo }}</td>
+                                    <td data-field="cuenta_contable_codigo">{{ medio.cuenta_contable_codigo }}</td>
+                                    <td data-field="banco_codigo">{{ medio.banco_codigo or "" }}</td>
+                                    <td data-field="requiere_cotizacion" class="text-center">{% if medio.usa_cotizacion %}Si{% else %}No{% endif %}</td>
+                                    <td data-field="activo" class="text-center">{% if medio.esta_activo %}Si{% else %}No{% endif %}</td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('tablas_comunes.ver_formulario_editar_medio_operativo', codigo_medio_operativo=medio.codigo) }}">Editar</a>
+                                            {% if medio.esta_activo %}
+                                                <form method="post" action="{{ url_for('tablas_comunes.desactivar_medio_operativo_existente', codigo_medio_operativo=medio.codigo) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desactivar</button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('tablas_comunes.activar_medio_operativo_existente', codigo_medio_operativo=medio.codigo) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="mope-row-sin-datos" data-table="medios_operativos">
+                                    <td id="mope-mensaje-sin-datos" colspan="9" class="text-center text-muted py-4">No hay medios operativos cargados.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
