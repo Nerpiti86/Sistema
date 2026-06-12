@@ -7,6 +7,12 @@
 ] %}
 {% set es_bancos = endpoint_actual in [
     "tablas_comunes.ver_listado_bancos",
+    "tablas_comunes.ver_formulario_nuevo_banco",
+    "tablas_comunes.crear_banco_nuevo",
+    "tablas_comunes.ver_formulario_editar_banco",
+    "tablas_comunes.actualizar_banco_existente",
+    "tablas_comunes.activar_banco_existente",
+    "tablas_comunes.desactivar_banco_existente",
 ] %}
 {% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
 {% set es_asientos = endpoint_actual in [
