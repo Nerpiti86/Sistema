@@ -70,12 +70,12 @@
                         {{ asiento_contable.tipo_codigo }}
                     </dd>
 
-                    <dt class="col-sm-3">Monedas</dt>
+                    <dt class="col-sm-3">Cabecera contable</dt>
                     <dd class="col-sm-9" data-field="moneda_origen_codigo">
                         {{ asiento_contable.par_monedas_codigo }}
                     </dd>
 
-                    <dt class="col-sm-3">Cotización</dt>
+                    <dt class="col-sm-3">Cotiz. cabecera</dt>
                     <dd class="col-sm-9" data-field="cotizacion_1000000">
                         {{ asiento_contable.cotizacion_mostrar }}
                     </dd>
@@ -112,6 +112,14 @@
         >
             {% call card("Renglones", "Detalle del asiento") %}
                 <div class="table-responsive">
+                    <p
+                        id="as-detalle-renglones-ayuda"
+                        class="text-muted small mb-3"
+                        data-role="ayuda-renglones-moneda"
+                    >
+                        La moneda real y la cotización se leen por renglón; la cabecera solo identifica la moneda contable del asiento.
+                    </p>
+
                     <table
                         id="as-detalle-tabla"
                         data-table="asientos_contables_detalle"
