@@ -291,8 +291,10 @@ def test_pantalla_nuevo_asiento_contable_muestra_formulario_borrador():
     assert b'value="BORRADOR"' in response.data
     assert b'value="ARS"' in response.data
     assert b'id="as-cotizacion-tipo"' in response.data
-    assert b'data-ns-select="normal"' in response.data
-    assert b'CIERRE - Cotizacion de cierre' in response.data
+    assert b'name="cotizacion_tipo"' in response.data
+    assert b'type="hidden"' in response.data
+    assert b'data-ns-select="normal"' not in response.data
+    assert b'CIERRE - Cotizacion de cierre' not in response.data
     assert b"Ejercicio 2026" in response.data
     assert b"01/01/2026" in response.data
     assert b"31/12/2026" in response.data
@@ -643,12 +645,8 @@ def test_pantalla_nuevo_asiento_contable_tooltip_y_columnas_renglones():
         response = client.get("/contabilidad/asientos-contables/nuevo/")
 
     assert response.status_code == 200
-    assert b'id="as-cotizacion-ayuda"' in response.data
-    assert b'class="badge rounded-pill text-bg-secondary"' in response.data
-    assert (
-        'title="Define el criterio por defecto para buscar cotización en renglones con moneda distinta de ARS."'.encode("utf-8")
-        in response.data
-    )
+    assert b'id="as-cotizacion-ayuda"' not in response.data
+    assert b'class="badge rounded-pill text-bg-secondary"' not in response.data
     assert b'id="as-det-col-nombre-cuenta"' in response.data
     assert b'id="as-det-col-debe-nominal"' in response.data
     assert b'id="as-det-col-haber-nominal"' in response.data
@@ -899,10 +897,26 @@ def test_pantalla_nuevo_asiento_contable_moneda_por_renglon_editable():
 
     assert response.status_code == 200
 
-    assert "Moneda contable" in html
-    assert 'id="as-moneda-origen"' in html
-    assert 'name="moneda_origen_codigo"' in html
-    assert 'value="ARS"' in html
+    assert "Moneda contable" not in html
+    assert "Moneda contable destino" not in html
+    assert "Moneda destino" not in html
+    assert "Tipo de cotización por defecto" not in html
+    assert "Cotización por defecto" not in html
+    assert "Define el tipo usado cuando un renglón con moneda distinta de ARS no trae cotización manual." not in html
+
+    inicio_cabecera = html.index('id="as-cabecera-monetaria-tecnica"')
+    fin_cabecera = html.index("</div>", inicio_cabecera)
+    bloque_cabecera = html[inicio_cabecera:fin_cabecera]
+
+    assert 'data-role="cabecera-monetaria-tecnica"' in bloque_cabecera
+    assert 'id="as-moneda-origen"' in bloque_cabecera
+    assert 'name="moneda_origen_codigo"' in bloque_cabecera
+    assert 'value="ARS"' in bloque_cabecera
+    assert 'id="as-moneda-destino"' in bloque_cabecera
+    assert 'name="moneda_destino_codigo"' in bloque_cabecera
+    assert 'id="as-cotizacion-tipo"' in bloque_cabecera
+    assert 'name="cotizacion_tipo"' in bloque_cabecera
+    assert 'type="hidden"' in bloque_cabecera
 
     inicio_moneda = html.index('id="as-det-0-moneda"')
     inicio_td = html.rfind("<td", 0, inicio_moneda)
@@ -919,11 +933,6 @@ def test_pantalla_nuevo_asiento_contable_moneda_por_renglon_editable():
     assert "readonly" not in bloque_moneda
     assert "maxlength" not in bloque_moneda
 
-    assert "Cotización por defecto" in html
-    assert (
-        "Define el criterio por defecto para buscar cotización en renglones "
-        "con moneda distinta de ARS."
-    ) in html
 
 
 def test_pantalla_nuevo_asiento_cotizacion_renglon_manual_y_posteable():

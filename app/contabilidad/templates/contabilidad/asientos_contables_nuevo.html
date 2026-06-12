@@ -166,70 +166,34 @@
                         >
                     </div>
 
-                    <div class="col-12 col-md-4">
-                        <label for="as-moneda-origen" class="form-label">
-                            Moneda contable
-                        </label>
+                    <div
+                        id="as-cabecera-monetaria-tecnica"
+                        class="d-none"
+                        data-role="cabecera-monetaria-tecnica"
+                    >
                         <input
                             id="as-moneda-origen"
                             data-table="asientos_contables"
                             data-field="moneda_origen_codigo"
-                            type="text"
+                            type="hidden"
                             name="moneda_origen_codigo"
                             value="ARS"
-                            class="form-control"
-                            readonly
                         >
-                    </div>
-
-                    <div class="col-12 col-md-4">
-                        <label for="as-moneda-destino" class="form-label">
-                            Moneda destino
-                        </label>
                         <input
                             id="as-moneda-destino"
                             data-field="moneda_destino_codigo"
-                            type="text"
+                            type="hidden"
                             name="moneda_destino_codigo"
-                            value="{{ asiento_contable_form.moneda_destino_codigo }}"
-                            class="form-control"
-                            readonly
+                            value="ARS"
                         >
-                    </div>
-
-                    <div class="col-12 col-md-4">
-                        <label
-                            for="as-cotizacion-tipo"
-                            class="form-label d-flex align-items-center gap-1"
-                        >
-                            <span>Cotización por defecto</span>
-                            <span
-                                id="as-cotizacion-ayuda"
-                                data-field="cotizacion_ayuda"
-                                class="badge rounded-pill text-bg-secondary"
-                                title="Define el criterio por defecto para buscar cotización en renglones con moneda distinta de ARS."
-                                aria-label="Define el criterio por defecto para buscar cotización en renglones con moneda distinta de ARS."
-                            >?</span>
-                        </label>
-                        <select
+                        <input
                             id="as-cotizacion-tipo"
-                            data-ns-select="normal"
                             data-table="asientos_contables"
                             data-field="cotizacion_tipo"
+                            type="hidden"
                             name="cotizacion_tipo"
-                            class="form-select"
-                            aria-describedby="as-cotizacion-ayuda"
+                            value="{{ asiento_contable_form.cotizacion_tipo }}"
                         >
-                            {% for cotizacion_tipo in cotizacion_tipos %}
-                                <option
-                                    value="{{ cotizacion_tipo.codigo }}"
-                                    {% if cotizacion_tipo.codigo == asiento_contable_form.cotizacion_tipo %}selected{% endif %}
-                                >
-                                    {{ cotizacion_tipo.descripcion }}
-                                </option>
-                            {% endfor %}
-                        </select>
-
                     </div>
 
                     <div class="col-12">
