@@ -667,49 +667,22 @@ def _resolver_cotizacion_cabecera(
     datos_asiento: dict[str, Any],
     fecha: str,
 ) -> dict[str, Any]:
-    moneda_origen_codigo = _validar_codigo_moneda(
-        datos_asiento.get("moneda_origen_codigo", _MONEDA_CONTABLE),
-        "La moneda origen es obligatoria.",
-    )
-    moneda_destino_codigo = _validar_codigo_moneda(
-        datos_asiento.get("moneda_destino_codigo", _MONEDA_CONTABLE),
-        "La moneda destino es obligatoria.",
-    )
+    """
+    Normaliza la cabecera manual a moneda contable ARS/ARS.
+
+    La moneda operativa y la cotizacion real viven en cada renglon; por eso
+    la cabecera no busca cotizaciones FX del asiento.
+    """
     cotizacion_tipo = _validar_tipo_cotizacion(
         datos_asiento.get("cotizacion_tipo") or _TIPO_COTIZACION_DEFAULT
     )
 
-    if moneda_destino_codigo != _MONEDA_CONTABLE:
-        raise ValueError("La moneda contable destino debe ser ARS.")
-
-    datos_asiento["moneda_origen_codigo"] = moneda_origen_codigo
-    datos_asiento["moneda_destino_codigo"] = moneda_destino_codigo
-
-    if moneda_origen_codigo == _MONEDA_CONTABLE:
-        datos_asiento["cotizacion_id"] = None
-        datos_asiento["cotizacion_fecha"] = fecha
-        datos_asiento["cotizacion_tipo"] = cotizacion_tipo
-        datos_asiento["cotizacion_1000000"] = 1000000
-        return datos_asiento
-
-    if _tiene_cotizacion_completa(datos_asiento):
-        datos_asiento["cotizacion_tipo"] = cotizacion_tipo
-        return datos_asiento
-
-    cotizacion = obtener_ultima_moneda_cotizacion(
-        moneda_origen_codigo,
-        _MONEDA_CONTABLE,
-        cotizacion_tipo,
-        fecha,
-    )
-
-    if cotizacion is None:
-        raise ValueError("No existe cotizacion disponible para la moneda del asiento.")
-
-    datos_asiento["cotizacion_id"] = cotizacion["id"]
-    datos_asiento["cotizacion_fecha"] = cotizacion["fecha"]
-    datos_asiento["cotizacion_tipo"] = cotizacion["tipo"]
-    datos_asiento["cotizacion_1000000"] = cotizacion["cotizacion_1000000"]
+    datos_asiento["moneda_origen_codigo"] = _MONEDA_CONTABLE
+    datos_asiento["moneda_destino_codigo"] = _MONEDA_CONTABLE
+    datos_asiento["cotizacion_id"] = None
+    datos_asiento["cotizacion_fecha"] = fecha
+    datos_asiento["cotizacion_tipo"] = cotizacion_tipo
+    datos_asiento["cotizacion_1000000"] = _ESCALA_COTIZACION
 
     return datos_asiento
 

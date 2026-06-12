@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from app import create_app
@@ -302,6 +304,24 @@ def test_service_rechaza_cuenta_no_imputable():
             )
 
 
+def test_service_resolucion_cabecera_manual_no_busca_cotizacion_fx():
+    """Valida que la cabecera manual no conserve resolucion FX de asiento."""
+
+    contenido = Path("app/contabilidad/asientos_contables_service.py").read_text(
+        encoding="utf-8"
+    )
+    inicio = contenido.index("def _resolver_cotizacion_cabecera(")
+    fin = contenido.index("\ndef _validar_y_completar_detalles(", inicio)
+    bloque = contenido[inicio:fin]
+
+    assert "obtener_ultima_moneda_cotizacion(" not in bloque
+    assert "No existe cotizacion disponible para la moneda del asiento" not in bloque
+    assert 'datos_asiento["moneda_origen_codigo"] = _MONEDA_CONTABLE' in bloque
+    assert 'datos_asiento["moneda_destino_codigo"] = _MONEDA_CONTABLE' in bloque
+    assert 'datos_asiento["cotizacion_id"] = None' in bloque
+    assert 'datos_asiento["cotizacion_1000000"] = _ESCALA_COTIZACION' in bloque
+
+
 def test_service_calcula_ars_desde_nominal_usd_por_renglon():
     """
     Valida conversion FX por renglon.
@@ -389,6 +409,50 @@ def test_service_rechaza_moneda_extranjera_sin_cotizacion():
                     },
                 ],
             )
+
+
+def test_service_ignora_moneda_cabecera_formulario_y_mantiene_ars_ars():
+    """Valida que la moneda de cabecera del formulario no active logica FX."""
+
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _crear_ejercicio(db)
+        cuenta_debe = _crear_cuenta(db, "1.1.01.01.997")
+        cuenta_haber = _crear_cuenta(db, "1.1.01.01.996")
+
+        asiento = crear_asiento_contable_borrador(
+            {
+                **_datos_asiento_base(ejercicio_id),
+                "descripcion": "Asiento ARS con cabecera formulario USD",
+                "moneda_origen_codigo": "USD",
+                "moneda_destino_codigo": "ARS",
+                "cotizacion_tipo": "VENTA",
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "moneda_codigo": "ARS",
+                    "nominal_debe_centavos": 10000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "moneda_codigo": "ARS",
+                    "nominal_haber_centavos": 10000,
+                },
+            ],
+        )
+
+    assert asiento["moneda_origen_codigo"] == "ARS"
+    assert asiento["moneda_destino_codigo"] == "ARS"
+    assert asiento["cotizacion_id"] is None
+    assert asiento["cotizacion_tipo"] == "VENTA"
+    assert asiento["cotizacion_1000000"] == 1000000
+    assert asiento["detalles"][0]["moneda_codigo"] == "ARS"
+    assert asiento["detalles"][0]["cotizacion_id"] is None
+    assert asiento["detalles"][0]["cotizacion_1000000"] == 1000000
 
 
 def test_service_obtener_y_listar_delegan_en_repository():
