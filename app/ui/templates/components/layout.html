@@ -5,6 +5,9 @@
 {% set es_monedas = endpoint_actual in [
     "tablas_comunes.ver_listado_monedas",
 ] %}
+{% set es_bancos = endpoint_actual in [
+    "tablas_comunes.ver_listado_bancos",
+] %}
 {% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
 {% set es_asientos = endpoint_actual in [
     "contabilidad.ver_listado_asientos_contables",
@@ -104,6 +107,19 @@
                                 data-endpoint="tablas_comunes.ver_listado_monedas"
                             >
                                 Monedas
+                            </a>
+                        </li>
+                        <li>
+                            <a
+                                id="ns-nav-bancos"
+                                class="dropdown-item {% if es_bancos %}active{% endif %}"
+                                href="{{ url_for('tablas_comunes.ver_listado_bancos') }}"
+                                data-component="navbar"
+                                data-action="navegar"
+                                data-module="tablas_comunes"
+                                data-endpoint="tablas_comunes.ver_listado_bancos"
+                            >
+                                Bancos
                             </a>
                         </li>
                     </ul>
