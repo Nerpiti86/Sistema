@@ -6,6 +6,10 @@ from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.shared.monedas_service import (
+    activar_moneda,
+    actualizar_moneda_desde_formulario,
+    crear_moneda_desde_formulario,
+    desactivar_moneda,
     normalizar_codigo_moneda_desde_formulario,
     obtener_contexto_listado_monedas,
     obtener_contexto_monedas_activas,
@@ -82,6 +86,67 @@ def test_obtener_moneda_activa_por_codigo_rechaza_inactiva():
 
         with pytest.raises(ValueError):
             obtener_moneda_activa_por_codigo("USD")
+
+
+def test_crear_moneda_desde_formulario():
+    """Valida alta manual de moneda desde service."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        moneda = crear_moneda_desde_formulario(
+            {
+                "codigo": "uyu",
+                "nombre": "Peso uruguayo",
+                "simbolo": "$U",
+                "decimales": "2",
+                "activa": "1",
+                "orden": "40",
+            }
+        )
+
+    assert moneda["codigo"] == "UYU"
+    assert moneda["nombre"] == "Peso uruguayo"
+    assert moneda["simbolo"] == "$U"
+    assert moneda["activa"] == 1
+
+
+def test_actualizar_moneda_desde_formulario():
+    """Valida edicion manual de moneda desde service."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        moneda = actualizar_moneda_desde_formulario(
+            "USD",
+            {
+                "nombre": "Dolar estadounidense editado",
+                "simbolo": "USD",
+                "decimales": "2",
+                "activa": "1",
+                "orden": "25",
+            },
+        )
+
+    assert moneda["codigo"] == "USD"
+    assert moneda["nombre"] == "Dolar estadounidense editado"
+    assert moneda["simbolo"] == "USD"
+    assert moneda["orden"] == 25
+
+
+def test_activar_desactivar_moneda():
+    """Valida baja logica por activar/desactivar sin borrado fisico."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        moneda_desactivada = desactivar_moneda("USD")
+        moneda_activada = activar_moneda("USD")
+
+    assert moneda_desactivada["activa"] == 0
+    assert moneda_desactivada["esta_activa"] is False
+    assert moneda_activada["activa"] == 1
+    assert moneda_activada["esta_activa"] is True
 
 
 def test_normalizar_codigo_moneda_desde_formulario():
