@@ -6,6 +6,12 @@
     "tablas_comunes.ver_listado_monedas",
 ] %}
 {% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
+{% set es_asientos = endpoint_actual in [
+    "contabilidad.ver_listado_asientos_contables",
+    "contabilidad.ver_formulario_nuevo_asiento_contable",
+    "contabilidad.crear_asiento_contable_nuevo",
+    "contabilidad.ver_detalle_asiento_contable",
+] %}
 {% set es_cuentas = endpoint_actual in [
     "contabilidad.ver_formulario_nueva_cuenta_contable",
     "contabilidad.crear_cuenta_contable_nueva",
@@ -119,6 +125,56 @@
                     </a>
 
                     <ul class="dropdown-menu ns-dropdown-menu" aria-labelledby="ns-nav-contabilidad">
+                        <li class="dropdown-submenu ns-dropdown-submenu">
+                            <a
+                                id="ns-nav-asientos"
+                                class="dropdown-item dropdown-toggle {% if es_asientos %}active{% endif %}"
+                                href="#"
+                                role="button"
+                                data-component="navbar"
+                                data-action="abrir_submenu"
+                                data-module="asientos"
+                                aria-expanded="false"
+                            >
+                                Asientos
+                            </a>
+
+                            <ul class="dropdown-menu ns-dropdown-submenu-menu" aria-labelledby="ns-nav-asientos">
+                                <li>
+                                    <a
+                                        id="ns-nav-nuevo-asiento"
+                                        class="dropdown-item {% if endpoint_actual in [
+                                            'contabilidad.ver_formulario_nuevo_asiento_contable',
+                                            'contabilidad.crear_asiento_contable_nuevo'
+                                        ] %}active{% endif %}"
+                                        href="{{ url_for('contabilidad.ver_formulario_nuevo_asiento_contable') }}"
+                                        data-component="navbar"
+                                        data-action="navegar"
+                                        data-module="asientos"
+                                        data-endpoint="contabilidad.ver_formulario_nuevo_asiento_contable"
+                                    >
+                                        Nuevo asiento
+                                    </a>
+                                </li>
+                                <li>
+                                    <a
+                                        id="ns-nav-listado-asientos"
+                                        class="dropdown-item {% if endpoint_actual in [
+                                            'contabilidad.ver_listado_asientos_contables',
+                                            'contabilidad.ver_detalle_asiento_contable'
+                                        ] %}active{% endif %}"
+                                        href="{{ url_for('contabilidad.ver_listado_asientos_contables') }}"
+                                        data-component="navbar"
+                                        data-action="navegar"
+                                        data-module="asientos"
+                                        data-endpoint="contabilidad.ver_listado_asientos_contables"
+                                    >
+                                        Listado de asientos
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
                         <li class="dropdown-submenu ns-dropdown-submenu">
                             <a
                                 id="ns-nav-cuentas"
