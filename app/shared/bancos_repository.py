@@ -9,7 +9,7 @@ def listar_bancos() -> list[dict[str, Any]]:
         """
         SELECT id, codigo, nombre, activo, orden, creado_en, actualizado_en
         FROM bancos
-        ORDER BY orden, codigo
+        ORDER BY orden, CAST(codigo AS INTEGER)
         """
     ).fetchall()
 
@@ -23,7 +23,7 @@ def listar_bancos_activos() -> list[dict[str, Any]]:
         SELECT id, codigo, nombre, activo, orden, creado_en, actualizado_en
         FROM bancos
         WHERE activo = 1
-        ORDER BY orden, codigo
+        ORDER BY orden, CAST(codigo AS INTEGER)
         """
     ).fetchall()
 
@@ -78,12 +78,12 @@ def _normalizar_fila(fila) -> dict[str, Any]:
 
 
 def _validar_codigo(codigo: Any) -> str:
-    codigo_validado = str(codigo or "").strip().upper()
+    codigo_validado = str(codigo or "").strip()
 
     if not codigo_validado:
         raise ValueError("El codigo de banco es obligatorio.")
 
-    if len(codigo_validado) != 5 or not codigo_validado.isalnum():
-        raise ValueError("El codigo de banco debe tener formato BCRA de 5 caracteres.")
+    if len(codigo_validado) > 5 or not codigo_validado.isdigit():
+        raise ValueError("El codigo de banco debe ser numerico de hasta 5 digitos.")
 
     return codigo_validado
