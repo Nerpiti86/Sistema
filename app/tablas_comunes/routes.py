@@ -33,16 +33,11 @@ def index():
 
 @bp.get("/monedas/")
 def ver_listado_monedas():
-    """
-    Muestra listado del maestro transversal de monedas.
-
-    Esta route no ejecuta SQL directo. El contexto de pantalla queda delegado
-    al service transversal de monedas.
-    """
+    """Muestra listado del maestro transversal de monedas."""
     contexto_monedas = obtener_contexto_listado_monedas()
 
     return render_template(
-        "tablas_comunes/monedas.html",
+        "tablas_comunes/monedas_abm.html",
         page_title="Monedas",
         **contexto_monedas,
     )
@@ -177,12 +172,7 @@ def desactivar_moneda_existente(codigo_moneda):
 
 @bp.get("/bancos/")
 def ver_listado_bancos():
-    """
-    Muestra listado del maestro transversal de bancos.
-
-    Esta route no ejecuta SQL directo. El contexto de pantalla queda delegado
-    al service transversal de bancos.
-    """
+    """Muestra listado del maestro transversal de bancos."""
     contexto_bancos = obtener_contexto_listado_bancos()
 
     return render_template(
