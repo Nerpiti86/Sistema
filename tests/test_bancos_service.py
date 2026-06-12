@@ -27,17 +27,10 @@ def test_obtener_contexto_listado_bancos():
 
     with app.app_context():
         apply_migrations()
-        get_db().execute(
-            """
-            INSERT INTO bancos (codigo, nombre, activo, orden, creado_en)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            ("AAA00", "Banco prueba", 1, 10, "2026-01-01 10:00:00"),
-        )
         contexto = obtener_contexto_listado_bancos()
 
-    assert contexto["cantidad_bancos"] == 1
-    assert contexto["cantidad_bancos_activos"] == 1
+    assert contexto["cantidad_bancos"] == 73
+    assert contexto["cantidad_bancos_activos"] == 73
     assert {"bancos", "bancos_activos"}.issubset(contexto)
 
 
@@ -48,29 +41,15 @@ def test_obtener_contexto_bancos_activos():
     with app.app_context():
         apply_migrations()
         get_db().execute(
-            """
-            INSERT INTO bancos (codigo, nombre, activo, orden, creado_en)
-            VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)
-            """,
-            (
-                "AAA00",
-                "Banco activo",
-                1,
-                10,
-                "2026-01-01 10:00:00",
-                "BBB00",
-                "Banco inactivo",
-                0,
-                20,
-                "2026-01-01 10:00:00",
-            ),
+            "UPDATE bancos SET activo = 0 WHERE codigo = ?",
+            ("285",),
         )
         contexto = obtener_contexto_bancos_activos()
 
     codigos = {banco["codigo"] for banco in contexto["bancos"]}
 
-    assert "AAA00" in codigos
-    assert "BBB00" not in codigos
+    assert "7" in codigos
+    assert "285" not in codigos
     assert contexto["cantidad_bancos"] == len(contexto["bancos"])
 
 
@@ -80,17 +59,10 @@ def test_obtener_banco_activo_por_codigo_normaliza_codigo():
 
     with app.app_context():
         apply_migrations()
-        get_db().execute(
-            """
-            INSERT INTO bancos (codigo, nombre, activo, orden, creado_en)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            ("AAA00", "Banco prueba", 1, 10, "2026-01-01 10:00:00"),
-        )
-        banco = obtener_banco_activo_por_codigo(" aaa00 ")
+        banco = obtener_banco_activo_por_codigo(" 285 ")
 
-    assert banco["codigo"] == "AAA00"
-    assert banco["descripcion_select"] == "AAA00 - Banco prueba"
+    assert banco["codigo"] == "285"
+    assert banco["descripcion_select"] == "285 - BANCO MACRO S.A."
 
 
 def test_obtener_banco_activo_por_codigo_rechaza_inactivo():
@@ -100,20 +72,17 @@ def test_obtener_banco_activo_por_codigo_rechaza_inactivo():
     with app.app_context():
         apply_migrations()
         get_db().execute(
-            """
-            INSERT INTO bancos (codigo, nombre, activo, orden, creado_en)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            ("AAA00", "Banco inactivo", 0, 10, "2026-01-01 10:00:00"),
+            "UPDATE bancos SET activo = 0 WHERE codigo = ?",
+            ("285",),
         )
 
         with pytest.raises(ValueError):
-            obtener_banco_activo_por_codigo("AAA00")
+            obtener_banco_activo_por_codigo("285")
 
 
 def test_normalizar_codigo_banco_desde_formulario():
     """Valida normalizacion de codigo recibido desde formulario."""
-    assert normalizar_codigo_banco_desde_formulario(" aaa00 ") == "AAA00"
+    assert normalizar_codigo_banco_desde_formulario(" 285 ") == "285"
 
 
 def test_normalizar_codigo_banco_desde_formulario_rechaza_vacio():
