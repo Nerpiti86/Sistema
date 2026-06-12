@@ -1,6 +1,6 @@
 from app import create_app
 from app.config import TestConfig
-from app.db import apply_migrations, get_db
+from app.db import apply_migrations
 
 
 def test_pantalla_tablas_comunes_bancos_responde_ok():
@@ -15,27 +15,20 @@ def test_pantalla_tablas_comunes_bancos_responde_ok():
 
     with app.app_context():
         apply_migrations()
-        get_db().execute(
-            """
-            INSERT INTO bancos (codigo, nombre, activo, orden, creado_en)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            ("AAA00", "Banco prueba", 1, 10, "2026-01-01 10:00:00"),
-        )
         response = client.get("/tablas-comunes/bancos/")
 
     assert response.status_code == 200
     assert b"Bancos" in response.data
-    assert b"AAA00" in response.data
-    assert b"Banco prueba" in response.data
+    assert b"285" in response.data
+    assert b"BANCO MACRO S.A." in response.data
     assert b'id="ba-listado"' in response.data
     assert b'id="ba-tabla"' in response.data
     assert b'data-table="bancos"' in response.data
     assert b'data-query="listar_bancos"' in response.data
 
 
-def test_pantalla_tablas_comunes_bancos_muestra_sin_datos():
-    """Valida mensaje vacio cuando aun no hay bancos cargados."""
+def test_pantalla_tablas_comunes_bancos_muestra_catalogo_inicial():
+    """Valida que la pantalla muestre la carga inicial de bancos."""
     app = create_app(TestConfig)
     client = app.test_client()
 
@@ -44,8 +37,9 @@ def test_pantalla_tablas_comunes_bancos_muestra_sin_datos():
         response = client.get("/tablas-comunes/bancos/")
 
     assert response.status_code == 200
-    assert b"No hay bancos cargados." in response.data
-    assert b'id="ba-row-sin-datos"' in response.data
+    assert b"BANCO DE GALICIA Y BUENOS AIRES S.A." in response.data
+    assert b"BANCO MUNICIPAL DE ROSARIO" in response.data
+    assert b"BANCO MACRO S.A." in response.data
 
 
 def test_navbar_tiene_tablas_comunes_bancos():
