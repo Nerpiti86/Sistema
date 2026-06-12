@@ -1,10 +1,9 @@
 {% extends "base.html" %}
 {% from "components/cards.html" import card %}
-{% from "components/buttons.html" import secondary_link %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
 
 {% block content %}
 <section id="ba-listado" data-table="bancos" data-query="listar_bancos" class="row g-3">
-    <!-- id="ba-row-sin-datos" No hay bancos cargados. -->
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
@@ -14,6 +13,7 @@
                 </p>
             </div>
             <div id="ba-acciones-listado" class="d-flex gap-2">
+                {{ primary_link("Nuevo banco", url_for("tablas_comunes.ver_formulario_nuevo_banco")) }}
                 {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
             </div>
         </div>
@@ -43,6 +43,7 @@
                                 <th data-field="nombre">Nombre</th>
                                 <th data-field="activo" class="text-center">Activo</th>
                                 <th data-field="orden" class="text-end">Orden</th>
+                                <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="ba-tbody">
@@ -52,10 +53,24 @@
                                     <td data-field="nombre">{{ banco.nombre }}</td>
                                     <td data-field="activo" class="text-center">{% if banco.esta_activo %}Si{% else %}No{% endif %}</td>
                                     <td data-field="orden" class="text-end">{{ banco.orden }}</td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('tablas_comunes.ver_formulario_editar_banco', codigo_banco=banco.codigo) }}">Editar</a>
+                                            {% if banco.esta_activo %}
+                                                <form method="post" action="{{ url_for('tablas_comunes.desactivar_banco_existente', codigo_banco=banco.codigo) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desactivar</button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('tablas_comunes.activar_banco_existente', codigo_banco=banco.codigo) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
                                 </tr>
                             {% else %}
                                 <tr id="ba-row-sin-datos" data-table="bancos" data-query="listar_bancos">
-                                    <td id="ba-mensaje-sin-datos" colspan="4" class="text-center text-muted py-4">No hay bancos cargados.</td>
+                                    <td id="ba-mensaje-sin-datos" colspan="5" class="text-center text-muted py-4">No hay bancos cargados.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
