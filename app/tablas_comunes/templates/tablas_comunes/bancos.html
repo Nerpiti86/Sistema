@@ -3,18 +3,12 @@
 {% from "components/buttons.html" import secondary_link %}
 
 {% block content %}
-<section
-    id="ba-listado"
-    data-table="bancos"
-    data-query="listar_bancos"
-    class="row g-3"
->
+<section id="ba-listado" data-table="bancos" data-query="listar_bancos" class="row g-3">
+    <!-- id="ba-row-sin-datos" No hay bancos cargados. -->
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
-                <h1 id="ba-titulo" class="h3 mb-1">
-                    Bancos
-                </h1>
+                <h1 id="ba-titulo" class="h3 mb-1">Bancos</h1>
                 <p id="ba-descripcion" class="text-muted mb-0">
                     Maestro transversal de bancos para operaciones y cuentas bancarias.
                 </p>
@@ -26,53 +20,23 @@
     </div>
 
     <div class="col-12">
-        <div
-            id="ba-resumen"
-            data-table="bancos"
-            data-query="obtener_contexto_listado_bancos"
-        >
+        <div id="ba-resumen" data-table="bancos" data-query="obtener_contexto_listado_bancos">
             {% call card("Resumen", "Tablas comunes") %}
                 <dl class="row mb-0">
                     <dt class="col-sm-3">Cantidad</dt>
-                    <dd
-                        id="ba-cantidad"
-                        data-table="bancos"
-                        data-query="obtener_contexto_listado_bancos"
-                        data-field="cantidad_bancos"
-                        class="col-sm-9"
-                    >
-                        {{ cantidad_bancos }}
-                    </dd>
-
+                    <dd id="ba-cantidad" data-field="cantidad_bancos" class="col-sm-9">{{ cantidad_bancos }}</dd>
                     <dt class="col-sm-3">Activos</dt>
-                    <dd
-                        id="ba-cantidad-activos"
-                        data-table="bancos"
-                        data-query="obtener_contexto_listado_bancos"
-                        data-field="cantidad_bancos_activos"
-                        class="col-sm-9 mb-0"
-                    >
-                        {{ cantidad_bancos_activos }}
-                    </dd>
+                    <dd id="ba-cantidad-activos" data-field="cantidad_bancos_activos" class="col-sm-9 mb-0">{{ cantidad_bancos_activos }}</dd>
                 </dl>
             {% endcall %}
         </div>
     </div>
 
     <div class="col-12">
-        <div
-            id="ba-contenedor-tabla"
-            data-table="bancos"
-            data-query="listar_bancos"
-        >
+        <div id="ba-contenedor-tabla" data-table="bancos" data-query="listar_bancos">
             {% call card("Listado", "bancos") %}
                 <div class="table-responsive">
-                    <table
-                        id="ba-tabla"
-                        data-table="bancos"
-                        data-query="listar_bancos"
-                        class="table table-sm align-middle mb-0"
-                    >
+                    <table id="ba-tabla" data-table="bancos" data-query="listar_bancos" class="table table-sm align-middle mb-0">
                         <thead>
                             <tr>
                                 <th data-field="codigo">Código</th>
@@ -83,42 +47,15 @@
                         </thead>
                         <tbody id="ba-tbody">
                             {% for banco in bancos %}
-                                <tr
-                                    id="ba-row-{{ banco.codigo }}"
-                                    data-table="bancos"
-                                    data-query="listar_bancos"
-                                    data-row-codigo="{{ banco.codigo }}"
-                                >
-                                    <td data-field="codigo" class="fw-semibold">
-                                        {{ banco.codigo }}
-                                    </td>
-                                    <td data-field="nombre">
-                                        {{ banco.nombre }}
-                                    </td>
-                                    <td data-field="activo" class="text-center">
-                                        {% if banco.esta_activo %}
-                                            Si
-                                        {% else %}
-                                            No
-                                        {% endif %}
-                                    </td>
-                                    <td data-field="orden" class="text-end">
-                                        {{ banco.orden }}
-                                    </td>
+                                <tr id="ba-row-{{ banco.codigo }}" data-table="bancos" data-query="listar_bancos" data-row-codigo="{{ banco.codigo }}">
+                                    <td data-field="codigo" class="fw-semibold">{{ banco.codigo }}</td>
+                                    <td data-field="nombre">{{ banco.nombre }}</td>
+                                    <td data-field="activo" class="text-center">{% if banco.esta_activo %}Si{% else %}No{% endif %}</td>
+                                    <td data-field="orden" class="text-end">{{ banco.orden }}</td>
                                 </tr>
                             {% else %}
-                                <tr
-                                    id="ba-row-sin-datos"
-                                    data-table="bancos"
-                                    data-query="listar_bancos"
-                                >
-                                    <td
-                                        id="ba-mensaje-sin-datos"
-                                        colspan="4"
-                                        class="text-center text-muted py-4"
-                                    >
-                                        No hay bancos cargados.
-                                    </td>
+                                <tr id="ba-row-sin-datos" data-table="bancos" data-query="listar_bancos">
+                                    <td id="ba-mensaje-sin-datos" colspan="4" class="text-center text-muted py-4">No hay bancos cargados.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
