@@ -4,6 +4,12 @@
 {% set es_tablas_comunes = endpoint_actual.startswith("tablas_comunes.") %}
 {% set es_monedas = endpoint_actual in [
     "tablas_comunes.ver_listado_monedas",
+    "tablas_comunes.ver_formulario_nueva_moneda",
+    "tablas_comunes.crear_moneda_nueva",
+    "tablas_comunes.ver_formulario_editar_moneda",
+    "tablas_comunes.actualizar_moneda_existente",
+    "tablas_comunes.activar_moneda_existente",
+    "tablas_comunes.desactivar_moneda_existente",
 ] %}
 {% set es_bancos = endpoint_actual in [
     "tablas_comunes.ver_listado_bancos",
@@ -13,6 +19,15 @@
     "tablas_comunes.actualizar_banco_existente",
     "tablas_comunes.activar_banco_existente",
     "tablas_comunes.desactivar_banco_existente",
+] %}
+{% set es_medios_operativos = endpoint_actual in [
+    "tablas_comunes.ver_listado_medios_operativos",
+    "tablas_comunes.ver_formulario_nuevo_medio_operativo",
+    "tablas_comunes.crear_medio_operativo_nuevo",
+    "tablas_comunes.ver_formulario_editar_medio_operativo",
+    "tablas_comunes.actualizar_medio_operativo_existente",
+    "tablas_comunes.activar_medio_operativo_existente",
+    "tablas_comunes.desactivar_medio_operativo_existente",
 ] %}
 {% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
 {% set es_asientos = endpoint_actual in [
@@ -126,6 +141,19 @@
                                 data-endpoint="tablas_comunes.ver_listado_bancos"
                             >
                                 Bancos
+                            </a>
+                        </li>
+                        <li>
+                            <a
+                                id="ns-nav-medios-operativos"
+                                class="dropdown-item {% if es_medios_operativos %}active{% endif %}"
+                                href="{{ url_for('tablas_comunes.ver_listado_medios_operativos') }}"
+                                data-component="navbar"
+                                data-action="navegar"
+                                data-module="tablas_comunes"
+                                data-endpoint="tablas_comunes.ver_listado_medios_operativos"
+                            >
+                                Medios operativos
                             </a>
                         </li>
                     </ul>
