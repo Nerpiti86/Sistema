@@ -283,13 +283,33 @@ def _normalizar_fila_medio_operativo(fila) -> dict[str, Any]:
 
 def _validar_datos_medio_operativo(datos: dict[str, Any]) -> dict[str, Any]:
     tipo = _validar_tipo(datos["tipo"])
+    moneda_codigo = _validar_moneda_codigo(datos["moneda_codigo"])
     banco_codigo = _normalizar_nullable(datos.get("banco_codigo"))
+    plaza = _normalizar_nullable(datos.get("plaza"))
+    sucursal = _normalizar_nullable(datos.get("sucursal"))
+    numero_cuenta = _normalizar_nullable(datos.get("numero_cuenta"))
+    cuit = _normalizar_nullable(datos.get("cuit"))
+    requiere_cotizacion = _validar_activo(datos.get("requiere_cotizacion", 0))
+    cotizacion_default_centavos = _validar_centavos_nullable(
+        datos.get("cotizacion_default_centavos")
+    )
 
     if tipo == "BANCO_PROPIO" and banco_codigo is None:
         raise ValueError("El banco es obligatorio para medios de tipo banco propio.")
 
     if tipo != "BANCO_PROPIO":
         banco_codigo = None
+        plaza = None
+        sucursal = None
+        numero_cuenta = None
+        cuit = None
+
+    if moneda_codigo == "ARS":
+        requiere_cotizacion = 0
+        cotizacion_default_centavos = None
+
+    if requiere_cotizacion == 0:
+        cotizacion_default_centavos = None
 
     return {
         "codigo": _validar_codigo(datos["codigo"]),
@@ -298,20 +318,18 @@ def _validar_datos_medio_operativo(datos: dict[str, Any]) -> dict[str, Any]:
             "El nombre del medio operativo es obligatorio.",
         ),
         "tipo": tipo,
-        "requiere_cotizacion": _validar_activo(datos.get("requiere_cotizacion", 0)),
-        "cotizacion_default_centavos": _validar_centavos_nullable(
-            datos.get("cotizacion_default_centavos")
-        ),
+        "requiere_cotizacion": requiere_cotizacion,
+        "cotizacion_default_centavos": cotizacion_default_centavos,
         "banco_codigo": banco_codigo,
-        "plaza": _normalizar_nullable(datos.get("plaza")),
-        "sucursal": _normalizar_nullable(datos.get("sucursal")),
-        "numero_cuenta": _normalizar_nullable(datos.get("numero_cuenta")),
+        "plaza": plaza,
+        "sucursal": sucursal,
+        "numero_cuenta": numero_cuenta,
         "cuenta_contable_codigo": _validar_texto_obligatorio(
             datos["cuenta_contable_codigo"],
             "La cuenta contable del medio operativo es obligatoria.",
         ),
-        "moneda_codigo": _validar_moneda_codigo(datos["moneda_codigo"]),
-        "cuit": _normalizar_nullable(datos.get("cuit")),
+        "moneda_codigo": moneda_codigo,
+        "cuit": cuit,
         "activo": _validar_activo(datos.get("activo", 1)),
         "orden": _validar_orden(datos.get("orden", 0)),
     }
