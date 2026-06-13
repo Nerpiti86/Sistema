@@ -1,4 +1,5 @@
 .ns-navbar {
+    --ns-navbar-height: 3.45rem;
     z-index: 1070;
     width: 100%;
     background-color: var(--ns-color-main) !important;
@@ -59,22 +60,25 @@
 
 .ns-navbar .ns-mega-menu {
     position: fixed !important;
-    top: 3.9rem !important;
+    top: calc(var(--ns-navbar-height) + 0.45rem) !important;
     right: auto !important;
     left: 50% !important;
     width: min(920px, calc(100vw - 2rem));
     max-height: calc(100vh - 5rem);
-    padding: 0.9rem;
+    padding: 0.75rem;
     overflow-y: auto;
     transform: translateX(-50%) !important;
 }
 
 .ns-navbar .ns-mega-menu-compact {
-    width: min(560px, calc(100vw - 2rem));
+    width: min(540px, calc(100vw - 2rem));
 }
 
 .ns-navbar .ns-mega-menu-wide {
-    width: min(920px, calc(100vw - 2rem));
+    display: grid;
+    grid-template-columns: minmax(210px, 0.34fr) minmax(0, 1fr);
+    gap: 0.8rem;
+    width: min(860px, calc(100vw - 2rem));
 }
 
 .ns-mega-header {
@@ -85,6 +89,11 @@
     border-radius: 0.8rem;
     background: linear-gradient(135deg, rgba(38, 38, 38, 0.98), rgba(38, 38, 38, 0.90));
     color: var(--ns-color-white);
+}
+
+.ns-mega-menu-wide .ns-mega-header {
+    align-items: flex-start;
+    min-height: 100%;
 }
 
 .ns-mega-eyebrow {
@@ -113,8 +122,13 @@
 .ns-mega-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.85rem;
+    gap: 0.75rem;
     padding-top: 0.85rem;
+}
+
+.ns-mega-menu-wide .ns-mega-grid {
+    align-self: start;
+    padding-top: 0;
 }
 
 .ns-mega-grid-compact {
@@ -142,9 +156,9 @@
 
 .ns-mega-link {
     display: block;
-    min-height: 4.45rem;
+    min-height: 4.1rem;
     margin-top: 0.35rem;
-    padding: 0.65rem 0.7rem;
+    padding: 0.62rem 0.68rem;
     border: 1px solid transparent;
     border-radius: var(--ns-radius-subtle);
     color: var(--ns-color-main);
@@ -228,6 +242,7 @@
     .ns-navbar .ns-mega-menu-compact,
     .ns-navbar .ns-mega-menu-wide {
         position: static !important;
+        display: block;
         width: auto;
         max-height: none;
         padding: 0.65rem 0 0.35rem 0.75rem;
