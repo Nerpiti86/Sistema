@@ -75,10 +75,13 @@
 }
 
 .ns-navbar .ns-mega-menu-wide {
-    display: grid;
     grid-template-columns: minmax(210px, 0.34fr) minmax(0, 1fr);
     gap: 0.8rem;
     width: min(860px, calc(100vw - 2rem));
+}
+
+.ns-navbar .ns-mega-menu-wide.show {
+    display: grid;
 }
 
 .ns-mega-header {
@@ -242,7 +245,6 @@
     .ns-navbar .ns-mega-menu-compact,
     .ns-navbar .ns-mega-menu-wide {
         position: static !important;
-        display: block;
         width: auto;
         max-height: none;
         padding: 0.65rem 0 0.35rem 0.75rem;
@@ -250,6 +252,10 @@
         border-radius: 0;
         background-color: transparent;
         transform: none !important;
+    }
+
+    .ns-navbar .ns-mega-menu-wide.show {
+        display: block;
     }
 
     .ns-mega-header {
