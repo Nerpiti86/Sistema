@@ -58,7 +58,7 @@
 
                     <div class="col-12 col-md-4">
                         <label for="mope-banco" class="form-label">Banco</label>
-                        <select id="mope-banco" data-field="banco_codigo" name="banco_codigo" class="form-select">
+                        <select id="mope-banco" data-field="banco_codigo" name="banco_codigo" class="form-select" data-mope-bank-field>
                             <option value="">Sin banco</option>
                             {% for banco in bancos %}
                                 <option value="{{ banco.codigo }}" {% if medio_operativo.banco_codigo | default('', true) == banco.codigo %}selected{% endif %}>{{ banco.codigo }} - {{ banco.nombre }}</option>
@@ -68,27 +68,27 @@
 
                     <div class="col-12 col-md-3">
                         <label for="mope-plaza" class="form-label">Plaza</label>
-                        <input id="mope-plaza" data-field="plaza" name="plaza" type="text" class="form-control" value="{{ medio_operativo.plaza | default('', true) }}">
+                        <input id="mope-plaza" data-field="plaza" name="plaza" type="text" class="form-control" value="{{ medio_operativo.plaza | default('', true) }}" data-mope-bank-field>
                     </div>
 
                     <div class="col-12 col-md-3">
                         <label for="mope-sucursal" class="form-label">Sucursal</label>
-                        <input id="mope-sucursal" data-field="sucursal" name="sucursal" type="text" class="form-control" value="{{ medio_operativo.sucursal | default('', true) }}">
+                        <input id="mope-sucursal" data-field="sucursal" name="sucursal" type="text" class="form-control" value="{{ medio_operativo.sucursal | default('', true) }}" data-mope-bank-field>
                     </div>
 
                     <div class="col-12 col-md-3">
                         <label for="mope-numero-cuenta" class="form-label">Número de cuenta</label>
-                        <input id="mope-numero-cuenta" data-field="numero_cuenta" name="numero_cuenta" type="text" class="form-control" value="{{ medio_operativo.numero_cuenta | default('', true) }}">
+                        <input id="mope-numero-cuenta" data-field="numero_cuenta" name="numero_cuenta" type="text" class="form-control" value="{{ medio_operativo.numero_cuenta | default('', true) }}" data-mope-bank-field>
                     </div>
 
                     <div class="col-12 col-md-3">
                         <label for="mope-cuit" class="form-label">CUIT</label>
-                        <input id="mope-cuit" data-field="cuit" name="cuit" type="text" class="form-control" value="{{ medio_operativo.cuit | default('', true) }}">
+                        <input id="mope-cuit" data-field="cuit" name="cuit" type="text" class="form-control" value="{{ medio_operativo.cuit | default('', true) }}" data-mope-bank-field>
                     </div>
 
                     <div class="col-12 col-md-3">
-                        <label for="mope-cotizacion" class="form-label">Cotización default centavos</label>
-                        <input id="mope-cotizacion" data-field="cotizacion_default_centavos" name="cotizacion_default_centavos" type="number" min="0" step="1" class="form-control" value="{{ medio_operativo.cotizacion_default_centavos | default('', true) }}">
+                        <label for="mope-cotizacion" class="form-label">Cotización default</label>
+                        <input id="mope-cotizacion" data-field="cotizacion_default_centavos" name="cotizacion_default_centavos" type="number" min="0" step="1" class="form-control" value="{{ medio_operativo.cotizacion_default_centavos | default('', true) }}" data-mope-currency-field>
                     </div>
 
                     <div class="col-12 col-md-3">
@@ -98,7 +98,7 @@
 
                     <div class="col-12 col-md-3 d-flex align-items-end">
                         <div class="form-check mb-2">
-                            <input id="mope-requiere-cotizacion" data-field="requiere_cotizacion" name="requiere_cotizacion" type="checkbox" class="form-check-input" value="1" {% if medio_operativo.requiere_cotizacion | default(0, true) | int == 1 %}checked{% endif %}>
+                            <input id="mope-requiere-cotizacion" data-field="requiere_cotizacion" name="requiere_cotizacion" type="checkbox" class="form-check-input" value="1" {% if medio_operativo.requiere_cotizacion | default(0, true) | int == 1 %}checked{% endif %} data-mope-currency-field>
                             <label for="mope-requiere-cotizacion" class="form-check-label">Cambio</label>
                         </div>
                     </div>
@@ -119,4 +119,66 @@
         {% endcall %}
     </div>
 </section>
+
+<script>
+(function () {
+    const tipo = document.getElementById("mope-tipo");
+    const moneda = document.getElementById("mope-moneda");
+    const requiereCotizacion = document.getElementById("mope-requiere-cotizacion");
+    const cotizacion = document.getElementById("mope-cotizacion");
+    const camposBanco = Array.from(document.querySelectorAll("[data-mope-bank-field]"));
+
+    function limpiarCampo(campo) {
+        if (campo.type === "checkbox") {
+            campo.checked = false;
+            return;
+        }
+        campo.value = "";
+    }
+
+    function actualizarCamposBanco() {
+        const usaBanco = tipo && tipo.value === "BANCO_PROPIO";
+
+        camposBanco.forEach((campo) => {
+            campo.disabled = !usaBanco;
+            if (!usaBanco) {
+                limpiarCampo(campo);
+            }
+        });
+    }
+
+    function actualizarCamposCotizacion() {
+        const monedaEsArs = moneda && moneda.value === "ARS";
+        const permiteCambio = !monedaEsArs;
+
+        if (requiereCotizacion) {
+            requiereCotizacion.disabled = !permiteCambio;
+            if (!permiteCambio) {
+                requiereCotizacion.checked = false;
+            }
+        }
+
+        if (cotizacion) {
+            const deshabilitarCotizacion = !permiteCambio || !requiereCotizacion || !requiereCotizacion.checked;
+            cotizacion.disabled = deshabilitarCotizacion;
+            if (deshabilitarCotizacion) {
+                cotizacion.value = "";
+            }
+        }
+    }
+
+    if (tipo) {
+        tipo.addEventListener("change", actualizarCamposBanco);
+    }
+    if (moneda) {
+        moneda.addEventListener("change", actualizarCamposCotizacion);
+    }
+    if (requiereCotizacion) {
+        requiereCotizacion.addEventListener("change", actualizarCamposCotizacion);
+    }
+
+    actualizarCamposBanco();
+    actualizarCamposCotizacion();
+}());
+</script>
 {% endblock %}
