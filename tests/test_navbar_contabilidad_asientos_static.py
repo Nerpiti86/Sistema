@@ -1,10 +1,10 @@
 from pathlib import Path
 
 
-def test_navbar_contabilidad_expone_submenu_asientos():
+def test_navbar_contabilidad_expone_grupo_asientos_en_mega_menu():
     """
-    Contrato de navegación: Contabilidad expone accesos directos a nuevo asiento
-    y listado de asientos sin depender de rutas ni SQL.
+    Contrato de navegación: el mega menú de Contabilidad expone accesos
+    directos a nuevo asiento y listado de asientos sin depender de rutas ni SQL.
     """
     html = Path("app/ui/templates/components/layout.html").read_text(encoding="utf-8")
 
@@ -15,6 +15,7 @@ def test_navbar_contabilidad_expone_submenu_asientos():
     assert '"contabilidad.ver_detalle_asiento_contable"' in html
 
     assert 'id="ns-nav-contabilidad"' in html
+    assert 'class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-wide"' in html
     assert 'id="ns-nav-asientos"' in html
     assert 'id="ns-nav-nuevo-asiento"' in html
     assert 'id="ns-nav-listado-asientos"' in html
@@ -42,15 +43,15 @@ def test_navbar_contabilidad_expone_submenu_asientos():
     )
 
 
-def test_navbar_asientos_marca_activo_el_submenu_completo():
+def test_navbar_asientos_marca_activo_el_grupo_del_mega_menu():
     """
     Contrato visual: cualquier pantalla de asientos debe activar el grupo
-    Asientos dentro del menú Contabilidad.
+    Asientos dentro del mega menú Contabilidad.
     """
     html = Path("app/ui/templates/components/layout.html").read_text(encoding="utf-8")
 
     assert (
-        'class="dropdown-item dropdown-toggle {% if es_asientos %}active{% endif %}"'
+        'id="ns-nav-asientos" class="ns-mega-section-title {% if es_asientos %}active{% endif %}"'
         in html
     )
 

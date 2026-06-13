@@ -204,19 +204,23 @@ def test_navbar_respeta_contrato_visual_global():
     assert ".ns-navbar .dropdown-item.active" in css
 
 
-def test_navbar_dropdown_padres_internos_tienen_contraste():
+def test_navbar_mega_menu_tiene_contraste_y_posicion_controlada():
     """
-    Valida contraste de dropdowns padre internos.
+    Valida contraste y posicionamiento del mega menú.
 
-    Los toggles principales del navbar deben ser claros sobre fondo oscuro,
-    pero los dropdowns padre internos, como Cuentas y Ejercicios, deben ser
-    oscuros porque viven dentro de un menu claro.
+    El panel debe quedar centrado debajo del navbar, mantener fondo claro,
+    cabecera oscura y enlaces activos con contraste suficiente.
     """
     css = Path("app/static/css/nerisoft_navbar.css").read_text(encoding="utf-8")
 
-    assert ".ns-navbar .dropdown-menu .dropdown-toggle" in css
-    assert "color: var(--ns-color-main) !important;" in css
-    assert ".dropdown-submenu.show > .dropdown-toggle" in css
-    assert "color: var(--ns-color-white) !important;" in css
+    assert ".ns-navbar .ns-mega-menu" in css
+    assert "position: fixed !important;" in css
+    assert "left: 50% !important;" in css
+    assert "transform: translateX(-50%) !important;" in css
+    assert "width: min(920px, calc(100vw - 2rem));" in css
+    assert ".ns-mega-header" in css
+    assert "background: linear-gradient" in css
+    assert ".ns-mega-link.active" in css
+    assert "color: var(--ns-color-white);" in css
     assert ".ns-navbar .navbar-brand," in css
     assert ".navbar-nav > .nav-item > .nav-link" in css

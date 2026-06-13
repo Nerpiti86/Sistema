@@ -1,53 +1,33 @@
 (function () {
     "use strict";
 
-    function cerrarSubmenusHermanos(submenuActual) {
-        const padre = submenuActual.parentElement;
-
-        if (!padre) {
+    function cerrarDropdownsAbiertos(navbar) {
+        if (!window.bootstrap || !window.bootstrap.Dropdown) {
             return;
         }
 
-        padre.querySelectorAll(":scope > .dropdown-submenu.show").forEach((submenu) => {
-            if (submenu !== submenuActual) {
-                submenu.classList.remove("show");
+        navbar.querySelectorAll(".dropdown-toggle.show").forEach((toggle) => {
+            const instancia = window.bootstrap.Dropdown.getInstance(toggle);
 
-                const toggle = submenu.querySelector(":scope > .dropdown-toggle");
-                if (toggle) {
-                    toggle.setAttribute("aria-expanded", "false");
-                }
+            if (instancia) {
+                instancia.hide();
             }
         });
     }
 
     function inicializarNavbarGlobal() {
-        document.querySelectorAll(".ns-dropdown-submenu > .dropdown-toggle").forEach((toggle) => {
-            toggle.addEventListener("click", (event) => {
-                event.preventDefault();
-                event.stopPropagation();
+        const navbar = document.getElementById("ns-navbar");
 
-                const submenu = toggle.closest(".ns-dropdown-submenu");
+        if (!navbar) {
+            return;
+        }
 
-                if (!submenu) {
-                    return;
-                }
+        document.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") {
+                return;
+            }
 
-                cerrarSubmenusHermanos(submenu);
-
-                const estaAbierto = submenu.classList.toggle("show");
-                toggle.setAttribute("aria-expanded", estaAbierto ? "true" : "false");
-            });
-        });
-
-        document.addEventListener("click", () => {
-            document.querySelectorAll(".ns-dropdown-submenu.show").forEach((submenu) => {
-                submenu.classList.remove("show");
-
-                const toggle = submenu.querySelector(":scope > .dropdown-toggle");
-                if (toggle) {
-                    toggle.setAttribute("aria-expanded", "false");
-                }
-            });
+            cerrarDropdownsAbiertos(navbar);
         });
     }
 

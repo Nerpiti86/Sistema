@@ -101,13 +101,15 @@
                     </a>
                 </li>
 
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown ns-mega-dropdown">
                     <a
                         id="ns-nav-tablas-comunes"
                         class="nav-link dropdown-toggle {% if es_tablas_comunes %}active{% endif %}"
                         href="#"
                         role="button"
                         data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        data-bs-auto-close="outside"
                         data-component="navbar"
                         data-action="abrir_menu"
                         data-module="tablas_comunes"
@@ -116,56 +118,78 @@
                         Tablas comunes
                     </a>
 
-                    <ul class="dropdown-menu ns-dropdown-menu" aria-labelledby="ns-nav-tablas-comunes">
-                        <li>
-                            <a
-                                id="ns-nav-monedas"
-                                class="dropdown-item {% if es_monedas %}active{% endif %}"
-                                href="{{ url_for('tablas_comunes.ver_listado_monedas') }}"
-                                data-component="navbar"
-                                data-action="navegar"
-                                data-module="tablas_comunes"
-                                data-endpoint="tablas_comunes.ver_listado_monedas"
-                            >
-                                Monedas
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                id="ns-nav-bancos"
-                                class="dropdown-item {% if es_bancos %}active{% endif %}"
-                                href="{{ url_for('tablas_comunes.ver_listado_bancos') }}"
-                                data-component="navbar"
-                                data-action="navegar"
-                                data-module="tablas_comunes"
-                                data-endpoint="tablas_comunes.ver_listado_bancos"
-                            >
-                                Bancos
-                            </a>
-                        </li>
-                        <li>
-                            <a
-                                id="ns-nav-medios-operativos"
-                                class="dropdown-item {% if es_medios_operativos %}active{% endif %}"
-                                href="{{ url_for('tablas_comunes.ver_listado_medios_operativos') }}"
-                                data-component="navbar"
-                                data-action="navegar"
-                                data-module="tablas_comunes"
-                                data-endpoint="tablas_comunes.ver_listado_medios_operativos"
-                            >
-                                Medios operativos
-                            </a>
-                        </li>
-                    </ul>
+                    <div
+                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-compact"
+                        aria-labelledby="ns-nav-tablas-comunes"
+                    >
+                        <div class="ns-mega-header">
+                            <div>
+                                <div class="ns-mega-eyebrow">Base operativa</div>
+                                <div class="ns-mega-title">Tablas comunes</div>
+                                <p class="ns-mega-description">
+                                    Catálogos compartidos por gestión, tesorería y contabilidad.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="ns-mega-grid ns-mega-grid-compact">
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-catalogos">
+                                <h2 id="ns-nav-tablas-catalogos" class="ns-mega-section-title">
+                                    Catálogos
+                                </h2>
+
+                                <a
+                                    id="ns-nav-monedas"
+                                    class="ns-mega-link {% if es_monedas %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes.ver_listado_monedas') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes.ver_listado_monedas"
+                                >
+                                    <span class="ns-mega-link-title">Monedas</span>
+                                    <span class="ns-mega-link-text">ARS, USD y otras monedas operativas.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-bancos"
+                                    class="ns-mega-link {% if es_bancos %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes.ver_listado_bancos') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes.ver_listado_bancos"
+                                >
+                                    <span class="ns-mega-link-title">Bancos</span>
+                                    <span class="ns-mega-link-text">Nómina bancaria para operaciones del sistema.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-medios-operativos"
+                                    class="ns-mega-link {% if es_medios_operativos %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes.ver_listado_medios_operativos') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes.ver_listado_medios_operativos"
+                                >
+                                    <span class="ns-mega-link-title">Medios operativos</span>
+                                    <span class="ns-mega-link-text">Cajas, bancos y medios usados para movimientos.</span>
+                                </a>
+                            </section>
+                        </div>
+                    </div>
                 </li>
 
-                <li class="nav-item dropdown">
+                <li class="nav-item dropdown ns-mega-dropdown">
                     <a
                         id="ns-nav-contabilidad"
                         class="nav-link dropdown-toggle {% if es_contabilidad %}active{% endif %}"
                         href="#"
                         role="button"
                         data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        data-bs-auto-close="outside"
                         data-component="navbar"
                         data-action="abrir_menu"
                         data-module="contabilidad"
@@ -174,163 +198,142 @@
                         Contabilidad
                     </a>
 
-                    <ul class="dropdown-menu ns-dropdown-menu" aria-labelledby="ns-nav-contabilidad">
-                        <li class="dropdown-submenu ns-dropdown-submenu">
-                            <a
-                                id="ns-nav-asientos"
-                                class="dropdown-item dropdown-toggle {% if es_asientos %}active{% endif %}"
-                                href="#"
-                                role="button"
-                                data-component="navbar"
-                                data-action="abrir_submenu"
-                                data-module="asientos"
-                                aria-expanded="false"
-                            >
-                                Asientos
-                            </a>
+                    <div
+                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-wide"
+                        aria-labelledby="ns-nav-contabilidad"
+                    >
+                        <div class="ns-mega-header">
+                            <div>
+                                <div class="ns-mega-eyebrow">Módulo contable</div>
+                                <div class="ns-mega-title">Contabilidad</div>
+                                <p class="ns-mega-description">
+                                    Accesos principales para carga, consulta y mantenimiento contable.
+                                </p>
+                            </div>
+                        </div>
 
-                            <ul class="dropdown-menu ns-dropdown-submenu-menu" aria-labelledby="ns-nav-asientos">
-                                <li>
-                                    <a
-                                        id="ns-nav-nuevo-asiento"
-                                        class="dropdown-item {% if endpoint_actual in [
-                                            'contabilidad.ver_formulario_nuevo_asiento_contable',
-                                            'contabilidad.crear_asiento_contable_nuevo'
-                                        ] %}active{% endif %}"
-                                        href="{{ url_for('contabilidad.ver_formulario_nuevo_asiento_contable') }}"
-                                        data-component="navbar"
-                                        data-action="navegar"
-                                        data-module="asientos"
-                                        data-endpoint="contabilidad.ver_formulario_nuevo_asiento_contable"
-                                    >
-                                        Nuevo asiento
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        id="ns-nav-listado-asientos"
-                                        class="dropdown-item {% if endpoint_actual in [
-                                            'contabilidad.ver_listado_asientos_contables',
-                                            'contabilidad.ver_detalle_asiento_contable'
-                                        ] %}active{% endif %}"
-                                        href="{{ url_for('contabilidad.ver_listado_asientos_contables') }}"
-                                        data-component="navbar"
-                                        data-action="navegar"
-                                        data-module="asientos"
-                                        data-endpoint="contabilidad.ver_listado_asientos_contables"
-                                    >
-                                        Listado de asientos
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        <div class="ns-mega-grid">
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-asientos">
+                                <h2 id="ns-nav-asientos" class="ns-mega-section-title {% if es_asientos %}active{% endif %}">
+                                    Asientos
+                                </h2>
 
-                        <li class="dropdown-submenu ns-dropdown-submenu">
-                            <a
-                                id="ns-nav-cuentas"
-                                class="dropdown-item dropdown-toggle {% if es_cuentas %}active{% endif %}"
-                                href="#"
-                                role="button"
-                                data-component="navbar"
-                                data-action="abrir_submenu"
-                                data-module="cuentas"
-                                aria-expanded="false"
-                            >
-                                Cuentas
-                            </a>
+                                <a
+                                    id="ns-nav-nuevo-asiento"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_formulario_nuevo_asiento_contable',
+                                        'contabilidad.crear_asiento_contable_nuevo'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_formulario_nuevo_asiento_contable') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="asientos"
+                                    data-endpoint="contabilidad.ver_formulario_nuevo_asiento_contable"
+                                >
+                                    <span class="ns-mega-link-title">Nuevo asiento</span>
+                                    <span class="ns-mega-link-text">Registrar una nueva operación contable.</span>
+                                </a>
 
-                            <ul class="dropdown-menu ns-dropdown-submenu-menu" aria-labelledby="ns-nav-cuentas">
-                                <li>
-                                    <a
-                                        id="ns-nav-cuentas-contables"
-                                        class="dropdown-item {% if endpoint_actual in [
-                                            'contabilidad.ver_formulario_nueva_cuenta_contable',
-                                            'contabilidad.crear_cuenta_contable_nueva'
-                                        ] %}active{% endif %}"
-                                        href="{{ url_for('contabilidad.ver_formulario_nueva_cuenta_contable') }}"
-                                        data-component="navbar"
-                                        data-action="navegar"
-                                        data-module="cuentas"
-                                        data-endpoint="contabilidad.ver_formulario_nueva_cuenta_contable"
-                                    >
-                                        Cuentas contables
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        id="ns-nav-listado-cuentas-contables"
-                                        class="dropdown-item {% if endpoint_actual in [
-                                            'contabilidad.ver_listado_cuentas_contables',
-                                            'contabilidad.ver_formulario_editar_cuenta_contable',
-                                            'contabilidad.actualizar_cuenta_contable_existente'
-                                        ] %}active{% endif %}"
-                                        href="{{ url_for('contabilidad.ver_listado_cuentas_contables') }}"
-                                        data-component="navbar"
-                                        data-action="navegar"
-                                        data-module="cuentas"
-                                        data-endpoint="contabilidad.ver_listado_cuentas_contables"
-                                    >
-                                        Listado cuentas contables
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                                <a
+                                    id="ns-nav-listado-asientos"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_listado_asientos_contables',
+                                        'contabilidad.ver_detalle_asiento_contable'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_listado_asientos_contables') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="asientos"
+                                    data-endpoint="contabilidad.ver_listado_asientos_contables"
+                                >
+                                    <span class="ns-mega-link-title">Listado de asientos</span>
+                                    <span class="ns-mega-link-text">Consultar, revisar y abrir asientos existentes.</span>
+                                </a>
+                            </section>
 
-                        <li class="dropdown-submenu ns-dropdown-submenu">
-                            <a
-                                id="ns-nav-ejercicios"
-                                class="dropdown-item dropdown-toggle {% if es_ejercicios %}active{% endif %}"
-                                href="#"
-                                role="button"
-                                data-component="navbar"
-                                data-action="abrir_submenu"
-                                data-module="ejercicios"
-                                aria-expanded="false"
-                            >
-                                Ejercicios
-                            </a>
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-cuentas">
+                                <h2 id="ns-nav-cuentas" class="ns-mega-section-title {% if es_cuentas %}active{% endif %}">
+                                    Cuentas
+                                </h2>
 
-                            <ul class="dropdown-menu ns-dropdown-submenu-menu" aria-labelledby="ns-nav-ejercicios">
-                                <li>
-                                    <a
-                                        id="ns-nav-ejercicio"
-                                        class="dropdown-item {% if endpoint_actual in [
-                                            'contabilidad.ver_listado_ejercicios_contables',
-                                            'contabilidad.ver_formulario_crear_ejercicio_contable',
-                                            'contabilidad.crear_ejercicio_contable',
-                                            'contabilidad.ver_detalle_ejercicio_contable',
-                                            'contabilidad.ver_formulario_editar_ejercicio_contable',
-                                            'contabilidad.actualizar_ejercicio_contable',
-                                            'contabilidad.generar_coeficientes_inflacion_para_ejercicio'
-                                        ] %}active{% endif %}"
-                                        href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
-                                        data-component="navbar"
-                                        data-action="navegar"
-                                        data-module="ejercicios"
-                                        data-endpoint="contabilidad.ver_listado_ejercicios_contables"
-                                    >
-                                        Ejercicio
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        id="ns-nav-indices"
-                                        class="dropdown-item {% if endpoint_actual in [
-                                            'contabilidad.ver_indices_inflacion',
-                                            'contabilidad.guardar_indice_inflacion_mensual'
-                                        ] %}active{% endif %}"
-                                        href="{{ url_for('contabilidad.ver_indices_inflacion') }}"
-                                        data-component="navbar"
-                                        data-action="navegar"
-                                        data-module="ejercicios"
-                                        data-endpoint="contabilidad.ver_indices_inflacion"
-                                    >
-                                        Índices
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
+                                <a
+                                    id="ns-nav-cuentas-contables"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_formulario_nueva_cuenta_contable',
+                                        'contabilidad.crear_cuenta_contable_nueva'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_formulario_nueva_cuenta_contable') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="cuentas"
+                                    data-endpoint="contabilidad.ver_formulario_nueva_cuenta_contable"
+                                >
+                                    <span class="ns-mega-link-title">Nueva cuenta</span>
+                                    <span class="ns-mega-link-text">Crear cuentas imputables o sumarizadoras.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-listado-cuentas-contables"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_listado_cuentas_contables',
+                                        'contabilidad.ver_formulario_editar_cuenta_contable',
+                                        'contabilidad.actualizar_cuenta_contable_existente'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_listado_cuentas_contables') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="cuentas"
+                                    data-endpoint="contabilidad.ver_listado_cuentas_contables"
+                                >
+                                    <span class="ns-mega-link-title">Plan de cuentas</span>
+                                    <span class="ns-mega-link-text">Revisar estructura y editar cuentas existentes.</span>
+                                </a>
+                            </section>
+
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-ejercicios">
+                                <h2 id="ns-nav-ejercicios" class="ns-mega-section-title {% if es_ejercicios %}active{% endif %}">
+                                    Ejercicios
+                                </h2>
+
+                                <a
+                                    id="ns-nav-ejercicio"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_listado_ejercicios_contables',
+                                        'contabilidad.ver_formulario_crear_ejercicio_contable',
+                                        'contabilidad.crear_ejercicio_contable',
+                                        'contabilidad.ver_detalle_ejercicio_contable',
+                                        'contabilidad.ver_formulario_editar_ejercicio_contable',
+                                        'contabilidad.actualizar_ejercicio_contable',
+                                        'contabilidad.generar_coeficientes_inflacion_para_ejercicio'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="ejercicios"
+                                    data-endpoint="contabilidad.ver_listado_ejercicios_contables"
+                                >
+                                    <span class="ns-mega-link-title">Ejercicios contables</span>
+                                    <span class="ns-mega-link-text">Abrir, revisar y mantener ejercicios contables.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-indices"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_indices_inflacion',
+                                        'contabilidad.guardar_indice_inflacion_mensual'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_indices_inflacion') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="ejercicios"
+                                    data-endpoint="contabilidad.ver_indices_inflacion"
+                                >
+                                    <span class="ns-mega-link-title">Índices de inflación</span>
+                                    <span class="ns-mega-link-text">Cargar índices mensuales para cálculo de coeficientes.</span>
+                                </a>
+                            </section>
+                        </div>
+                    </div>
                 </li>
             </ul>
         </div>
