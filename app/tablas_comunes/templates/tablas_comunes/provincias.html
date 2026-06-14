@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
+
+{% block content %}
+<section id="pv-listado" data-table="provincias" data-query="listar_provincias" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="pv-titulo" class="h3 mb-1">Provincias</h1>
+                <p id="pv-descripcion" class="text-muted mb-0">
+                    Maestro transversal de provincias vinculado a países.
+                </p>
+            </div>
+            <div id="pv-acciones-listado" class="d-flex gap-2">
+                {{ primary_link("Nueva provincia", url_for("tablas_comunes.ver_formulario_nueva_provincia")) }}
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="pv-resumen" data-table="provincias" data-query="obtener_contexto_listado_provincias">
+            {% call card("Resumen", "Tablas comunes") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd id="pv-cantidad" data-field="cantidad_provincias" class="col-sm-9">{{ cantidad_provincias }}</dd>
+                    <dt class="col-sm-3">Activas</dt>
+                    <dd id="pv-cantidad-activas" data-field="cantidad_provincias_activas" class="col-sm-9 mb-0">{{ cantidad_provincias_activas }}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="pv-contenedor-tabla" data-table="provincias" data-query="listar_provincias">
+            {% call card("Listado", "provincias") %}
+                <div class="table-responsive">
+                    <table id="pv-tabla" data-table="provincias" data-query="listar_provincias" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="pais_nombre">País</th>
+                                <th data-field="nombre">Provincia</th>
+                                <th data-field="activo" class="text-center">Activa</th>
+                                <th data-field="orden" class="text-end">Orden</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pv-tbody">
+                            {% for provincia in provincias %}
+                                <tr id="pv-row-{{ provincia.id }}" data-table="provincias" data-query="listar_provincias" data-row-id="{{ provincia.id }}">
+                                    <td data-field="pais_nombre">{{ provincia.pais_descripcion }}</td>
+                                    <td data-field="nombre" class="fw-semibold">{{ provincia.nombre }}</td>
+                                    <td data-field="activo" class="text-center">{% if provincia.esta_activa %}Si{% else %}No{% endif %}</td>
+                                    <td data-field="orden" class="text-end">{{ provincia.orden }}</td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('tablas_comunes.ver_formulario_editar_provincia', provincia_id=provincia.id) }}">Editar</a>
+                                            {% if provincia.esta_activa %}
+                                                <form method="post" action="{{ url_for('tablas_comunes.desactivar_provincia_existente', provincia_id=provincia.id) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desactivar</button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('tablas_comunes.activar_provincia_existente', provincia_id=provincia.id) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="pv-row-sin-datos" data-table="provincias" data-query="listar_provincias">
+                                    <td id="pv-mensaje-sin-datos" colspan="5" class="text-center text-muted py-4">No hay provincias cargadas.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

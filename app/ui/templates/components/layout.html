@@ -29,6 +29,15 @@
     "tablas_comunes.activar_pais_existente",
     "tablas_comunes.desactivar_pais_existente",
 ] %}
+{% set es_provincias = endpoint_actual in [
+    "tablas_comunes.ver_listado_provincias",
+    "tablas_comunes.ver_formulario_nueva_provincia",
+    "tablas_comunes.crear_provincia_nueva",
+    "tablas_comunes.ver_formulario_editar_provincia",
+    "tablas_comunes.actualizar_provincia_existente",
+    "tablas_comunes.activar_provincia_existente",
+    "tablas_comunes.desactivar_provincia_existente",
+] %}
 {% set es_medios_operativos = endpoint_actual in [
     "tablas_comunes.ver_listado_medios_operativos",
     "tablas_comunes.ver_formulario_nuevo_medio_operativo",
@@ -212,6 +221,19 @@
                                 >
                                     <span class="ns-mega-link-title">Países</span>
                                     <span class="ns-mega-link-text">Catálogo común para domicilios y datos fiscales.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-provincias"
+                                    class="ns-mega-link {% if es_provincias %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes.ver_listado_provincias') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes.ver_listado_provincias"
+                                >
+                                    <span class="ns-mega-link-title">Provincias</span>
+                                    <span class="ns-mega-link-text">Jurisdicciones asociadas a cada país.</span>
                                 </a>
 
                                 <a
