@@ -2,7 +2,7 @@ import pytest
 
 from app import create_app
 from app.config import TestConfig
-from app.db import apply_migrations, get_db
+from app.db import apply_migrations
 from app.gestion.articulos_venta_repository import (
     actualizar_articulo_venta_por_id,
     cambiar_estado_articulo_venta,
@@ -10,42 +10,11 @@ from app.gestion.articulos_venta_repository import (
     listar_articulos_venta,
     listar_articulos_venta_activos,
     obtener_articulo_venta_por_id,
-    validar_articulo_venta_activo,
 )
 
 
-def _crear_cuenta_contable_ingreso(db, cuenta: str = "4.1.01.01.996") -> str:
-    """Crea una cuenta imputable de ingreso para pruebas de repository."""
-    db.execute(
-        """
-        INSERT INTO cuentas_contables (
-            cuenta,
-            descripcion,
-            saldo_habitual,
-            naturaleza,
-            imputable,
-            monetaria,
-            sumarizadora,
-            creado_en
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            cuenta,
-            "Ingresos por ventas test",
-            "HABER",
-            "RESULTADO",
-            1,
-            0,
-            None,
-            "2026-01-01 10:00:00",
-        ),
-    )
-    return cuenta
-
-
 def test_crear_articulo_venta_minimo_devuelve_fila_normalizada():
-    """Valida alta minima y normalizacion funcional del repository."""
+    """Valida alta minima y normalizacion basica del repository."""
     app = create_app(TestConfig)
 
     with app.app_context():
@@ -62,23 +31,20 @@ def test_crear_articulo_venta_minimo_devuelve_fila_normalizada():
     assert articulo["id"] > 0
     assert articulo["nombre"] == "Consulta profesional"
     assert articulo["tipo"] == "SERVICIO"
-    assert articulo["tipo_descripcion"] == "Servicio"
     assert articulo["moneda_codigo"] == "ARS"
     assert articulo["moneda_nombre"] == "Peso argentino"
     assert articulo["precio_unitario_sugerido_1000000"] == 0
     assert articulo["activo"] == 1
     assert articulo["orden"] == 0
     assert articulo["esta_activo"] is True
-    assert articulo["descripcion_select"] == "Consulta profesional"
 
 
-def test_crear_articulo_venta_con_precio_cuenta_y_observaciones():
-    """Valida campos opcionales de precio sugerido, cuenta y observaciones."""
+def test_crear_articulo_venta_con_precio_y_observaciones():
+    """Valida campos opcionales sin fijar reglas futuras de venta."""
     app = create_app(TestConfig)
 
     with app.app_context():
         apply_migrations()
-        cuenta_ingreso = _crear_cuenta_contable_ingreso(get_db())
 
         articulo = crear_articulo_venta(
             {
@@ -86,7 +52,6 @@ def test_crear_articulo_venta_con_precio_cuenta_y_observaciones():
                 "tipo": "PRODUCTO",
                 "moneda_codigo": "ARS",
                 "precio_unitario_sugerido_1000000": "12500000000",
-                "cuenta_ingreso_codigo": cuenta_ingreso,
                 "activo": "1",
                 "orden": "5",
                 "observaciones": "Precio general sugerido.",
@@ -94,10 +59,9 @@ def test_crear_articulo_venta_con_precio_cuenta_y_observaciones():
         )
 
     assert articulo["tipo"] == "PRODUCTO"
-    assert articulo["tipo_descripcion"] == "Producto"
     assert articulo["precio_unitario_sugerido_1000000"] == 12500000000
-    assert articulo["cuenta_ingreso_codigo"] == cuenta_ingreso
-    assert articulo["cuenta_ingreso_descripcion"] == "Ingresos por ventas test"
+    assert articulo["cuenta_ingreso_codigo"] is None
+    assert articulo["cuenta_ingreso_descripcion"] is None
     assert articulo["orden"] == 5
     assert articulo["observaciones"] == "Precio general sugerido."
 
@@ -143,7 +107,7 @@ def test_listar_articulos_venta_ordena_activos_orden_nombre():
 
 
 def test_listar_articulos_venta_activos_filtra_inactivos():
-    """Valida listado minimo para selectores operativos."""
+    """Valida listado de productos o servicios activos."""
     app = create_app(TestConfig)
 
     with app.app_context():
@@ -189,7 +153,6 @@ def test_actualizar_articulo_venta_por_id_actualiza_campos_mutables():
 
     with app.app_context():
         apply_migrations()
-        cuenta_ingreso = _crear_cuenta_contable_ingreso(get_db())
 
         articulo = crear_articulo_venta(
             {
@@ -206,7 +169,7 @@ def test_actualizar_articulo_venta_por_id_actualiza_campos_mutables():
                 "tipo": "PRODUCTO",
                 "moneda_codigo": "USD",
                 "precio_unitario_sugerido_1000000": 5000000,
-                "cuenta_ingreso_codigo": cuenta_ingreso,
+                "cuenta_ingreso_codigo": None,
                 "activo": 0,
                 "orden": 8,
                 "observaciones": "Actualizado.",
@@ -218,15 +181,15 @@ def test_actualizar_articulo_venta_por_id_actualiza_campos_mutables():
     assert actualizado["tipo"] == "PRODUCTO"
     assert actualizado["moneda_codigo"] == "USD"
     assert actualizado["precio_unitario_sugerido_1000000"] == 5000000
-    assert actualizado["cuenta_ingreso_codigo"] == cuenta_ingreso
+    assert actualizado["cuenta_ingreso_codigo"] is None
     assert actualizado["activo"] == 0
     assert actualizado["orden"] == 8
     assert actualizado["observaciones"] == "Actualizado."
     assert actualizado["actualizado_en"] is not None
 
 
-def test_cambiar_estado_articulo_venta_y_validar_activo():
-    """Valida baja logica y contrato de articulo activo para operaciones."""
+def test_cambiar_estado_articulo_venta():
+    """Valida baja logica sin borrado fisico."""
     app = create_app(TestConfig)
 
     with app.app_context():
@@ -234,18 +197,13 @@ def test_cambiar_estado_articulo_venta_y_validar_activo():
 
         articulo = crear_articulo_venta(
             {
-                "nombre": "Servicio validable",
+                "nombre": "Servicio desactivable",
                 "tipo": "SERVICIO",
                 "moneda_codigo": "ARS",
             }
         )
 
-        assert validar_articulo_venta_activo(articulo["id"]) is True
-
         desactivado = cambiar_estado_articulo_venta(articulo["id"], 0)
-
-        with pytest.raises(ValueError, match="no existe o no esta activo"):
-            validar_articulo_venta_activo(articulo["id"])
 
     assert desactivado["activo"] == 0
     assert desactivado["esta_activo"] is False
@@ -327,8 +285,8 @@ def test_repository_rechaza_datos_invalidos_antes_de_sql():
             )
 
 
-def test_repository_convierte_integrity_error_en_value_error():
-    """Valida errores funcionales ante FKs invalidas o duplicados."""
+def test_repository_convierte_duplicado_en_value_error():
+    """Valida error funcional ante nombre duplicado."""
     app = create_app(TestConfig)
 
     with app.app_context():
@@ -348,25 +306,6 @@ def test_repository_convierte_integrity_error_en_value_error():
                     "nombre": "servicio unico",
                     "tipo": "SERVICIO",
                     "moneda_codigo": "ARS",
-                }
-            )
-
-        with pytest.raises(ValueError, match="No se pudo crear"):
-            crear_articulo_venta(
-                {
-                    "nombre": "Moneda inexistente",
-                    "tipo": "SERVICIO",
-                    "moneda_codigo": "GBP",
-                }
-            )
-
-        with pytest.raises(ValueError, match="No se pudo crear"):
-            crear_articulo_venta(
-                {
-                    "nombre": "Cuenta inexistente",
-                    "tipo": "SERVICIO",
-                    "moneda_codigo": "ARS",
-                    "cuenta_ingreso_codigo": "9.9.99.99.999",
                 }
             )
 

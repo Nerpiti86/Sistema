@@ -51,7 +51,7 @@ def listar_articulos_venta() -> list[dict[str, Any]]:
 
 
 def listar_articulos_venta_activos() -> list[dict[str, Any]]:
-    """Devuelve productos o servicios activos ordenados para selects y operaciones."""
+    """Devuelve productos o servicios activos ordenados."""
     filas_articulos = get_db().execute(
         f"""
         SELECT {_COLUMNAS_SELECT_ARTICULOS_VENTA}
@@ -243,27 +243,6 @@ def cambiar_estado_articulo_venta(
     return articulo
 
 
-def validar_articulo_venta_activo(articulo_venta_id: Any) -> bool:
-    """Valida que un producto o servicio exista y este activo."""
-    articulo_venta_id_validado = _validar_id_articulo_venta(articulo_venta_id)
-
-    fila_articulo = get_db().execute(
-        """
-        SELECT 1
-        FROM articulos_venta
-        WHERE id = ?
-          AND activo = 1
-        LIMIT 1
-        """,
-        (articulo_venta_id_validado,),
-    ).fetchone()
-
-    if fila_articulo is None:
-        raise ValueError("El producto o servicio no existe o no esta activo.")
-
-    return True
-
-
 def _normalizar_fila_articulo_venta(fila_articulo) -> dict[str, Any]:
     """Convierte una fila SQLite de articulos_venta en dict explicito."""
     articulo = dict(fila_articulo)
@@ -275,23 +254,11 @@ def _normalizar_fila_articulo_venta(fila_articulo) -> dict[str, Any]:
     articulo["activo"] = int(articulo["activo"])
     articulo["orden"] = int(articulo["orden"])
     articulo["esta_activo"] = articulo["activo"] == 1
-    articulo["descripcion_select"] = articulo["nombre"]
-    articulo["tipo_descripcion"] = _describir_tipo_articulo_venta(articulo["tipo"])
 
     if articulo.get("moneda_decimales") is not None:
         articulo["moneda_decimales"] = int(articulo["moneda_decimales"])
 
     return articulo
-
-
-def _describir_tipo_articulo_venta(tipo: str) -> str:
-    if tipo == "PRODUCTO":
-        return "Producto"
-
-    if tipo == "SERVICIO":
-        return "Servicio"
-
-    return tipo
 
 
 def _validar_datos_articulo_venta(datos_articulo: dict[str, Any]) -> dict[str, Any]:
