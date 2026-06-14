@@ -80,7 +80,7 @@ def test_pantalla_editar_cuenta_contable_responde_ok():
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Editar cuenta contable 1.1.01.01.001" in html
+    assert "Editar cuenta contable 1.1.01.01.001 - CAJA ARS" in html
     assert 'id="cc-form"' in html
     assert 'id="cc-formulario"' in html
     assert 'data-action="editar_cuenta_contable"' in html
