@@ -1,6 +1,6 @@
 from typing import Any
 
-from app.comunes.paises_repository import (
+from app.shared.paises_repository import (
     actualizar_pais_por_id,
     cambiar_estado_pais,
     crear_pais,
