@@ -9,7 +9,7 @@ _COLUMNAS_SELECT_ARTICULOS_VENTA = """
     articulos_venta.nombre,
     articulos_venta.tipo,
     articulos_venta.moneda_codigo,
-    articulos_venta.precio_unitario_sugerido_1000000,
+    articulos_venta.precio_unitario_sugerido_centavos,
     articulos_venta.cuenta_ingreso_codigo,
     articulos_venta.activo,
     articulos_venta.orden,
@@ -111,7 +111,7 @@ def crear_articulo_venta(datos_articulo: dict[str, Any]) -> dict[str, Any]:
                     nombre,
                     tipo,
                     moneda_codigo,
-                    precio_unitario_sugerido_1000000,
+                    precio_unitario_sugerido_centavos,
                     cuenta_ingreso_codigo,
                     activo,
                     orden,
@@ -124,7 +124,7 @@ def crear_articulo_venta(datos_articulo: dict[str, Any]) -> dict[str, Any]:
                     datos_validados["nombre"],
                     datos_validados["tipo"],
                     datos_validados["moneda_codigo"],
-                    datos_validados["precio_unitario_sugerido_1000000"],
+                    datos_validados["precio_unitario_sugerido_centavos"],
                     datos_validados["cuenta_ingreso_codigo"],
                     datos_validados["activo"],
                     datos_validados["orden"],
@@ -170,7 +170,7 @@ def actualizar_articulo_venta_por_id(
                     nombre = ?,
                     tipo = ?,
                     moneda_codigo = ?,
-                    precio_unitario_sugerido_1000000 = ?,
+                    precio_unitario_sugerido_centavos = ?,
                     cuenta_ingreso_codigo = ?,
                     activo = ?,
                     orden = ?,
@@ -182,7 +182,7 @@ def actualizar_articulo_venta_por_id(
                     datos_validados["nombre"],
                     datos_validados["tipo"],
                     datos_validados["moneda_codigo"],
-                    datos_validados["precio_unitario_sugerido_1000000"],
+                    datos_validados["precio_unitario_sugerido_centavos"],
                     datos_validados["cuenta_ingreso_codigo"],
                     datos_validados["activo"],
                     datos_validados["orden"],
@@ -248,8 +248,8 @@ def _normalizar_fila_articulo_venta(fila_articulo) -> dict[str, Any]:
     articulo = dict(fila_articulo)
 
     articulo["id"] = int(articulo["id"])
-    articulo["precio_unitario_sugerido_1000000"] = int(
-        articulo["precio_unitario_sugerido_1000000"]
+    articulo["precio_unitario_sugerido_centavos"] = int(
+        articulo["precio_unitario_sugerido_centavos"]
     )
     articulo["activo"] = int(articulo["activo"])
     articulo["orden"] = int(articulo["orden"])
@@ -269,8 +269,8 @@ def _validar_datos_articulo_venta(datos_articulo: dict[str, Any]) -> dict[str, A
         ),
         "tipo": _validar_tipo_articulo_venta(datos_articulo.get("tipo")),
         "moneda_codigo": _validar_codigo_moneda(datos_articulo.get("moneda_codigo")),
-        "precio_unitario_sugerido_1000000": _validar_entero_no_negativo(
-            datos_articulo.get("precio_unitario_sugerido_1000000", 0),
+        "precio_unitario_sugerido_centavos": _validar_entero_no_negativo(
+            datos_articulo.get("precio_unitario_sugerido_centavos", 0),
             "El precio sugerido debe ser numerico.",
             "El precio sugerido no puede ser negativo.",
         ),

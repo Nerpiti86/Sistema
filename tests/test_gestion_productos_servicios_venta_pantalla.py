@@ -44,7 +44,7 @@ def test_pantalla_productos_servicios_venta_muestra_datos():
                 "nombre": "Servicio pantalla",
                 "tipo": "SERVICIO",
                 "moneda_codigo": "ARS",
-                "precio_unitario_sugerido_1000000": "1000000",
+                "precio_unitario_sugerido_centavos": "1,00",
                 "activo": "1",
                 "orden": "10",
                 "observaciones": "Visible en listado.",
@@ -57,6 +57,7 @@ def test_pantalla_productos_servicios_venta_muestra_datos():
     assert b"Servicio pantalla" in response.data
     assert b"Servicio" in response.data
     assert b"ARS" in response.data
+    assert b"1,00" in response.data
     assert b"Visible en listado." in response.data
     assert b"Editar" in response.data
     assert b"Desactivar" in response.data
@@ -78,6 +79,9 @@ def test_formulario_nuevo_producto_servicio_venta_responde_ok():
     assert b'id="psv-tipo"' in response.data
     assert b'id="psv-moneda"' in response.data
     assert b'id="psv-precio-sugerido"' in response.data
+    assert b'data-money-ar="centavos"' in response.data
+    assert b'inputmode="decimal"' in response.data
+    assert b'name="precio_unitario_sugerido_centavos"' in response.data
     assert b'id="psv-cuenta-ingreso"' in response.data
     assert b'data-ns-select="normal"' in response.data
 
@@ -97,7 +101,7 @@ def test_crear_producto_servicio_venta_nuevo_desde_pantalla():
                 "nombre": "Servicio post pantalla",
                 "tipo": "SERVICIO",
                 "moneda_codigo": "ARS",
-                "precio_unitario_sugerido_1000000": "250000000",
+                "precio_unitario_sugerido_centavos": "250,00",
                 "activo": "1",
                 "orden": "4",
                 "observaciones": "Alta desde pantalla.",
@@ -107,7 +111,7 @@ def test_crear_producto_servicio_venta_nuevo_desde_pantalla():
 
         articulo = db.execute(
             """
-            SELECT nombre, tipo, moneda_codigo, precio_unitario_sugerido_1000000,
+            SELECT nombre, tipo, moneda_codigo, precio_unitario_sugerido_centavos,
                    activo, orden, observaciones
             FROM articulos_venta
             WHERE nombre = ?
@@ -119,7 +123,7 @@ def test_crear_producto_servicio_venta_nuevo_desde_pantalla():
     assert articulo["nombre"] == "Servicio post pantalla"
     assert articulo["tipo"] == "SERVICIO"
     assert articulo["moneda_codigo"] == "ARS"
-    assert articulo["precio_unitario_sugerido_1000000"] == 250000000
+    assert articulo["precio_unitario_sugerido_centavos"] == 25000
     assert articulo["activo"] == 1
     assert articulo["orden"] == 4
     assert articulo["observaciones"] == "Alta desde pantalla."
@@ -148,6 +152,29 @@ def test_crear_producto_servicio_venta_rechaza_nombre_vacio():
     assert b"El nombre del producto o servicio es obligatorio." in response.data
 
 
+def test_crear_producto_servicio_venta_rechaza_precio_entero_crudo():
+    """Valida que el importe preserve el valor invalido al re-renderizar."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        response = client.post(
+            "/gestion/productos-servicios-venta/nuevo/",
+            data={
+                "nombre": "Servicio precio crudo",
+                "tipo": "SERVICIO",
+                "moneda_codigo": "ARS",
+                "precio_unitario_sugerido_centavos": "123456",
+                "activo": "1",
+            },
+        )
+
+    assert response.status_code == 400
+    assert b"formato argentino" in response.data
+    assert b'value="123456"' in response.data
+
+
 def test_editar_producto_servicio_venta_desde_pantalla():
     """Valida GET y POST de edicion manual."""
     app = create_app(TestConfig)
@@ -174,7 +201,7 @@ def test_editar_producto_servicio_venta_desde_pantalla():
                 "nombre": "Producto editado pantalla",
                 "tipo": "PRODUCTO",
                 "moneda_codigo": "USD",
-                "precio_unitario_sugerido_1000000": "5000000",
+                "precio_unitario_sugerido_centavos": "5,00",
                 "activo": "1",
                 "orden": "15",
                 "observaciones": "Editado desde pantalla.",
@@ -184,7 +211,7 @@ def test_editar_producto_servicio_venta_desde_pantalla():
 
         actualizado = get_db().execute(
             """
-            SELECT nombre, tipo, moneda_codigo, precio_unitario_sugerido_1000000,
+            SELECT nombre, tipo, moneda_codigo, precio_unitario_sugerido_centavos,
                    orden, observaciones
             FROM articulos_venta
             WHERE id = ?
@@ -198,7 +225,7 @@ def test_editar_producto_servicio_venta_desde_pantalla():
     assert actualizado["nombre"] == "Producto editado pantalla"
     assert actualizado["tipo"] == "PRODUCTO"
     assert actualizado["moneda_codigo"] == "USD"
-    assert actualizado["precio_unitario_sugerido_1000000"] == 5000000
+    assert actualizado["precio_unitario_sugerido_centavos"] == 500
     assert actualizado["orden"] == 15
     assert actualizado["observaciones"] == "Editado desde pantalla."
 
@@ -243,6 +270,22 @@ def test_activar_desactivar_producto_servicio_venta_desde_pantalla():
     assert articulo_desactivado["activo"] == 0
     assert articulo_activado["activo"] == 1
 
+
+
+def test_template_precio_sugerido_no_usa_number_crudo():
+    """Valida que precio sugerido use contrato visual de importes argentinos."""
+    contenido = Path(
+        "app/gestion/templates/gestion/productos_servicios_venta_form.html"
+    ).read_text(encoding="utf-8")
+
+    posicion = contenido.index('id="psv-precio-sugerido"')
+    bloque = contenido[posicion : contenido.index("</div>", posicion)]
+
+    assert 'data-money-ar="centavos"' in bloque
+    assert 'type="text"' in bloque
+    assert 'inputmode="decimal"' in bloque
+    assert 'value="{{ articulo.precio_unitario_sugerido_argentina' in bloque
+    assert 'type="number"' not in bloque
 
 def test_productos_servicios_venta_no_menciona_compras_ni_reglas_futuras():
     """Valida que la pantalla no fije circuitos futuros."""

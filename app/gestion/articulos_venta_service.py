@@ -11,9 +11,14 @@ from app.gestion.articulos_venta_repository import (
     listar_articulos_venta,
     obtener_articulo_venta_por_id,
 )
+from app.shared.formatos import (
+    formatear_entero_escala_a_decimal_argentino,
+    normalizar_decimal_argentino_a_entero_escala,
+)
 from app.shared.monedas_repository import listar_monedas_activas, validar_moneda_activa
 
 _TIPOS_ARTICULO_VENTA = ("PRODUCTO", "SERVICIO")
+_ESCALA_IMPORTE_CENTAVOS = 2
 
 
 def obtener_contexto_listado_articulos_venta() -> dict[str, Any]:
@@ -23,7 +28,10 @@ def obtener_contexto_listado_articulos_venta() -> dict[str, Any]:
     Este service no ejecuta SQL directo. La lectura queda delegada al repository
     funcional de gestion.
     """
-    articulos_venta = listar_articulos_venta()
+    articulos_venta = [
+        _preparar_articulo_venta_para_pantalla(articulo)
+        for articulo in listar_articulos_venta()
+    ]
     articulos_venta_activos = [
         articulo for articulo in articulos_venta if articulo["esta_activo"]
     ]
@@ -40,7 +48,7 @@ def obtener_contexto_formulario_articulo_venta(
     articulo: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Devuelve contexto para formularios de productos o servicios."""
-    articulo_form = dict(articulo or {})
+    articulo_form = _preparar_articulo_venta_para_formulario(articulo or {})
     articulo_form.setdefault("activo", 1)
     articulo_form.setdefault("orden", 0)
 
@@ -119,6 +127,72 @@ def normalizar_id_articulo_venta_desde_formulario(articulo_venta_id: Any) -> int
     return articulo_venta_id_normalizado
 
 
+def _preparar_articulo_venta_para_pantalla(
+    articulo: dict[str, Any],
+) -> dict[str, Any]:
+    """Agrega representaciones visuales sin modificar el contrato persistido."""
+    articulo_pantalla = dict(articulo)
+    articulo_pantalla["precio_unitario_sugerido_argentina"] = (
+        _formatear_precio_sugerido_centavos_a_importe_argentino(
+            articulo_pantalla.get("precio_unitario_sugerido_centavos", 0)
+        )
+    )
+
+    return articulo_pantalla
+
+
+def _preparar_articulo_venta_para_formulario(
+    articulo: dict[str, Any],
+) -> dict[str, Any]:
+    """Prepara valores visibles del formulario preservando entradas invalidas."""
+    articulo_form = dict(articulo)
+    articulo_form.setdefault("precio_unitario_sugerido_centavos", 0)
+    articulo_form["precio_unitario_sugerido_argentina"] = (
+        _formatear_precio_sugerido_para_formulario(
+            articulo_form.get("precio_unitario_sugerido_centavos")
+        )
+    )
+
+    return articulo_form
+
+
+def _formatear_precio_sugerido_para_formulario(valor: Any) -> str:
+    if isinstance(valor, str):
+        valor_texto = valor.strip()
+
+        if not valor_texto:
+            return "0,00"
+
+        return valor_texto
+
+    valor_texto = str(valor or "").strip()
+
+    if not valor_texto:
+        return "0,00"
+
+    try:
+        valor_entero = int(valor_texto)
+    except ValueError:
+        return valor_texto
+
+    return _formatear_precio_sugerido_centavos_a_importe_argentino(valor_entero)
+
+
+def _formatear_precio_sugerido_centavos_a_importe_argentino(valor: Any) -> str:
+    try:
+        valor_entero = int(valor)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("El precio sugerido guardado es invalido.") from exc
+
+    if valor_entero < 0:
+        raise ValueError("El precio sugerido guardado es invalido.")
+
+    return formatear_entero_escala_a_decimal_argentino(
+        valor_entero,
+        _ESCALA_IMPORTE_CENTAVOS,
+    )
+
+
 def _normalizar_datos_articulo_venta_formulario(
     formulario: dict[str, Any],
 ) -> dict[str, Any]:
@@ -127,9 +201,13 @@ def _normalizar_datos_articulo_venta_formulario(
         "nombre": _obtener_valor_formulario(formulario, "nombre"),
         "tipo": _obtener_valor_formulario(formulario, "tipo"),
         "moneda_codigo": _obtener_valor_formulario(formulario, "moneda_codigo"),
-        "precio_unitario_sugerido_1000000": _obtener_valor_formulario(
-            formulario,
-            "precio_unitario_sugerido_1000000",
+        "precio_unitario_sugerido_centavos": (
+            _normalizar_precio_sugerido_formulario_a_centavos(
+                _obtener_valor_formulario(
+                    formulario,
+                    "precio_unitario_sugerido_centavos",
+                )
+            )
         ),
         "cuenta_ingreso_codigo": _obtener_valor_formulario(
             formulario,
@@ -139,6 +217,28 @@ def _normalizar_datos_articulo_venta_formulario(
         "orden": _obtener_valor_formulario(formulario, "orden"),
         "observaciones": _obtener_valor_formulario(formulario, "observaciones"),
     }
+
+
+def _normalizar_precio_sugerido_formulario_a_centavos(valor: Any) -> int:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return 0
+
+    try:
+        centavos = normalizar_decimal_argentino_a_entero_escala(
+            valor_normalizado,
+            _ESCALA_IMPORTE_CENTAVOS,
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "El precio sugerido debe respetar formato argentino 9.999,99."
+        ) from exc
+
+    if centavos < 0:
+        raise ValueError("El precio sugerido no puede ser negativo.")
+
+    return centavos
 
 
 def _validar_referencias_operativas_articulo_venta(

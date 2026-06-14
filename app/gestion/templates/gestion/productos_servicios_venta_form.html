@@ -95,13 +95,15 @@
                         <label for="psv-precio-sugerido" class="form-label">Precio unitario sugerido</label>
                         <input
                             id="psv-precio-sugerido"
-                            data-field="precio_unitario_sugerido_1000000"
-                            name="precio_unitario_sugerido_1000000"
-                            type="number"
-                            min="0"
-                            step="1"
-                            class="form-control"
-                            value="{{ articulo.precio_unitario_sugerido_1000000 | default(0, true) }}"
+                            data-field="precio_unitario_sugerido_centavos"
+                            data-money-ar="centavos"
+                            name="precio_unitario_sugerido_centavos"
+                            type="text"
+                            inputmode="decimal"
+                            class="form-control text-end"
+                            value="{{ articulo.precio_unitario_sugerido_argentina | default('0,00', true) }}"
+                            placeholder="0,00"
+                            autocomplete="off"
                         >
                     </div>
 

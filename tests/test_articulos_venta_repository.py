@@ -33,7 +33,7 @@ def test_crear_articulo_venta_minimo_devuelve_fila_normalizada():
     assert articulo["tipo"] == "SERVICIO"
     assert articulo["moneda_codigo"] == "ARS"
     assert articulo["moneda_nombre"] == "Peso argentino"
-    assert articulo["precio_unitario_sugerido_1000000"] == 0
+    assert articulo["precio_unitario_sugerido_centavos"] == 0
     assert articulo["activo"] == 1
     assert articulo["orden"] == 0
     assert articulo["esta_activo"] is True
@@ -51,7 +51,7 @@ def test_crear_articulo_venta_con_precio_y_observaciones():
                 "nombre": "Producto odontologico",
                 "tipo": "PRODUCTO",
                 "moneda_codigo": "ARS",
-                "precio_unitario_sugerido_1000000": "12500000000",
+                "precio_unitario_sugerido_centavos": "1250000",
                 "activo": "1",
                 "orden": "5",
                 "observaciones": "Precio general sugerido.",
@@ -59,7 +59,7 @@ def test_crear_articulo_venta_con_precio_y_observaciones():
         )
 
     assert articulo["tipo"] == "PRODUCTO"
-    assert articulo["precio_unitario_sugerido_1000000"] == 12500000000
+    assert articulo["precio_unitario_sugerido_centavos"] == 1250000
     assert articulo["cuenta_ingreso_codigo"] is None
     assert articulo["cuenta_ingreso_descripcion"] is None
     assert articulo["orden"] == 5
@@ -168,7 +168,7 @@ def test_actualizar_articulo_venta_por_id_actualiza_campos_mutables():
                 "nombre": "Consulta actualizada",
                 "tipo": "PRODUCTO",
                 "moneda_codigo": "USD",
-                "precio_unitario_sugerido_1000000": 5000000,
+                "precio_unitario_sugerido_centavos": 500,
                 "cuenta_ingreso_codigo": None,
                 "activo": 0,
                 "orden": 8,
@@ -180,7 +180,7 @@ def test_actualizar_articulo_venta_por_id_actualiza_campos_mutables():
     assert actualizado["nombre"] == "Consulta actualizada"
     assert actualizado["tipo"] == "PRODUCTO"
     assert actualizado["moneda_codigo"] == "USD"
-    assert actualizado["precio_unitario_sugerido_1000000"] == 5000000
+    assert actualizado["precio_unitario_sugerido_centavos"] == 500
     assert actualizado["cuenta_ingreso_codigo"] is None
     assert actualizado["activo"] == 0
     assert actualizado["orden"] == 8
@@ -250,7 +250,7 @@ def test_repository_rechaza_datos_invalidos_antes_de_sql():
                     "nombre": "Precio invalido",
                     "tipo": "SERVICIO",
                     "moneda_codigo": "ARS",
-                    "precio_unitario_sugerido_1000000": "abc",
+                    "precio_unitario_sugerido_centavos": "abc",
                 }
             )
 
@@ -260,7 +260,7 @@ def test_repository_rechaza_datos_invalidos_antes_de_sql():
                     "nombre": "Precio negativo",
                     "tipo": "SERVICIO",
                     "moneda_codigo": "ARS",
-                    "precio_unitario_sugerido_1000000": -1,
+                    "precio_unitario_sugerido_centavos": -1,
                 }
             )
 

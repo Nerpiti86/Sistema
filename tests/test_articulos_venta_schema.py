@@ -52,7 +52,7 @@ def test_migracion_crea_tabla_articulos_venta():
         "nombre",
         "tipo",
         "moneda_codigo",
-        "precio_unitario_sugerido_1000000",
+        "precio_unitario_sugerido_centavos",
         "cuenta_ingreso_codigo",
         "activo",
         "orden",
@@ -60,6 +60,8 @@ def test_migracion_crea_tabla_articulos_venta():
         "creado_en",
         "actualizado_en",
     }.issubset(column_names)
+    columna_precio_escala_cotizacion = "precio_unitario_sugerido_" + "1000000"
+    assert columna_precio_escala_cotizacion not in column_names
 
 
 def test_articulos_venta_permite_alta_minima_servicio():
@@ -93,7 +95,7 @@ def test_articulos_venta_permite_alta_minima_servicio():
             SELECT nombre,
                    tipo,
                    moneda_codigo,
-                   precio_unitario_sugerido_1000000,
+                   precio_unitario_sugerido_centavos,
                    activo,
                    orden
             FROM articulos_venta
@@ -105,7 +107,7 @@ def test_articulos_venta_permite_alta_minima_servicio():
     assert articulo["nombre"] == "Consulta profesional"
     assert articulo["tipo"] == "SERVICIO"
     assert articulo["moneda_codigo"] == "ARS"
-    assert articulo["precio_unitario_sugerido_1000000"] == 0
+    assert articulo["precio_unitario_sugerido_centavos"] == 0
     assert articulo["activo"] == 1
     assert articulo["orden"] == 0
 
@@ -124,7 +126,7 @@ def test_articulos_venta_permite_producto_con_precio_sugerido():
                 nombre,
                 tipo,
                 moneda_codigo,
-                precio_unitario_sugerido_1000000,
+                precio_unitario_sugerido_centavos,
                 creado_en
             )
             VALUES (?, ?, ?, ?, ?)
@@ -133,21 +135,21 @@ def test_articulos_venta_permite_producto_con_precio_sugerido():
                 "Producto odontologico test",
                 "PRODUCTO",
                 "ARS",
-                12500000000,
+                1250000,
                 "2026-01-01 10:00:00",
             ),
         )
 
         articulo = db.execute(
             """
-            SELECT precio_unitario_sugerido_1000000
+            SELECT precio_unitario_sugerido_centavos
             FROM articulos_venta
             WHERE nombre = ?
             """,
             ("Producto odontologico test",),
         ).fetchone()
 
-    assert articulo["precio_unitario_sugerido_1000000"] == 12500000000
+    assert articulo["precio_unitario_sugerido_centavos"] == 1250000
 
 
 def test_articulos_venta_rechaza_nombre_vacio():
@@ -291,7 +293,7 @@ def test_articulos_venta_rechaza_precio_sugerido_negativo():
                     nombre,
                     tipo,
                     moneda_codigo,
-                    precio_unitario_sugerido_1000000,
+                    precio_unitario_sugerido_centavos,
                     creado_en
                 )
                 VALUES (?, ?, ?, ?, ?)

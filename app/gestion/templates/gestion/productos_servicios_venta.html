@@ -42,7 +42,7 @@
                                 <th data-field="nombre">Producto o servicio</th>
                                 <th data-field="tipo">Tipo</th>
                                 <th data-field="moneda_codigo">Moneda</th>
-                                <th data-field="precio_unitario_sugerido_1000000" class="text-end">Precio sugerido</th>
+                                <th data-field="precio_unitario_sugerido_centavos" class="text-end">Precio sugerido</th>
                                 <th data-field="cuenta_ingreso_codigo">Cuenta ingreso sugerida</th>
                                 <th data-field="activo" class="text-center">Activo</th>
                                 <th data-field="orden" class="text-end">Orden</th>
@@ -73,7 +73,7 @@
                                             <span class="text-muted small">- {{ articulo.moneda_nombre }}</span>
                                         {% endif %}
                                     </td>
-                                    <td data-field="precio_unitario_sugerido_1000000" class="text-end">{{ articulo.precio_unitario_sugerido_1000000 }}</td>
+                                    <td data-field="precio_unitario_sugerido_centavos" class="text-end">{{ articulo.precio_unitario_sugerido_argentina }}</td>
                                     <td data-field="cuenta_ingreso_codigo">
                                         {% if articulo.cuenta_ingreso_codigo %}
                                             <div>{{ articulo.cuenta_ingreso_codigo }}</div>

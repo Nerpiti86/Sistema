@@ -29,7 +29,7 @@ def test_crear_articulo_venta_desde_formulario_normaliza_y_valida_moneda():
                 "nombre": " Consulta profesional ",
                 "tipo": " servicio ",
                 "moneda_codigo": " ars ",
-                "precio_unitario_sugerido_1000000": "12500000000",
+                "precio_unitario_sugerido_centavos": "12.500,00",
                 "activo": "1",
                 "orden": "3",
                 "observaciones": " Precio sugerido general. ",
@@ -39,7 +39,7 @@ def test_crear_articulo_venta_desde_formulario_normaliza_y_valida_moneda():
     assert articulo["nombre"] == "Consulta profesional"
     assert articulo["tipo"] == "SERVICIO"
     assert articulo["moneda_codigo"] == "ARS"
-    assert articulo["precio_unitario_sugerido_1000000"] == 12500000000
+    assert articulo["precio_unitario_sugerido_centavos"] == 1250000
     assert articulo["activo"] == 1
     assert articulo["esta_activo"] is True
     assert articulo["orden"] == 3
@@ -106,7 +106,7 @@ def test_actualizar_articulo_venta_desde_formulario_valida_y_actualiza():
                 "nombre": "Producto actualizado",
                 "tipo": "PRODUCTO",
                 "moneda_codigo": "USD",
-                "precio_unitario_sugerido_1000000": "5000000",
+                "precio_unitario_sugerido_centavos": "5,00",
                 "activo": "1",
                 "orden": "8",
                 "observaciones": "Actualizado.",
@@ -117,7 +117,7 @@ def test_actualizar_articulo_venta_desde_formulario_valida_y_actualiza():
     assert actualizado["nombre"] == "Producto actualizado"
     assert actualizado["tipo"] == "PRODUCTO"
     assert actualizado["moneda_codigo"] == "USD"
-    assert actualizado["precio_unitario_sugerido_1000000"] == 5000000
+    assert actualizado["precio_unitario_sugerido_centavos"] == 500
     assert actualizado["orden"] == 8
     assert actualizado["observaciones"] == "Actualizado."
 
@@ -153,12 +153,54 @@ def test_contextos_articulos_venta():
     assert contexto_listado["cantidad_articulos_venta_activos"] == 1
     assert contexto_formulario["articulo"]["activo"] == 1
     assert contexto_formulario["articulo"]["orden"] == 0
+    assert contexto_formulario["articulo"]["precio_unitario_sugerido_argentina"] == "0,00"
     assert contexto_formulario["tipos_articulo_venta"] == ["PRODUCTO", "SERVICIO"]
     assert contexto_formulario["cantidad_tipos_articulo_venta"] == 2
     assert contexto_formulario["cantidad_monedas"] >= 1
     assert "cuentas_contables_imputables" in contexto_formulario
     assert contexto_edicion["articulo"]["id"] == activo["id"]
 
+
+
+def test_service_normaliza_precio_sugerido_formato_argentino():
+    """Valida conversion de importe visual argentino a centavos."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        articulo = crear_articulo_venta_desde_formulario(
+            {
+                "nombre": "Servicio con precio argentino",
+                "tipo": "SERVICIO",
+                "moneda_codigo": "ARS",
+                "precio_unitario_sugerido_centavos": "1.234,56",
+                "activo": "1",
+            }
+        )
+        contexto = obtener_contexto_edicion_articulo_venta(articulo["id"])
+
+    assert articulo["precio_unitario_sugerido_centavos"] == 123456
+    assert contexto["articulo"]["precio_unitario_sugerido_argentina"] == "1.234,56"
+
+
+def test_service_rechaza_precio_sugerido_fuera_de_contrato_argentino():
+    """Valida que el precio sugerido use contrato de importes argentinos."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        with pytest.raises(ValueError, match="formato argentino"):
+            crear_articulo_venta_desde_formulario(
+                {
+                    "nombre": "Servicio precio invalido",
+                    "tipo": "SERVICIO",
+                    "moneda_codigo": "ARS",
+                    "precio_unitario_sugerido_centavos": "123456",
+                    "activo": "1",
+                }
+            )
 
 def test_activar_desactivar_articulo_venta():
     """Valida baja logica por activar/desactivar desde service."""

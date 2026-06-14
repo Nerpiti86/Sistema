@@ -138,3 +138,50 @@ def test_js_numero_argentino_declara_contrato_global_cotizacion_ar():
     assert "innerHTML" not in contenido
     assert ".style" not in contenido
     assert 'setAttribute("style"' not in contenido
+
+
+def test_input_precio_sugerido_venta_declara_money_ar_centavos():
+    """
+    Contrato: precio sugerido de venta usa formatter AR en vivo.
+
+    Es un importe monetario, como debe/haber, no una cotizacion.
+    """
+    contenido = Path(
+        "app/gestion/templates/gestion/productos_servicios_venta_form.html"
+    ).read_text(encoding="utf-8")
+
+    posicion = contenido.index('id="psv-precio-sugerido"')
+    bloque = contenido[posicion : contenido.index("</div>", posicion)]
+
+    assert 'data-money-ar="centavos"' in bloque
+    assert 'data-field="precio_unitario_sugerido_centavos"' in bloque
+    assert 'name="precio_unitario_sugerido_centavos"' in bloque
+    assert 'type="text"' in bloque
+    assert 'inputmode="decimal"' in bloque
+    assert 'data-cotizacion-ar="1000000"' not in bloque
+    assert 'type="number"' not in bloque
+
+
+def test_precio_sugerido_venta_no_mantiene_referencias_1000000_fuera_de_migraciones():
+    """Contrato: el campo funcional de precio sugerido usa centavos."""
+    campo_escala_cotizacion = "precio_unitario_sugerido_" + "1000000"
+    permitidos = {
+        Path("migrations/017_crear_articulos_venta.sql"),
+        Path("migrations/018_precio_sugerido_articulos_venta_centavos.sql"),
+    }
+
+    referencias = []
+    for ruta in Path(".").rglob("*"):
+        if (
+            not ruta.is_file()
+            or ".git" in ruta.parts
+            or "__pycache__" in ruta.parts
+            or ruta.suffix not in {".py", ".html", ".js", ".sql"}
+        ):
+            continue
+
+        contenido = ruta.read_text(encoding="utf-8")
+        if campo_escala_cotizacion in contenido and ruta not in permitidos:
+            referencias.append(str(ruta))
+
+    assert referencias == []
