@@ -1,6 +1,9 @@
 from typing import Any
 
-from app.contabilidad.cuentas_contables_repository import validar_cuenta_contable_imputable
+from app.contabilidad.cuentas_contables_repository import (
+    listar_cuentas_contables,
+    validar_cuenta_contable_imputable,
+)
 from app.gestion.clientes_repository import (
     actualizar_cliente_por_id,
     cambiar_estado_cliente,
@@ -10,10 +13,20 @@ from app.gestion.clientes_repository import (
     obtener_cliente_por_id,
     validar_cliente_activo,
 )
-from app.gestion.grupos_clientes_repository import validar_grupo_cliente_activo
-from app.shared.catalogos_fiscales_repository import validar_item_catalogo_fiscal_activo
-from app.shared.paises_repository import validar_pais_activo
-from app.shared.provincias_repository import obtener_provincia_por_id, validar_provincia_activa
+from app.gestion.grupos_clientes_repository import (
+    listar_grupos_clientes_activos,
+    validar_grupo_cliente_activo,
+)
+from app.shared.catalogos_fiscales_repository import (
+    listar_catalogo_fiscal_activo,
+    validar_item_catalogo_fiscal_activo,
+)
+from app.shared.paises_repository import listar_paises_activos, validar_pais_activo
+from app.shared.provincias_repository import (
+    listar_provincias,
+    obtener_provincia_por_id,
+    validar_provincia_activa,
+)
 
 
 def obtener_contexto_listado_clientes() -> dict[str, Any]:
@@ -41,6 +54,46 @@ def obtener_contexto_clientes_activos() -> dict[str, Any]:
     return {
         "clientes": clientes,
         "cantidad_clientes": len(clientes),
+    }
+
+
+def obtener_contexto_formulario_cliente(
+    cliente: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Devuelve contexto para formularios de clientes."""
+    cliente_form = dict(cliente or {})
+    cliente_form.setdefault("activo", 1)
+    cliente_form.setdefault("orden", 0)
+
+    grupos_clientes = listar_grupos_clientes_activos()
+    paises = listar_paises_activos()
+    provincias = [
+        provincia
+        for provincia in listar_provincias()
+        if provincia["esta_activa"]
+    ]
+    condiciones_iva = listar_catalogo_fiscal_activo("condiciones_iva")
+    tipos_documento = listar_catalogo_fiscal_activo("tipos_documento")
+    cuentas_contables_imputables = [
+        cuenta
+        for cuenta in listar_cuentas_contables()
+        if cuenta["es_imputable"]
+    ]
+
+    return {
+        "cliente": cliente_form,
+        "grupos_clientes": grupos_clientes,
+        "paises": paises,
+        "provincias": provincias,
+        "condiciones_iva": condiciones_iva,
+        "tipos_documento": tipos_documento,
+        "cuentas_contables_imputables": cuentas_contables_imputables,
+        "cantidad_grupos_clientes": len(grupos_clientes),
+        "cantidad_paises": len(paises),
+        "cantidad_provincias": len(provincias),
+        "cantidad_condiciones_iva": len(condiciones_iva),
+        "cantidad_tipos_documento": len(tipos_documento),
+        "cantidad_cuentas_contables_imputables": len(cuentas_contables_imputables),
     }
 
 

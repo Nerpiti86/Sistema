@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
+
+{% block content %}
+<section id="cl-listado" data-table="clientes" data-query="listar_clientes" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="cl-titulo" class="h3 mb-1">Clientes</h1>
+                <p id="cl-descripcion" class="text-muted mb-0">
+                    Maestro de clientes para gestión comercial, fiscalidad y cuenta corriente.
+                </p>
+            </div>
+            <div id="cl-acciones-listado" class="d-flex gap-2">
+                {{ primary_link("Nuevo cliente", url_for("gestion.ver_formulario_nuevo_cliente")) }}
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="cl-resumen" data-table="clientes" data-query="obtener_contexto_listado_clientes">
+            {% call card("Resumen", "Gestión") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd id="cl-cantidad" data-field="cantidad_clientes" class="col-sm-9">{{ cantidad_clientes }}</dd>
+                    <dt class="col-sm-3">Activos</dt>
+                    <dd id="cl-cantidad-activos" data-field="cantidad_clientes_activos" class="col-sm-9 mb-0">{{ cantidad_clientes_activos }}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="cl-contenedor-tabla" data-table="clientes" data-query="listar_clientes">
+            {% call card("Listado", "clientes") %}
+                <div class="table-responsive">
+                    <table id="cl-tabla" data-table="clientes" data-query="listar_clientes" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="razon_social">Razón social</th>
+                                <th data-field="grupo_cliente_id">Grupo</th>
+                                <th data-field="documento_fiscal">Documento</th>
+                                <th data-field="ubicacion">Ubicación</th>
+                                <th data-field="activo" class="text-center">Activo</th>
+                                <th data-field="orden" class="text-end">Orden</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cl-tbody">
+                            {% for cliente in clientes %}
+                                <tr id="cl-row-{{ cliente.id }}" data-table="clientes" data-query="listar_clientes" data-row-id="{{ cliente.id }}">
+                                    <td data-field="razon_social">
+                                        <div class="fw-semibold">{{ cliente.razon_social }}</div>
+                                        {% if cliente.nombre_fantasia %}
+                                            <div class="text-muted small">{{ cliente.nombre_fantasia }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="grupo_cliente_id">{{ cliente.grupo_cliente_nombre }}</td>
+                                    <td data-field="documento_fiscal">
+                                        {% if cliente.documento_fiscal_descripcion %}
+                                            {{ cliente.documento_fiscal_descripcion }}
+                                        {% else %}
+                                            <span class="text-muted">Sin documento</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="ubicacion">
+                                        {% if cliente.ciudad or cliente.provincia_nombre or cliente.pais_descripcion %}
+                                            {{ cliente.ciudad or "" }}
+                                            {% if cliente.provincia_nombre %}{% if cliente.ciudad %}, {% endif %}{{ cliente.provincia_nombre }}{% endif %}
+                                            {% if cliente.pais_descripcion %}{% if cliente.ciudad or cliente.provincia_nombre %}, {% endif %}{{ cliente.pais_descripcion }}{% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Sin ubicación</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="activo" class="text-center">{% if cliente.esta_activo %}Si{% else %}No{% endif %}</td>
+                                    <td data-field="orden" class="text-end">{{ cliente.orden }}</td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('gestion.ver_formulario_editar_cliente', cliente_id=cliente.id) }}">Editar</a>
+                                            {% if cliente.esta_activo %}
+                                                <form method="post" action="{{ url_for('gestion.desactivar_cliente_existente', cliente_id=cliente.id) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desactivar</button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('gestion.activar_cliente_existente', cliente_id=cliente.id) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="cl-row-sin-datos" data-table="clientes" data-query="listar_clientes">
+                                    <td id="cl-mensaje-sin-datos" colspan="7" class="text-center text-muted py-4">No hay clientes cargados.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
