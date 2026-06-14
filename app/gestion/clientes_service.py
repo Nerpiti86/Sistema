@@ -80,6 +80,24 @@ def obtener_contexto_formulario_cliente(
         if cuenta["es_imputable"]
     ]
 
+    es_alta = not cliente_form.get("id")
+    pais_default_id = _obtener_pais_default_id(paises, "Argentina")
+    provincia_default_id = _obtener_provincia_default_id(
+        provincias,
+        "Santa Fe",
+        pais_default_id,
+    )
+
+    if es_alta and _valor_vacio(cliente_form.get("pais_id")) and pais_default_id is not None:
+        cliente_form["pais_id"] = pais_default_id
+
+    if (
+        es_alta
+        and _valor_vacio(cliente_form.get("provincia_id"))
+        and provincia_default_id is not None
+    ):
+        cliente_form["provincia_id"] = provincia_default_id
+
     return {
         "cliente": cliente_form,
         "grupos_clientes": grupos_clientes,
@@ -164,6 +182,51 @@ def normalizar_id_cliente_desde_formulario(cliente_id: Any) -> int:
         raise ValueError("El id del cliente debe ser positivo.")
 
     return cliente_id_normalizado
+
+
+def _obtener_pais_default_id(
+    paises: list[dict[str, Any]],
+    nombre_default: str,
+) -> int | None:
+    """Devuelve id de pais default por nombre si existe activo en contexto."""
+    nombre_normalizado = _normalizar_texto_comparacion(nombre_default)
+
+    for pais in paises:
+        if _normalizar_texto_comparacion(pais.get("nombre")) == nombre_normalizado:
+            return int(pais["id"])
+
+    return None
+
+
+def _obtener_provincia_default_id(
+    provincias: list[dict[str, Any]],
+    nombre_default: str,
+    pais_id: int | None,
+) -> int | None:
+    """Devuelve id de provincia default por nombre y pais si existe activa."""
+    if pais_id is None:
+        return None
+
+    nombre_normalizado = _normalizar_texto_comparacion(nombre_default)
+
+    for provincia in provincias:
+        if (
+            int(provincia["pais_id"]) == int(pais_id)
+            and _normalizar_texto_comparacion(provincia.get("nombre")) == nombre_normalizado
+        ):
+            return int(provincia["id"])
+
+    return None
+
+
+def _normalizar_texto_comparacion(valor: Any) -> str:
+    """Normaliza texto para comparaciones internas de defaults."""
+    return str(valor or "").strip().casefold()
+
+
+def _valor_vacio(valor: Any) -> bool:
+    """Indica si un valor de formulario/contexto esta vacio."""
+    return str(valor or "").strip() == ""
 
 
 def _normalizar_datos_cliente_formulario(formulario: dict[str, Any]) -> dict[str, Any]:

@@ -33,7 +33,11 @@
     <div class="col-12">
         {% call card(titulo_visible, "clientes") %}
             <form id="cl-formulario" method="post" action="{{ action_url }}" data-table="clientes">
-                <div class="row g-3">
+                <div id="cl-datos-principales" class="row g-3 mb-3">
+                    <div class="col-12">
+                        <h2 id="cl-datos-principales-titulo" class="h6 mb-0">Datos del cliente</h2>
+                    </div>
+
                     <div class="col-12 col-lg-6">
                         <label for="cl-razon-social" class="form-label">Razón social</label>
                         <input
@@ -108,175 +112,237 @@
                             <label for="cl-activo" class="form-check-label">Activo</label>
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-12">
-                        <hr class="my-2">
-                        <h2 class="h6 mb-0">Contacto y domicilio</h2>
-                    </div>
-
-                    <div class="col-12 col-lg-4">
-                        <label for="cl-telefono" class="form-label">Teléfono</label>
-                        <input id="cl-telefono" data-field="telefono" name="telefono" type="text" class="form-control" value="{{ cliente.telefono | default('', true) }}">
-                    </div>
-
-                    <div class="col-12 col-lg-4">
-                        <label for="cl-email" class="form-label">Email</label>
-                        <input id="cl-email" data-field="email" name="email" type="email" class="form-control" value="{{ cliente.email | default('', true) }}">
-                    </div>
-
-                    <div class="col-12 col-lg-4">
-                        <label for="cl-codigo-postal" class="form-label">Código postal</label>
-                        <input id="cl-codigo-postal" data-field="codigo_postal" name="codigo_postal" type="text" class="form-control" value="{{ cliente.codigo_postal | default('', true) }}">
-                    </div>
-
-                    <div class="col-12 col-lg-6">
-                        <label for="cl-domicilio" class="form-label">Domicilio</label>
-                        <input id="cl-domicilio" data-field="domicilio" name="domicilio" type="text" class="form-control" value="{{ cliente.domicilio | default('', true) }}">
-                    </div>
-
-                    <div class="col-12 col-lg-6">
-                        <label for="cl-ciudad" class="form-label">Ciudad</label>
-                        <input id="cl-ciudad" data-field="ciudad" name="ciudad" type="text" class="form-control" value="{{ cliente.ciudad | default('', true) }}">
-                    </div>
-
-                    <div class="col-12 col-lg-6">
-                        <label for="cl-pais" class="form-label">País</label>
-                        <select
-                            id="cl-pais"
-                            data-ns-select="normal"
-                            data-table="clientes"
-                            data-field="pais_id"
-                            name="pais_id"
-                            class="form-select"
+                <ul id="cl-tabs" class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button
+                            id="cl-tab-contacto"
+                            class="nav-link active"
+                            data-bs-toggle="tab"
+                            data-bs-target="#cl-panel-contacto"
+                            type="button"
+                            role="tab"
+                            aria-controls="cl-panel-contacto"
+                            aria-selected="true"
                         >
-                            <option value="">Seleccionar país...</option>
-                            {% for pais in paises %}
-                                <option value="{{ pais.id }}" {% if cliente.pais_id | default('', true) | string == pais.id | string %}selected{% endif %}>
-                                    {{ pais.descripcion_select }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="col-12 col-lg-6">
-                        <label for="cl-provincia" class="form-label">Provincia</label>
-                        <select
-                            id="cl-provincia"
-                            data-ns-select="normal"
-                            data-table="clientes"
-                            data-field="provincia_id"
-                            name="provincia_id"
-                            class="form-select"
+                            Contacto
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button
+                            id="cl-tab-fiscal"
+                            class="nav-link"
+                            data-bs-toggle="tab"
+                            data-bs-target="#cl-panel-fiscal"
+                            type="button"
+                            role="tab"
+                            aria-controls="cl-panel-fiscal"
+                            aria-selected="false"
                         >
-                            <option value="">Seleccionar provincia...</option>
-                            {% for provincia in provincias %}
-                                <option value="{{ provincia.id }}" {% if cliente.provincia_id | default('', true) | string == provincia.id | string %}selected{% endif %}>
-                                    {{ provincia.nombre }}{% if provincia.pais_descripcion %} - {{ provincia.pais_descripcion }}{% endif %}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="col-12">
-                        <hr class="my-2">
-                        <h2 class="h6 mb-0">Datos fiscales</h2>
-                    </div>
-
-                    <div class="col-12 col-lg-4">
-                        <label for="cl-condicion-iva" class="form-label">Condición IVA</label>
-                        <select
-                            id="cl-condicion-iva"
-                            data-ns-select="normal"
-                            data-table="clientes"
-                            data-field="condicion_iva_codigo"
-                            name="condicion_iva_codigo"
-                            class="form-select"
+                            Fiscal
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button
+                            id="cl-tab-contable"
+                            class="nav-link"
+                            data-bs-toggle="tab"
+                            data-bs-target="#cl-panel-contable"
+                            type="button"
+                            role="tab"
+                            aria-controls="cl-panel-contable"
+                            aria-selected="false"
                         >
-                            <option value="">Seleccionar condición...</option>
-                            {% for condicion_iva in condiciones_iva %}
-                                <option value="{{ condicion_iva.codigo }}" {% if cliente.condicion_iva_codigo | default('', true) | string == condicion_iva.codigo | string %}selected{% endif %}>
-                                    {{ condicion_iva.descripcion_select }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                            Conexión contable
+                        </button>
+                    </li>
+                </ul>
+
+                <div id="cl-tabs-contenido" class="tab-content">
+                    <div
+                        id="cl-panel-contacto"
+                        class="tab-pane fade show active"
+                        role="tabpanel"
+                        aria-labelledby="cl-tab-contacto"
+                        tabindex="0"
+                    >
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-4">
+                                <label for="cl-telefono" class="form-label">Teléfono</label>
+                                <input id="cl-telefono" data-field="telefono" name="telefono" type="text" class="form-control" value="{{ cliente.telefono | default('', true) }}">
+                            </div>
+
+                            <div class="col-12 col-lg-4">
+                                <label for="cl-email" class="form-label">Email</label>
+                                <input id="cl-email" data-field="email" name="email" type="email" class="form-control" value="{{ cliente.email | default('', true) }}">
+                            </div>
+
+                            <div class="col-12 col-lg-4">
+                                <label for="cl-codigo-postal" class="form-label">Código postal</label>
+                                <input id="cl-codigo-postal" data-field="codigo_postal" name="codigo_postal" type="text" class="form-control" value="{{ cliente.codigo_postal | default('', true) }}">
+                            </div>
+
+                            <div class="col-12 col-lg-6">
+                                <label for="cl-domicilio" class="form-label">Domicilio</label>
+                                <input id="cl-domicilio" data-field="domicilio" name="domicilio" type="text" class="form-control" value="{{ cliente.domicilio | default('', true) }}">
+                            </div>
+
+                            <div class="col-12 col-lg-6">
+                                <label for="cl-ciudad" class="form-label">Ciudad</label>
+                                <input id="cl-ciudad" data-field="ciudad" name="ciudad" type="text" class="form-control" value="{{ cliente.ciudad | default('', true) }}">
+                            </div>
+
+                            <div class="col-12 col-lg-6">
+                                <label for="cl-pais" class="form-label">País</label>
+                                <select
+                                    id="cl-pais"
+                                    data-ns-select="normal"
+                                    data-table="clientes"
+                                    data-field="pais_id"
+                                    name="pais_id"
+                                    class="form-select"
+                                >
+                                    <option value="">Seleccionar país...</option>
+                                    {% for pais in paises %}
+                                        <option value="{{ pais.id }}" {% if cliente.pais_id | default('', true) | string == pais.id | string %}selected{% endif %}>
+                                            {{ pais.descripcion_select }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-lg-6">
+                                <label for="cl-provincia" class="form-label">Provincia</label>
+                                <select
+                                    id="cl-provincia"
+                                    data-ns-select="normal"
+                                    data-table="clientes"
+                                    data-field="provincia_id"
+                                    name="provincia_id"
+                                    class="form-select"
+                                >
+                                    <option value="">Seleccionar provincia...</option>
+                                    {% for provincia in provincias %}
+                                        <option value="{{ provincia.id }}" {% if cliente.provincia_id | default('', true) | string == provincia.id | string %}selected{% endif %}>
+                                            {{ provincia.nombre }}{% if provincia.pais_descripcion %} - {{ provincia.pais_descripcion }}{% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-12 col-lg-4">
-                        <label for="cl-tipo-documento-fiscal" class="form-label">Tipo documento fiscal</label>
-                        <select
-                            id="cl-tipo-documento-fiscal"
-                            data-ns-select="normal"
-                            data-table="clientes"
-                            data-field="tipo_documento_fiscal_codigo"
-                            name="tipo_documento_fiscal_codigo"
-                            class="form-select"
-                        >
-                            <option value="">Seleccionar tipo...</option>
-                            {% for tipo_documento in tipos_documento %}
-                                <option value="{{ tipo_documento.codigo }}" {% if cliente.tipo_documento_fiscal_codigo | default('', true) | string == tipo_documento.codigo | string %}selected{% endif %}>
-                                    {{ tipo_documento.descripcion_select }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                    <div
+                        id="cl-panel-fiscal"
+                        class="tab-pane fade"
+                        role="tabpanel"
+                        aria-labelledby="cl-tab-fiscal"
+                        tabindex="0"
+                    >
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-4">
+                                <label for="cl-condicion-iva" class="form-label">Condición IVA</label>
+                                <select
+                                    id="cl-condicion-iva"
+                                    data-ns-select="normal"
+                                    data-table="clientes"
+                                    data-field="condicion_iva_codigo"
+                                    name="condicion_iva_codigo"
+                                    class="form-select"
+                                >
+                                    <option value="">Seleccionar condición...</option>
+                                    {% for condicion_iva in condiciones_iva %}
+                                        <option value="{{ condicion_iva.codigo }}" {% if cliente.condicion_iva_codigo | default('', true) | string == condicion_iva.codigo | string %}selected{% endif %}>
+                                            {{ condicion_iva.descripcion_select }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-lg-4">
+                                <label for="cl-tipo-documento-fiscal" class="form-label">Tipo documento fiscal</label>
+                                <select
+                                    id="cl-tipo-documento-fiscal"
+                                    data-ns-select="normal"
+                                    data-table="clientes"
+                                    data-field="tipo_documento_fiscal_codigo"
+                                    name="tipo_documento_fiscal_codigo"
+                                    class="form-select"
+                                >
+                                    <option value="">Seleccionar tipo...</option>
+                                    {% for tipo_documento in tipos_documento %}
+                                        <option value="{{ tipo_documento.codigo }}" {% if cliente.tipo_documento_fiscal_codigo | default('', true) | string == tipo_documento.codigo | string %}selected{% endif %}>
+                                            {{ tipo_documento.descripcion_select }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-lg-4">
+                                <label for="cl-numero-documento-fiscal" class="form-label">Número documento fiscal</label>
+                                <input id="cl-numero-documento-fiscal" data-field="numero_documento_fiscal" name="numero_documento_fiscal" type="text" class="form-control" value="{{ cliente.numero_documento_fiscal | default('', true) }}">
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-12 col-lg-4">
-                        <label for="cl-numero-documento-fiscal" class="form-label">Número documento fiscal</label>
-                        <input id="cl-numero-documento-fiscal" data-field="numero_documento_fiscal" name="numero_documento_fiscal" type="text" class="form-control" value="{{ cliente.numero_documento_fiscal | default('', true) }}">
-                    </div>
+                    <div
+                        id="cl-panel-contable"
+                        class="tab-pane fade"
+                        role="tabpanel"
+                        aria-labelledby="cl-tab-contable"
+                        tabindex="0"
+                    >
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-6">
+                                <label for="cl-cuenta-deudores-ventas" class="form-label">Cuenta deudores por ventas</label>
+                                <select
+                                    id="cl-cuenta-deudores-ventas"
+                                    data-ns-select="normal"
+                                    data-table="clientes"
+                                    data-field="cuenta_deudores_ventas_codigo"
+                                    name="cuenta_deudores_ventas_codigo"
+                                    class="form-select"
+                                >
+                                    <option value="">Sin cuenta específica...</option>
+                                    {% for cuenta in cuentas_contables_imputables %}
+                                        <option value="{{ cuenta.cuenta }}" {% if cliente.cuenta_deudores_ventas_codigo | default('', true) | string == cuenta.cuenta | string %}selected{% endif %}>
+                                            {{ cuenta.cuenta }} - {{ cuenta.descripcion }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
-                    <div class="col-12">
-                        <hr class="my-2">
-                        <h2 class="h6 mb-0">Configuración contable del cliente</h2>
-                    </div>
+                            <div class="col-12 col-lg-6">
+                                <label for="cl-cuenta-anticipo-clientes" class="form-label">Cuenta anticipo clientes</label>
+                                <select
+                                    id="cl-cuenta-anticipo-clientes"
+                                    data-ns-select="normal"
+                                    data-table="clientes"
+                                    data-field="cuenta_anticipo_clientes_codigo"
+                                    name="cuenta_anticipo_clientes_codigo"
+                                    class="form-select"
+                                >
+                                    <option value="">Sin cuenta específica...</option>
+                                    {% for cuenta in cuentas_contables_imputables %}
+                                        <option value="{{ cuenta.cuenta }}" {% if cliente.cuenta_anticipo_clientes_codigo | default('', true) | string == cuenta.cuenta | string %}selected{% endif %}>
+                                            {{ cuenta.cuenta }} - {{ cuenta.descripcion }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
-                    <div class="col-12 col-lg-6">
-                        <label for="cl-cuenta-deudores-ventas" class="form-label">Cuenta deudores por ventas</label>
-                        <select
-                            id="cl-cuenta-deudores-ventas"
-                            data-ns-select="normal"
-                            data-table="clientes"
-                            data-field="cuenta_deudores_ventas_codigo"
-                            name="cuenta_deudores_ventas_codigo"
-                            class="form-select"
-                        >
-                            <option value="">Sin cuenta específica...</option>
-                            {% for cuenta in cuentas_contables_imputables %}
-                                <option value="{{ cuenta.cuenta }}" {% if cliente.cuenta_deudores_ventas_codigo | default('', true) | string == cuenta.cuenta | string %}selected{% endif %}>
-                                    {{ cuenta.cuenta }} - {{ cuenta.descripcion }}
-                                </option>
-                            {% endfor %}
-                        </select>
+                            <div class="col-12">
+                                <label for="cl-observaciones" class="form-label">Observaciones</label>
+                                <textarea id="cl-observaciones" data-field="observaciones" name="observaciones" class="form-control" rows="3">{{ cliente.observaciones | default('', true) }}</textarea>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="col-12 col-lg-6">
-                        <label for="cl-cuenta-anticipo-clientes" class="form-label">Cuenta anticipo clientes</label>
-                        <select
-                            id="cl-cuenta-anticipo-clientes"
-                            data-ns-select="normal"
-                            data-table="clientes"
-                            data-field="cuenta_anticipo_clientes_codigo"
-                            name="cuenta_anticipo_clientes_codigo"
-                            class="form-select"
-                        >
-                            <option value="">Sin cuenta específica...</option>
-                            {% for cuenta in cuentas_contables_imputables %}
-                                <option value="{{ cuenta.cuenta }}" {% if cliente.cuenta_anticipo_clientes_codigo | default('', true) | string == cuenta.cuenta | string %}selected{% endif %}>
-                                    {{ cuenta.cuenta }} - {{ cuenta.descripcion }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="col-12">
-                        <label for="cl-observaciones" class="form-label">Observaciones</label>
-                        <textarea id="cl-observaciones" data-field="observaciones" name="observaciones" class="form-control" rows="3">{{ cliente.observaciones | default('', true) }}</textarea>
-                    </div>
-
-                    <div class="col-12 d-flex justify-content-end gap-2">
-                        {{ secondary_link("Cancelar", form_cancelar_url) }}
-                        {{ primary_button(form_submit_label) }}
-                    </div>
+                <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                    {{ secondary_link("Cancelar", form_cancelar_url) }}
+                    {{ primary_button(form_submit_label) }}
                 </div>
             </form>
         {% endcall %}

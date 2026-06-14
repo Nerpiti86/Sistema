@@ -316,3 +316,73 @@ def test_template_clientes_no_define_cuenta_ingreso():
 
     assert "cuenta_ingreso" not in listado
     assert "cuenta_ingreso" not in formulario
+
+
+def test_formulario_cliente_tiene_tabs():
+    """Valida estructura de tabs del formulario de clientes."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        _crear_grupo_cliente_activo()
+        response = client.get("/gestion/clientes/nuevo/")
+
+    assert response.status_code == 200
+    assert b'id="cl-datos-principales"' in response.data
+    assert b'id="cl-tabs"' in response.data
+    assert b'id="cl-tab-contacto"' in response.data
+    assert b'id="cl-panel-contacto"' in response.data
+    assert b'id="cl-tab-fiscal"' in response.data
+    assert b'id="cl-panel-fiscal"' in response.data
+    assert b'id="cl-tab-contable"' in response.data
+    assert b'id="cl-panel-contable"' in response.data
+    assert b"Contacto" in response.data
+    assert b"Fiscal" in response.data
+    assert "Conexión contable".encode("utf-8") in response.data
+
+
+def test_formulario_nuevo_cliente_default_argentina_santa_fe():
+    """Valida defaults geograficos Argentina y Santa Fe en alta."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_grupo_cliente_activo()
+        pais_id = _crear_pais(db)
+        provincia_id = _crear_provincia(db, pais_id)
+
+        response = client.get("/gestion/clientes/nuevo/")
+
+    assert response.status_code == 200
+    assert f'value="{pais_id}" selected'.encode("utf-8") in response.data
+    assert f'value="{provincia_id}" selected'.encode("utf-8") in response.data
+
+
+def test_formulario_editar_cliente_no_pisa_geografia_vacia_con_default():
+    """Valida que los defaults solo apliquen en alta, no en edicion."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        grupo = _crear_grupo_cliente_activo()
+        _crear_pais(db)
+        cliente = crear_cliente_desde_formulario(
+            {
+                "razon_social": "Cliente Sin Geografia",
+                "grupo_cliente_id": str(grupo["id"]),
+                "activo": "1",
+            }
+        )
+
+        response = client.get(f"/gestion/clientes/{cliente['id']}/editar/")
+
+    assert response.status_code == 200
+    assert b'id="cl-pais"' in response.data
+    assert b'id="cl-provincia"' in response.data
+    assert b'Seleccionar pa' in response.data
+    assert b'Seleccionar provincia' in response.data
