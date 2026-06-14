@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_button, secondary_link %}
+
+{% block content %}
+{% set titulo_visible = form_titulo %}
+{% if modo_formulario == "edicion" and articulo.nombre %}
+    {% set titulo_visible = "Editar producto o servicio para la venta " ~ articulo.nombre %}
+{% endif %}
+<section id="psv-form" data-table="articulos_venta" data-action="{{ modo_formulario }}" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="psv-form-titulo" class="h3 mb-1">{{ titulo_visible }}</h1>
+                <p id="psv-form-descripcion" class="text-muted mb-0">
+                    Alta y edición manual de productos o servicios para la venta.
+                </p>
+            </div>
+            <div id="psv-form-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver al listado", form_cancelar_url) }}
+            </div>
+        </div>
+    </div>
+
+    {% if cantidad_monedas == 0 %}
+        <div class="col-12">
+            <div id="psv-alerta-sin-monedas" class="alert alert-warning mb-0">
+                Para cargar productos o servicios para la venta primero debe existir al menos una moneda activa.
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="col-12">
+        {% call card(titulo_visible, "productos o servicios para la venta") %}
+            <form id="psv-formulario" method="post" action="{{ action_url }}" data-table="articulos_venta">
+                <div id="psv-datos-principales" class="row g-3 mb-3">
+                    <div class="col-12">
+                        <h2 id="psv-datos-principales-titulo" class="h6 mb-0">Datos del producto o servicio</h2>
+                    </div>
+
+                    <div class="col-12 col-lg-8">
+                        <label for="psv-nombre" class="form-label">Producto o servicio</label>
+                        <input
+                            id="psv-nombre"
+                            data-field="nombre"
+                            name="nombre"
+                            type="text"
+                            class="form-control"
+                            value="{{ articulo.nombre | default('', true) }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <label for="psv-tipo" class="form-label">Tipo</label>
+                        <select
+                            id="psv-tipo"
+                            data-ns-select="normal"
+                            data-table="articulos_venta"
+                            data-field="tipo"
+                            name="tipo"
+                            class="form-select"
+                            required
+                        >
+                            <option value="">Seleccionar tipo...</option>
+                            {% for tipo in tipos_articulo_venta %}
+                                <option value="{{ tipo }}" {% if articulo.tipo | default('', true) | string == tipo | string %}selected{% endif %}>
+                                    {% if tipo == "PRODUCTO" %}Producto{% elif tipo == "SERVICIO" %}Servicio{% else %}{{ tipo }}{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <label for="psv-moneda" class="form-label">Moneda</label>
+                        <select
+                            id="psv-moneda"
+                            data-ns-select="normal"
+                            data-table="articulos_venta"
+                            data-field="moneda_codigo"
+                            name="moneda_codigo"
+                            class="form-select"
+                            required
+                        >
+                            <option value="">Seleccionar moneda...</option>
+                            {% for moneda in monedas %}
+                                <option value="{{ moneda.codigo }}" {% if articulo.moneda_codigo | default('', true) | string == moneda.codigo | string %}selected{% endif %}>
+                                    {{ moneda.descripcion_select }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <label for="psv-precio-sugerido" class="form-label">Precio unitario sugerido</label>
+                        <input
+                            id="psv-precio-sugerido"
+                            data-field="precio_unitario_sugerido_1000000"
+                            name="precio_unitario_sugerido_1000000"
+                            type="number"
+                            min="0"
+                            step="1"
+                            class="form-control"
+                            value="{{ articulo.precio_unitario_sugerido_1000000 | default(0, true) }}"
+                        >
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <label for="psv-orden" class="form-label">Orden</label>
+                        <input
+                            id="psv-orden"
+                            data-field="orden"
+                            name="orden"
+                            type="number"
+                            min="0"
+                            step="1"
+                            class="form-control"
+                            value="{{ articulo.orden | default(0, true) }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-12">
+                        <label for="psv-cuenta-ingreso" class="form-label">Cuenta de ingreso sugerida</label>
+                        <select
+                            id="psv-cuenta-ingreso"
+                            data-ns-select="normal"
+                            data-table="articulos_venta"
+                            data-field="cuenta_ingreso_codigo"
+                            name="cuenta_ingreso_codigo"
+                            class="form-select"
+                        >
+                            <option value="">Sin cuenta sugerida...</option>
+                            {% for cuenta in cuentas_contables_imputables %}
+                                <option value="{{ cuenta.cuenta }}" {% if articulo.cuenta_ingreso_codigo | default('', true) | string == cuenta.cuenta | string %}selected{% endif %}>
+                                    {{ cuenta.cuenta }} - {{ cuenta.descripcion }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-lg-4 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input
+                                id="psv-activo"
+                                data-field="activo"
+                                name="activo"
+                                type="checkbox"
+                                class="form-check-input"
+                                value="1"
+                                {% if articulo.activo | default(1, true) | int == 1 %}checked{% endif %}
+                            >
+                            <label for="psv-activo" class="form-check-label">Activo</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="psv-observaciones" class="form-label">Observaciones</label>
+                        <textarea
+                            id="psv-observaciones"
+                            data-field="observaciones"
+                            name="observaciones"
+                            class="form-control"
+                            rows="3"
+                        >{{ articulo.observaciones | default('', true) }}</textarea>
+                    </div>
+                </div>
+
+                <div id="psv-form-botones" class="d-flex justify-content-end gap-2">
+                    {{ secondary_link("Cancelar", form_cancelar_url) }}
+                    {{ primary_button(form_submit_label) }}
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+</section>
+{% endblock %}

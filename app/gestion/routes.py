@@ -1,5 +1,14 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
+from app.gestion.articulos_venta_service import (
+    activar_articulo_venta,
+    actualizar_articulo_venta_desde_formulario,
+    crear_articulo_venta_desde_formulario,
+    desactivar_articulo_venta,
+    obtener_contexto_edicion_articulo_venta,
+    obtener_contexto_formulario_articulo_venta,
+    obtener_contexto_listado_articulos_venta,
+)
 from app.gestion.clientes_service import (
     activar_cliente,
     actualizar_cliente_desde_formulario,
@@ -328,6 +337,174 @@ def desactivar_grupo_cliente_existente(grupo_cliente_id):
         url_for(
             "gestion.ver_listado_grupos_clientes",
             grupo=grupo_cliente["id"],
+        )
+    )
+
+
+@bp.get("/productos-servicios-venta/")
+def ver_listado_productos_servicios_venta():
+    """Muestra listado del maestro de productos o servicios para la venta."""
+    contexto = obtener_contexto_listado_articulos_venta()
+
+    return render_template(
+        "gestion/productos_servicios_venta.html",
+        page_title="Productos o servicios para la venta",
+        **contexto,
+    )
+
+
+@bp.get("/productos-servicios-venta/nuevo/")
+def ver_formulario_nuevo_producto_servicio_venta():
+    """Muestra formulario de alta de producto o servicio para la venta."""
+    contexto_formulario = obtener_contexto_formulario_articulo_venta()
+
+    return render_template(
+        "gestion/productos_servicios_venta_form.html",
+        page_title="Nuevo producto o servicio para la venta",
+        modo_formulario="alta",
+        action_url=url_for("gestion.crear_producto_servicio_venta_nuevo"),
+        form_titulo="Nuevo producto o servicio para la venta",
+        form_submit_label="Crear producto o servicio",
+        form_cancelar_url=url_for("gestion.ver_listado_productos_servicios_venta"),
+        **contexto_formulario,
+    )
+
+
+@bp.post("/productos-servicios-venta/nuevo/")
+def crear_producto_servicio_venta_nuevo():
+    """Crea un producto o servicio para la venta desde formulario."""
+    try:
+        articulo = crear_articulo_venta_desde_formulario(request.form)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        contexto_formulario = obtener_contexto_formulario_articulo_venta(
+            _normalizar_formulario_para_template(request.form)
+        )
+        return (
+            render_template(
+                "gestion/productos_servicios_venta_form.html",
+                page_title="Nuevo producto o servicio para la venta",
+                modo_formulario="alta",
+                action_url=url_for("gestion.crear_producto_servicio_venta_nuevo"),
+                form_titulo="Nuevo producto o servicio para la venta",
+                form_submit_label="Crear producto o servicio",
+                form_cancelar_url=url_for("gestion.ver_listado_productos_servicios_venta"),
+                **contexto_formulario,
+            ),
+            400,
+        )
+
+    flash("Producto o servicio para la venta creado correctamente.", "success")
+    return redirect(
+        url_for(
+            "gestion.ver_listado_productos_servicios_venta",
+            articulo=articulo["id"],
+        )
+    )
+
+
+@bp.get("/productos-servicios-venta/<int:articulo_venta_id>/editar/")
+def ver_formulario_editar_producto_servicio_venta(articulo_venta_id):
+    """Muestra formulario de edicion de producto o servicio para la venta."""
+    try:
+        contexto_formulario = obtener_contexto_edicion_articulo_venta(
+            articulo_venta_id
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("gestion.ver_listado_productos_servicios_venta"))
+
+    articulo = contexto_formulario["articulo"]
+
+    return render_template(
+        "gestion/productos_servicios_venta_form.html",
+        page_title=f"Editar producto o servicio para la venta {articulo['nombre']}",
+        modo_formulario="edicion",
+        action_url=url_for(
+            "gestion.actualizar_producto_servicio_venta_existente",
+            articulo_venta_id=articulo["id"],
+        ),
+        form_titulo=f"Editar producto o servicio para la venta {articulo['nombre']}",
+        form_submit_label="Guardar cambios",
+        form_cancelar_url=url_for("gestion.ver_listado_productos_servicios_venta"),
+        **contexto_formulario,
+    )
+
+
+@bp.post("/productos-servicios-venta/<int:articulo_venta_id>/editar/")
+def actualizar_producto_servicio_venta_existente(articulo_venta_id):
+    """Actualiza un producto o servicio para la venta desde formulario."""
+    try:
+        articulo = actualizar_articulo_venta_desde_formulario(
+            articulo_venta_id,
+            request.form,
+        )
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        articulo_form = _normalizar_formulario_para_template(request.form)
+        articulo_form["id"] = articulo_venta_id
+        contexto_formulario = obtener_contexto_formulario_articulo_venta(
+            articulo_form
+        )
+
+        return (
+            render_template(
+                "gestion/productos_servicios_venta_form.html",
+                page_title=f"Editar producto o servicio para la venta {articulo_venta_id}",
+                modo_formulario="edicion",
+                action_url=url_for(
+                    "gestion.actualizar_producto_servicio_venta_existente",
+                    articulo_venta_id=articulo_venta_id,
+                ),
+                form_titulo=f"Editar producto o servicio para la venta {articulo_venta_id}",
+                form_submit_label="Guardar cambios",
+                form_cancelar_url=url_for("gestion.ver_listado_productos_servicios_venta"),
+                **contexto_formulario,
+            ),
+            400,
+        )
+
+    flash("Producto o servicio para la venta actualizado correctamente.", "success")
+    return redirect(
+        url_for(
+            "gestion.ver_listado_productos_servicios_venta",
+            articulo=articulo["id"],
+        )
+    )
+
+
+@bp.post("/productos-servicios-venta/<int:articulo_venta_id>/activar/")
+def activar_producto_servicio_venta_existente(articulo_venta_id):
+    """Activa un producto o servicio para la venta sin borrado fisico."""
+    try:
+        articulo = activar_articulo_venta(articulo_venta_id)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("gestion.ver_listado_productos_servicios_venta"))
+
+    flash("Producto o servicio para la venta activado correctamente.", "success")
+    return redirect(
+        url_for(
+            "gestion.ver_listado_productos_servicios_venta",
+            articulo=articulo["id"],
+        )
+    )
+
+
+@bp.post("/productos-servicios-venta/<int:articulo_venta_id>/desactivar/")
+def desactivar_producto_servicio_venta_existente(articulo_venta_id):
+    """Desactiva un producto o servicio para la venta sin borrado fisico."""
+    try:
+        articulo = desactivar_articulo_venta(articulo_venta_id)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("gestion.ver_listado_productos_servicios_venta"))
+
+    flash("Producto o servicio para la venta desactivado correctamente.", "success")
+    return redirect(
+        url_for(
+            "gestion.ver_listado_productos_servicios_venta",
+            articulo=articulo["id"],
         )
     )
 
