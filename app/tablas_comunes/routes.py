@@ -255,16 +255,21 @@ def ver_formulario_editar_medio_operativo(codigo_medio_operativo):
     contexto = obtener_contexto_formulario_medio_operativo(
         contexto_detalle["medio_operativo"]
     )
+    medio_operativo = contexto["medio_operativo"]
+    titulo_formulario = (
+        f"Editar medio operativo {medio_operativo['codigo']} - "
+        f"{medio_operativo['nombre']}"
+    )
 
     return render_template(
         "tablas_comunes/medios_operativos_form.html",
-        page_title=f"Editar medio operativo {codigo_medio_operativo}",
+        page_title=titulo_formulario,
         modo_formulario="edicion",
         action_url=url_for(
             "tablas_comunes.actualizar_medio_operativo_existente",
             codigo_medio_operativo=codigo_medio_operativo,
         ),
-        form_titulo=f"Editar medio operativo {codigo_medio_operativo}",
+        form_titulo=titulo_formulario,
         form_submit_label="Guardar cambios",
         form_cancelar_url=url_for("tablas_comunes.ver_listado_medios_operativos"),
         codigo_solo_lectura=True,
@@ -285,16 +290,21 @@ def actualizar_medio_operativo_existente(codigo_medio_operativo):
         medio_form = {campo: request.form.get(campo, "") for campo in request.form.keys()}
         medio_form["codigo"] = codigo_medio_operativo
         contexto = obtener_contexto_formulario_medio_operativo(medio_form)
+        medio_operativo = contexto["medio_operativo"]
+        titulo_formulario = (
+            f"Editar medio operativo {medio_operativo['codigo']} - "
+            f"{medio_operativo.get('nombre', '')}"
+        )
         return (
             render_template(
                 "tablas_comunes/medios_operativos_form.html",
-                page_title=f"Editar medio operativo {codigo_medio_operativo}",
+                page_title=titulo_formulario,
                 modo_formulario="edicion",
                 action_url=url_for(
                     "tablas_comunes.actualizar_medio_operativo_existente",
                     codigo_medio_operativo=codigo_medio_operativo,
                 ),
-                form_titulo=f"Editar medio operativo {codigo_medio_operativo}",
+                form_titulo=titulo_formulario,
                 form_submit_label="Guardar cambios",
                 form_cancelar_url=url_for("tablas_comunes.ver_listado_medios_operativos"),
                 codigo_solo_lectura=True,

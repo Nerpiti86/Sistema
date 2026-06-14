@@ -152,10 +152,41 @@ def test_editar_medio_operativo_desde_pantalla():
         ).fetchone()
 
     assert get_response.status_code == 200
-    assert b"Editar medio operativo 1" in get_response.data
+    assert b"Editar medio operativo 1 - Caja pesos" in get_response.data
     assert post_response.status_code == 200
     assert medio["nombre"] == "Caja pesos editada"
     assert medio["orden"] == 15
+
+
+def test_editar_medio_operativo_con_error_mantiene_titulo_codigo_nombre():
+    """
+    Valida titulo de edicion ante error de formulario.
+
+    Si el POST invalido vuelve al formulario, el encabezado debe conservar
+    codigo y nombre para ubicar claramente el medio operativo editado.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        _insertar_cuenta_prueba()
+        _insertar_medio_prueba()
+        response = client.post(
+            "/tablas-comunes/medios-operativos/1/editar/",
+            data={
+                "nombre": "Caja pesos",
+                "tipo": "EFECTIVO",
+                "moneda_codigo": "ARS",
+                "cuenta_contable_codigo": "",
+                "activo": "1",
+                "orden": "15",
+            },
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 400
+    assert b"Editar medio operativo 1 - Caja pesos" in response.data
 
 
 def test_activar_desactivar_medio_operativo_desde_pantalla():
