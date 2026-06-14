@@ -20,6 +20,15 @@
     "tablas_comunes.activar_banco_existente",
     "tablas_comunes.desactivar_banco_existente",
 ] %}
+{% set es_paises = endpoint_actual in [
+    "tablas_comunes.ver_listado_paises",
+    "tablas_comunes.ver_formulario_nuevo_pais",
+    "tablas_comunes.crear_pais_nuevo",
+    "tablas_comunes.ver_formulario_editar_pais",
+    "tablas_comunes.actualizar_pais_existente",
+    "tablas_comunes.activar_pais_existente",
+    "tablas_comunes.desactivar_pais_existente",
+] %}
 {% set es_medios_operativos = endpoint_actual in [
     "tablas_comunes.ver_listado_medios_operativos",
     "tablas_comunes.ver_formulario_nuevo_medio_operativo",
@@ -190,6 +199,19 @@
                                 >
                                     <span class="ns-mega-link-title">Bancos</span>
                                     <span class="ns-mega-link-text">Nómina bancaria para operaciones del sistema.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-paises"
+                                    class="ns-mega-link {% if es_paises %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes.ver_listado_paises') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes.ver_listado_paises"
+                                >
+                                    <span class="ns-mega-link-title">Países</span>
+                                    <span class="ns-mega-link-text">Catálogo común para domicilios y datos fiscales.</span>
                                 </a>
 
                                 <a

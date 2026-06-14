@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_button, secondary_link %}
+
+{% block content %}
+{% set titulo_visible = form_titulo %}
+{% if modo_formulario == "edicion" and pais.id and pais.nombre %}
+    {% set titulo_visible = "Editar país " ~ pais.nombre %}
+{% endif %}
+<section id="pa-form" data-table="paises" data-action="{{ modo_formulario }}" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="pa-form-titulo" class="h3 mb-1">{{ titulo_visible }}</h1>
+                <p id="pa-form-descripcion" class="text-muted mb-0">
+                    Alta y edición manual del maestro transversal de países.
+                </p>
+            </div>
+            <div id="pa-form-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver a países", form_cancelar_url) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-8">
+        {% call card(titulo_visible, "paises") %}
+            <form id="pa-formulario" method="post" action="{{ action_url }}" data-table="paises">
+                <div class="row g-3">
+                    <div class="col-12 col-md-8">
+                        <label for="pa-nombre" class="form-label">Nombre</label>
+                        <input
+                            id="pa-nombre"
+                            data-field="nombre"
+                            name="nombre"
+                            type="text"
+                            class="form-control"
+                            value="{{ pais.nombre | default('', true) }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="pa-codigo-iso" class="form-label">Código ISO</label>
+                        <input
+                            id="pa-codigo-iso"
+                            data-field="codigo_iso"
+                            name="codigo_iso"
+                            type="text"
+                            class="form-control text-uppercase"
+                            value="{{ pais.codigo_iso | default('', true) }}"
+                            maxlength="3"
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="pa-orden" class="form-label">Orden</label>
+                        <input
+                            id="pa-orden"
+                            data-field="orden"
+                            name="orden"
+                            type="number"
+                            min="0"
+                            step="1"
+                            class="form-control"
+                            value="{{ pais.orden | default(0, true) }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input
+                                id="pa-activo"
+                                data-field="activo"
+                                name="activo"
+                                type="checkbox"
+                                class="form-check-input"
+                                value="1"
+                                {% if pais.activo | default(1, true) | int == 1 %}checked{% endif %}
+                            >
+                            <label for="pa-activo" class="form-check-label">Activo</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        {{ secondary_link("Cancelar", form_cancelar_url) }}
+                        {{ primary_button(form_submit_label) }}
+                    </div>
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+</section>
+{% endblock %}
