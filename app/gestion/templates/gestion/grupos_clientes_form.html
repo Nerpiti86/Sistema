@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_button, secondary_link %}
+
+{% block content %}
+{% set titulo_visible = form_titulo %}
+{% if modo_formulario == "edicion" and grupo_cliente.nombre %}
+    {% set titulo_visible = "Editar grupo de clientes " ~ grupo_cliente.nombre %}
+{% endif %}
+<section id="gc-form" data-table="grupos_clientes" data-action="{{ modo_formulario }}" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="gc-form-titulo" class="h3 mb-1">{{ titulo_visible }}</h1>
+                <p id="gc-form-descripcion" class="text-muted mb-0">
+                    Alta y edición manual del maestro de grupos de clientes.
+                </p>
+            </div>
+            <div id="gc-form-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver a grupos", form_cancelar_url) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-8">
+        {% call card(titulo_visible, "grupos clientes") %}
+            <form id="gc-formulario" method="post" action="{{ action_url }}" data-table="grupos_clientes">
+                <div class="row g-3">
+                    <div class="col-12 col-md-8">
+                        <label for="gc-nombre" class="form-label">Nombre</label>
+                        <input
+                            id="gc-nombre"
+                            data-field="nombre"
+                            name="nombre"
+                            type="text"
+                            class="form-control"
+                            value="{{ grupo_cliente.nombre | default('', true) }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <label for="gc-orden" class="form-label">Orden</label>
+                        <input
+                            id="gc-orden"
+                            data-field="orden"
+                            name="orden"
+                            type="number"
+                            min="0"
+                            step="1"
+                            class="form-control"
+                            value="{{ grupo_cliente.orden | default(0, true) }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-4 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input
+                                id="gc-activo"
+                                data-field="activo"
+                                name="activo"
+                                type="checkbox"
+                                class="form-check-input"
+                                value="1"
+                                {% if grupo_cliente.activo | default(1, true) | int == 1 %}checked{% endif %}
+                            >
+                            <label for="gc-activo" class="form-check-label">Activo</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        {{ secondary_link("Cancelar", form_cancelar_url) }}
+                        {{ primary_button(form_submit_label) }}
+                    </div>
+                </div>
+            </form>
+        {% endcall %}
+    </div>
+</section>
+{% endblock %}

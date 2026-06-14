@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
+
+{% block content %}
+<section id="gc-listado" data-table="grupos_clientes" data-query="listar_grupos_clientes" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="gc-titulo" class="h3 mb-1">Grupos de clientes</h1>
+                <p id="gc-descripcion" class="text-muted mb-0">
+                    Maestro de segmentación comercial para clasificar clientes.
+                </p>
+            </div>
+            <div id="gc-acciones-listado" class="d-flex gap-2">
+                {{ primary_link("Nuevo grupo", url_for("gestion.ver_formulario_nuevo_grupo_cliente")) }}
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="gc-resumen" data-table="grupos_clientes" data-query="obtener_contexto_listado_grupos_clientes">
+            {% call card("Resumen", "Gestión") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd id="gc-cantidad" data-field="cantidad_grupos_clientes" class="col-sm-9">{{ cantidad_grupos_clientes }}</dd>
+                    <dt class="col-sm-3">Activos</dt>
+                    <dd id="gc-cantidad-activos" data-field="cantidad_grupos_clientes_activos" class="col-sm-9 mb-0">{{ cantidad_grupos_clientes_activos }}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="gc-contenedor-tabla" data-table="grupos_clientes" data-query="listar_grupos_clientes">
+            {% call card("Listado", "grupos clientes") %}
+                <div class="table-responsive">
+                    <table id="gc-tabla" data-table="grupos_clientes" data-query="listar_grupos_clientes" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="nombre">Nombre</th>
+                                <th data-field="activo" class="text-center">Activo</th>
+                                <th data-field="orden" class="text-end">Orden</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gc-tbody">
+                            {% for grupo_cliente in grupos_clientes %}
+                                <tr id="gc-row-{{ grupo_cliente.id }}" data-table="grupos_clientes" data-query="listar_grupos_clientes" data-row-id="{{ grupo_cliente.id }}">
+                                    <td data-field="nombre" class="fw-semibold">{{ grupo_cliente.nombre }}</td>
+                                    <td data-field="activo" class="text-center">{% if grupo_cliente.esta_activo %}Si{% else %}No{% endif %}</td>
+                                    <td data-field="orden" class="text-end">{{ grupo_cliente.orden }}</td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('gestion.ver_formulario_editar_grupo_cliente', grupo_cliente_id=grupo_cliente.id) }}">Editar</a>
+                                            {% if grupo_cliente.esta_activo %}
+                                                <form method="post" action="{{ url_for('gestion.desactivar_grupo_cliente_existente', grupo_cliente_id=grupo_cliente.id) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desactivar</button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('gestion.activar_grupo_cliente_existente', grupo_cliente_id=grupo_cliente.id) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="gc-row-sin-datos" data-table="grupos_clientes" data-query="listar_grupos_clientes">
+                                    <td id="gc-mensaje-sin-datos" colspan="4" class="text-center text-muted py-4">No hay grupos de clientes cargados.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

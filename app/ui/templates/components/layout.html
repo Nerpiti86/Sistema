@@ -47,6 +47,16 @@
     "tablas_comunes_fiscales.activar_tipo_documento_existente",
     "tablas_comunes_fiscales.desactivar_tipo_documento_existente",
 ] %}
+{% set es_gestion = endpoint_actual.startswith("gestion.") %}
+{% set es_grupos_clientes = endpoint_actual in [
+    "gestion.ver_listado_grupos_clientes",
+    "gestion.ver_formulario_nuevo_grupo_cliente",
+    "gestion.crear_grupo_cliente_nuevo",
+    "gestion.ver_formulario_editar_grupo_cliente",
+    "gestion.actualizar_grupo_cliente_existente",
+    "gestion.activar_grupo_cliente_existente",
+    "gestion.desactivar_grupo_cliente_existente",
+] %}
 {% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
 {% set es_asientos = endpoint_actual in [
     "contabilidad.ver_listado_asientos_contables",
@@ -219,6 +229,60 @@
                                 >
                                     <span class="ns-mega-link-title">Tipos de documento</span>
                                     <span class="ns-mega-link-text">CUIT, DNI, pasaporte y otros documentos.</span>
+                                </a>
+                            </section>
+                        </div>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown ns-mega-dropdown">
+                    <a
+                        id="ns-nav-gestion"
+                        class="nav-link dropdown-toggle {% if es_gestion %}active{% endif %}"
+                        href="#"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        data-bs-auto-close="outside"
+                        data-component="navbar"
+                        data-action="abrir_menu"
+                        data-module="gestion"
+                        aria-expanded="false"
+                    >
+                        Gestión
+                    </a>
+
+                    <div
+                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-compact"
+                        aria-labelledby="ns-nav-gestion"
+                    >
+                        <div class="ns-mega-header">
+                            <div>
+                                <div class="ns-mega-eyebrow">Circuito comercial</div>
+                                <div class="ns-mega-title">Gestión</div>
+                                <p class="ns-mega-description">
+                                    Accesos principales para maestros y operaciones comerciales.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="ns-mega-grid ns-mega-grid-compact">
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-clientes">
+                                <h2 id="ns-nav-clientes" class="ns-mega-section-title {% if es_grupos_clientes %}active{% endif %}">
+                                    Clientes
+                                </h2>
+
+                                <a
+                                    id="ns-nav-grupos-clientes"
+                                    class="ns-mega-link {% if es_grupos_clientes %}active{% endif %}"
+                                    href="{{ url_for('gestion.ver_listado_grupos_clientes') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="gestion"
+                                    data-endpoint="gestion.ver_listado_grupos_clientes"
+                                >
+                                    <span class="ns-mega-link-title">Grupos de clientes</span>
+                                    <span class="ns-mega-link-text">Segmentación comercial de clientes.</span>
                                 </a>
                             </section>
                         </div>
