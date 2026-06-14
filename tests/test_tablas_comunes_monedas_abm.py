@@ -74,7 +74,7 @@ def test_editar_moneda_desde_pantalla():
         ).fetchone()
 
     assert get_response.status_code == 200
-    assert b"Editar moneda USD" in get_response.data
+    assert b"Editar moneda USD - Dolar estadounidense" in get_response.data
     assert post_response.status_code == 200
     assert moneda["nombre"] == "Dolar pantalla"
     assert moneda["orden"] == 25
