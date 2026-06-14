@@ -116,17 +116,6 @@
     data-component="navbar"
 >
     <div class="container-fluid px-3 px-lg-4 ns-navbar-container">
-        <a
-            id="ns-navbar-brand"
-            class="navbar-brand fw-bold"
-            href="{{ url_for('ui.dashboard') }}"
-            data-component="navbar"
-            data-action="navegar"
-            data-endpoint="ui.dashboard"
-        >
-            {{ brand }}
-        </a>
-
         <button
             id="ns-navbar-toggle"
             class="navbar-toggler"
@@ -141,7 +130,7 @@
         </button>
 
         <div id="ns-navbar-content" class="collapse navbar-collapse">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav mx-lg-auto mb-2 mb-lg-0 ns-navbar-nav">
                 <li class="nav-item">
                     <a
                         id="ns-nav-inicio"
@@ -174,7 +163,7 @@
                     </a>
 
                     <div
-                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-compact"
+                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-wide"
                         aria-labelledby="ns-nav-tablas-comunes"
                     >
                         <div class="ns-mega-header">
@@ -187,10 +176,10 @@
                             </div>
                         </div>
 
-                        <div class="ns-mega-grid ns-mega-grid-compact">
-                            <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-catalogos">
-                                <h2 id="ns-nav-tablas-catalogos" class="ns-mega-section-title">
-                                    Catálogos
+                        <div class="ns-mega-grid">
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-operacion">
+                                <h2 id="ns-nav-tablas-operacion" class="ns-mega-section-title {% if es_monedas or es_bancos or es_medios_operativos %}active{% endif %}">
+                                    Operación
                                 </h2>
 
                                 <a
@@ -220,6 +209,25 @@
                                 </a>
 
                                 <a
+                                    id="ns-nav-medios-operativos"
+                                    class="ns-mega-link {% if es_medios_operativos %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes.ver_listado_medios_operativos') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes.ver_listado_medios_operativos"
+                                >
+                                    <span class="ns-mega-link-title">Medios operativos</span>
+                                    <span class="ns-mega-link-text">Cajas, bancos y medios usados para movimientos.</span>
+                                </a>
+                            </section>
+
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-geografia">
+                                <h2 id="ns-nav-tablas-geografia" class="ns-mega-section-title {% if es_paises or es_provincias %}active{% endif %}">
+                                    Geografía
+                                </h2>
+
+                                <a
                                     id="ns-nav-paises"
                                     class="ns-mega-link {% if es_paises %}active{% endif %}"
                                     href="{{ url_for('tablas_comunes.ver_listado_paises') }}"
@@ -244,19 +252,12 @@
                                     <span class="ns-mega-link-title">Provincias</span>
                                     <span class="ns-mega-link-text">Jurisdicciones asociadas a cada país.</span>
                                 </a>
+                            </section>
 
-                                <a
-                                    id="ns-nav-medios-operativos"
-                                    class="ns-mega-link {% if es_medios_operativos %}active{% endif %}"
-                                    href="{{ url_for('tablas_comunes.ver_listado_medios_operativos') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="tablas_comunes"
-                                    data-endpoint="tablas_comunes.ver_listado_medios_operativos"
-                                >
-                                    <span class="ns-mega-link-title">Medios operativos</span>
-                                    <span class="ns-mega-link-text">Cajas, bancos y medios usados para movimientos.</span>
-                                </a>
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-fiscal">
+                                <h2 id="ns-nav-tablas-fiscal" class="ns-mega-section-title {% if es_condiciones_iva or es_tipos_documento %}active{% endif %}">
+                                    Fiscal
+                                </h2>
 
                                 <a
                                     id="ns-nav-condiciones-iva"
@@ -306,7 +307,7 @@
                     </a>
 
                     <div
-                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-compact"
+                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-wide"
                         aria-labelledby="ns-nav-gestion"
                     >
                         <div class="ns-mega-header">
@@ -319,7 +320,7 @@
                             </div>
                         </div>
 
-                        <div class="ns-mega-grid ns-mega-grid-compact">
+                        <div class="ns-mega-grid">
                             <section class="ns-mega-section" aria-labelledby="ns-nav-clientes">
                                 <h2 id="ns-nav-clientes" class="ns-mega-section-title {% if es_grupos_clientes or es_clientes %}active{% endif %}">
                                     Clientes
@@ -510,6 +511,7 @@
                     </div>
                 </li>
             </ul>
+
         </div>
     </div>
 </nav>

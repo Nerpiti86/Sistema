@@ -12,6 +12,8 @@ def test_dashboard_responde_ok():
 
     assert response.status_code == 200
     assert b"NeriSoft Sistema" in response.data
+    assert b'id="ns-index-title"' in response.data
+    assert b'id="ns-navbar-brand"' not in response.data
 
 
 def test_migraciones_aplican_schema_inicial():

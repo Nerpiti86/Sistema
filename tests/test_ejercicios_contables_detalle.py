@@ -1,7 +1,9 @@
+from pathlib import Path
+
 from app import create_app
+from app.contabilidad.ejercicios_contables_repository import crear_ejercicio_contable
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
-from app.contabilidad.ejercicios_contables_repository import crear_ejercicio_contable
 
 
 def _crear_ejercicio_contable_para_detalle():
@@ -95,6 +97,37 @@ def test_get_detalle_ejercicio_contable_muestra_datos_reales():
     assert b"ABIERTO" in response.data
     assert b"Detalle de prueba" in response.data
     assert b'data-field="es_primer_ejercicio"' in response.data
+
+
+def test_detalle_ejercicio_contable_usa_resumen_visual_de_datos():
+    """
+    Contrato visual: el bloque de datos del ejercicio debe ser escaneable.
+
+    La card principal separa identidad, estados, vigencia y metadatos sin
+    volver al listado plano de definiciones.
+    """
+    html = Path(
+        "app/contabilidad/templates/contabilidad/ejercicios_contables_detalle.html"
+    ).read_text(encoding="utf-8")
+    css = Path("app/static/css/nerisoft_theme.css").read_text(encoding="utf-8")
+
+    assert "ns-detail-summary" in html
+    assert "ns-detail-statuses" in html
+    assert "ns-detail-period" in html
+    assert "ns-detail-grid" in html
+    assert "ns-detail-badge" in html
+    assert 'data-field="codigo"' in html
+    assert 'data-field="estado"' in html
+    assert 'data-field="fecha_desde"' in html
+    assert 'data-field="fecha_hasta"' in html
+    assert 'data-field="observaciones_cierre"' in html
+
+    assert ".ns-detail-summary" in css
+    assert "background-color: var(--ns-color-main);" in css
+    assert ".ns-detail-badge" in css
+    assert "display: inline-flex;" in css
+    assert "align-items: center;" in css
+    assert ".ns-detail-grid" in css
 
 
 def test_get_detalle_ejercicio_contable_inexistente_redirige_al_listado():

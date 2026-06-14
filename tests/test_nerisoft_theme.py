@@ -152,16 +152,22 @@ def test_navbar_respeta_contrato_visual_global():
     Valida que navbar use el contrato visual global.
 
     El navbar no debe depender del fondo tertiary de Bootstrap y debe usar
-    negro principal, texto claro, acento amarillo y dropdowns tematizados.
+    negro principal, acento amarillo, navegación centrada y dropdowns
+    tematizados.
     """
     layout = Path("app/ui/templates/components/layout.html").read_text(encoding="utf-8")
     css = Path("app/static/css/nerisoft_navbar.css").read_text(encoding="utf-8")
 
     assert "bg-body-tertiary" not in layout
+    assert 'id="ns-navbar-brand"' not in layout
     assert "background-color: var(--ns-color-main) !important;" in css
     assert "border-bottom: 2px solid var(--ns-color-accent) !important;" in css
-    assert "color: var(--ns-color-soft) !important;" in css
-    assert "box-shadow: var(--ns-shadow-floating);" in css
+    assert ".ns-navbar-nav" in css
+    assert "border-radius: 999px;" in css
+    assert "display: inline-flex;" in css
+    assert "align-items: center;" in css
+    assert "ns-nav-accion-principal" not in layout
+    assert ".ns-navbar-cta" not in css
     assert ".ns-navbar .dropdown-item.active" in css
 
 
@@ -191,16 +197,22 @@ def test_navbar_respeta_contrato_visual_global():
     Valida que navbar use el contrato visual global.
 
     El navbar no debe depender del fondo tertiary de Bootstrap y debe usar
-    negro principal, texto claro, acento amarillo y dropdowns tematizados.
+    negro principal, acento amarillo, navegación centrada y dropdowns
+    tematizados.
     """
     layout = Path("app/ui/templates/components/layout.html").read_text(encoding="utf-8")
     css = Path("app/static/css/nerisoft_navbar.css").read_text(encoding="utf-8")
 
     assert "bg-body-tertiary" not in layout
+    assert 'id="ns-navbar-brand"' not in layout
     assert "background-color: var(--ns-color-main) !important;" in css
     assert "border-bottom: 2px solid var(--ns-color-accent) !important;" in css
-    assert "color: var(--ns-color-soft) !important;" in css
-    assert "box-shadow: var(--ns-shadow-floating);" in css
+    assert ".ns-navbar-nav" in css
+    assert "border-radius: 999px;" in css
+    assert "display: inline-flex;" in css
+    assert "align-items: center;" in css
+    assert "ns-nav-accion-principal" not in layout
+    assert ".ns-navbar-cta" not in css
     assert ".ns-navbar .dropdown-item.active" in css
 
 
@@ -209,7 +221,7 @@ def test_navbar_mega_menu_tiene_contraste_y_posicion_controlada():
     Valida contraste y posicionamiento del mega menú.
 
     El panel debe quedar centrado debajo del navbar, mantener fondo claro,
-    cabecera oscura y enlaces activos con contraste suficiente.
+    cabecera oscura con acento y enlaces activos con contraste suficiente.
     """
     css = Path("app/static/css/nerisoft_navbar.css").read_text(encoding="utf-8")
 
@@ -222,5 +234,4 @@ def test_navbar_mega_menu_tiene_contraste_y_posicion_controlada():
     assert "background: linear-gradient" in css
     assert ".ns-mega-link.active" in css
     assert "color: var(--ns-color-white);" in css
-    assert ".ns-navbar .navbar-brand," in css
     assert ".navbar-nav > .nav-item > .nav-link" in css

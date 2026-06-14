@@ -65,83 +65,118 @@
             data-row-codigo="{{ ejercicio_contable.codigo }}"
         >
             {% call card("Datos del ejercicio", "Ejercicio contable") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Código</dt>
-                    <dd class="col-sm-9" data-field="codigo">
-                        {{ ejercicio_contable.codigo }}
-                    </dd>
+                <div class="ns-detail-summary">
+                    <div class="ns-detail-summary-main">
+                        <span class="ns-detail-eyebrow">Código</span>
+                        <div class="ns-detail-code" data-field="codigo">
+                            {{ ejercicio_contable.codigo }}
+                        </div>
+                        <div class="ns-detail-name" data-field="nombre">
+                            {{ ejercicio_contable.nombre }}
+                        </div>
+                    </div>
 
-                    <dt class="col-sm-3">Nombre</dt>
-                    <dd class="col-sm-9" data-field="nombre">
-                        {{ ejercicio_contable.nombre }}
-                    </dd>
+                    <div class="ns-detail-statuses" aria-label="Estado del ejercicio">
+                        <span class="ns-detail-badge ns-detail-badge-main" data-field="estado">
+                            {{ ejercicio_contable.estado_codigo }}
+                        </span>
+                        <span class="ns-detail-badge" data-field="fase_cierre">
+                            Cierre {{ ejercicio_contable.fase_cierre_codigo }}
+                        </span>
+                        <span class="ns-detail-badge {% if ejercicio_contable.es_activo %}ns-detail-badge-ok{% else %}ns-detail-badge-muted{% endif %}" data-field="activo">
+                            {% if ejercicio_contable.es_activo %}
+                                Activo
+                            {% else %}
+                                Inactivo
+                            {% endif %}
+                        </span>
+                        <span class="ns-detail-badge {% if ejercicio_contable.esta_bloqueado %}ns-detail-badge-warning{% else %}ns-detail-badge-ok{% endif %}" data-field="bloqueado">
+                            {% if ejercicio_contable.esta_bloqueado %}
+                                Bloqueado
+                            {% else %}
+                                No bloqueado
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
 
-                    <dt class="col-sm-3">Fecha desde</dt>
-                    <dd class="col-sm-9" data-field="fecha_desde">
-                        {{ ejercicio_contable.fecha_desde_argentina }}
-                    </dd>
+                <div class="ns-detail-period" aria-label="Vigencia del ejercicio">
+                    <div class="ns-detail-period-item">
+                        <span class="ns-detail-label">Fecha desde</span>
+                        <span class="ns-detail-value" data-field="fecha_desde">
+                            {{ ejercicio_contable.fecha_desde_argentina }}
+                        </span>
+                    </div>
+                    <div class="ns-detail-period-divider" aria-hidden="true"></div>
+                    <div class="ns-detail-period-item">
+                        <span class="ns-detail-label">Fecha hasta</span>
+                        <span class="ns-detail-value" data-field="fecha_hasta">
+                            {{ ejercicio_contable.fecha_hasta_argentina }}
+                        </span>
+                    </div>
+                </div>
 
-                    <dt class="col-sm-3">Fecha hasta</dt>
-                    <dd class="col-sm-9" data-field="fecha_hasta">
-                        {{ ejercicio_contable.fecha_hasta_argentina }}
-                    </dd>
+                <dl class="ns-detail-grid mb-0">
+                    <div class="ns-detail-item">
+                        <dt>Activo</dt>
+                        <dd data-field="activo_texto">
+                            {% if ejercicio_contable.es_activo %}
+                                Si
+                            {% else %}
+                                No
+                            {% endif %}
+                        </dd>
+                    </div>
 
-                    <dt class="col-sm-3">Estado</dt>
-                    <dd class="col-sm-9" data-field="estado">
-                        {{ ejercicio_contable.estado_codigo }}
-                    </dd>
+                    <div class="ns-detail-item">
+                        <dt>Bloqueado</dt>
+                        <dd data-field="bloqueado_texto">
+                            {% if ejercicio_contable.esta_bloqueado %}
+                                Si
+                            {% else %}
+                                No
+                            {% endif %}
+                        </dd>
+                    </div>
 
-                    <dt class="col-sm-3">Fase cierre</dt>
-                    <dd class="col-sm-9" data-field="fase_cierre">
-                        {{ ejercicio_contable.fase_cierre_codigo }}
-                    </dd>
+                    <div class="ns-detail-item">
+                        <dt>Bloqueado en</dt>
+                        <dd data-field="bloqueado_en">
+                            {{ ejercicio_contable.bloqueado_en_argentina or "Sin bloqueo" }}
+                        </dd>
+                    </div>
 
-                    <dt class="col-sm-3">Activo</dt>
-                    <dd class="col-sm-9" data-field="activo">
-                        {% if ejercicio_contable.es_activo %}
-                            Si
-                        {% else %}
-                            No
-                        {% endif %}
-                    </dd>
+                    <div class="ns-detail-item">
+                        <dt>Es primer ejercicio</dt>
+                        <dd data-field="es_primer_ejercicio">
+                            {% if ejercicio_contable.es_primer_ejercicio_bool %}
+                                Si
+                            {% else %}
+                                No
+                            {% endif %}
+                        </dd>
+                    </div>
 
-                    <dt class="col-sm-3">Bloqueado</dt>
-                    <dd class="col-sm-9" data-field="bloqueado">
-                        {% if ejercicio_contable.esta_bloqueado %}
-                            Si
-                        {% else %}
-                            No
-                        {% endif %}
-                    </dd>
+                    <div class="ns-detail-item ns-detail-item-wide">
+                        <dt>Observaciones cierre</dt>
+                        <dd data-field="observaciones_cierre">
+                            {{ ejercicio_contable.observaciones_cierre or "Sin observaciones" }}
+                        </dd>
+                    </div>
 
-                    <dt class="col-sm-3">Bloqueado en</dt>
-                    <dd class="col-sm-9" data-field="bloqueado_en">
-                        {{ ejercicio_contable.bloqueado_en_argentina or "Sin bloqueo" }}
-                    </dd>
+                    <div class="ns-detail-item">
+                        <dt>Creado en</dt>
+                        <dd data-field="creado_en">
+                            {{ ejercicio_contable.creado_en_argentina }}
+                        </dd>
+                    </div>
 
-                    <dt class="col-sm-3">Es primer ejercicio</dt>
-                    <dd class="col-sm-9" data-field="es_primer_ejercicio">
-                        {% if ejercicio_contable.es_primer_ejercicio_bool %}
-                            Si
-                        {% else %}
-                            No
-                        {% endif %}
-                    </dd>
-
-                    <dt class="col-sm-3">Observaciones cierre</dt>
-                    <dd class="col-sm-9" data-field="observaciones_cierre">
-                        {{ ejercicio_contable.observaciones_cierre or "Sin observaciones" }}
-                    </dd>
-
-                    <dt class="col-sm-3">Creado en</dt>
-                    <dd class="col-sm-9" data-field="creado_en">
-                        {{ ejercicio_contable.creado_en_argentina }}
-                    </dd>
-
-                    <dt class="col-sm-3">Actualizado en</dt>
-                    <dd class="col-sm-9" data-field="actualizado_en">
-                        {{ ejercicio_contable.actualizado_en_argentina or "Sin actualizar" }}
-                    </dd>
+                    <div class="ns-detail-item">
+                        <dt>Actualizado en</dt>
+                        <dd data-field="actualizado_en">
+                            {{ ejercicio_contable.actualizado_en_argentina or "Sin actualizar" }}
+                        </dd>
+                    </div>
                 </dl>
             {% endcall %}
         </div>

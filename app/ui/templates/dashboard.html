@@ -1,17 +1,9 @@
 {% extends "base.html" %}
-{% from "components/cards.html" import card %}
-{% from "components/buttons.html" import primary_link %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        {% call card("Inicio", "Sistema NeriSoft operativo") %}
-            <p class="mb-3">
-                NeriSoft Sistema operativo.
-            </p>
-
-            {{ primary_link("Verificar inicio", url_for("ui.dashboard")) }}
-        {% endcall %}
-    </div>
-</div>
+<section class="ns-index-brand" aria-labelledby="ns-index-title">
+    <h1 id="ns-index-title" class="ns-index-title">
+        NeriSoft Sistema
+    </h1>
+</section>
 {% endblock %}
