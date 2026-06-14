@@ -233,21 +233,26 @@ def test_contexto_formulario_medio_operativo_formatea_cotizacion_default():
     """
     Valida que el formulario reciba centavos como decimal argentino.
 
-    Evita que data-money-ar interprete un entero persistido como pesos enteros.
+    El contexto de formulario consulta monedas y bancos activos, por eso el test
+    debe ejecutarse dentro de app_context con migraciones aplicadas.
     """
-    contexto = obtener_contexto_formulario_medio_operativo(
-        {
-            "codigo": "USD1",
-            "nombre": "Caja dolares",
-            "tipo": "EFECTIVO",
-            "moneda_codigo": "USD",
-            "cuenta_contable_codigo": "1.1.01.02.001",
-            "requiere_cotizacion": 1,
-            "cotizacion_default_centavos": 125050,
-            "activo": 1,
-            "orden": 30,
-        }
-    )
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        contexto = obtener_contexto_formulario_medio_operativo(
+            {
+                "codigo": "USD1",
+                "nombre": "Caja dolares",
+                "tipo": "EFECTIVO",
+                "moneda_codigo": "USD",
+                "cuenta_contable_codigo": "1.1.01.02.001",
+                "requiere_cotizacion": 1,
+                "cotizacion_default_centavos": 125050,
+                "activo": 1,
+                "orden": 30,
+            }
+        )
 
     assert contexto["medio_operativo"]["cotizacion_default_centavos"] == "1.250,50"
 
