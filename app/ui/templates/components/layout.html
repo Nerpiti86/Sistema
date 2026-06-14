@@ -1,7 +1,7 @@
 {% macro main_navbar(brand) %}
 {% set endpoint_actual = request.endpoint or "" %}
 {% set es_inicio = endpoint_actual == "ui.dashboard" %}
-{% set es_tablas_comunes = endpoint_actual.startswith("tablas_comunes.") %}
+{% set es_tablas_comunes = endpoint_actual.startswith("tablas_comunes.") or endpoint_actual.startswith("tablas_comunes_fiscales.") %}
 {% set es_monedas = endpoint_actual in [
     "tablas_comunes.ver_listado_monedas",
     "tablas_comunes.ver_formulario_nueva_moneda",
@@ -28,6 +28,24 @@
     "tablas_comunes.actualizar_medio_operativo_existente",
     "tablas_comunes.activar_medio_operativo_existente",
     "tablas_comunes.desactivar_medio_operativo_existente",
+] %}
+{% set es_condiciones_iva = endpoint_actual in [
+    "tablas_comunes_fiscales.ver_listado_condiciones_iva",
+    "tablas_comunes_fiscales.ver_formulario_nueva_condicion_iva",
+    "tablas_comunes_fiscales.crear_condicion_iva_nueva",
+    "tablas_comunes_fiscales.ver_formulario_editar_condicion_iva",
+    "tablas_comunes_fiscales.actualizar_condicion_iva_existente",
+    "tablas_comunes_fiscales.activar_condicion_iva_existente",
+    "tablas_comunes_fiscales.desactivar_condicion_iva_existente",
+] %}
+{% set es_tipos_documento = endpoint_actual in [
+    "tablas_comunes_fiscales.ver_listado_tipos_documento",
+    "tablas_comunes_fiscales.ver_formulario_nuevo_tipo_documento",
+    "tablas_comunes_fiscales.crear_tipo_documento_nuevo",
+    "tablas_comunes_fiscales.ver_formulario_editar_tipo_documento",
+    "tablas_comunes_fiscales.actualizar_tipo_documento_existente",
+    "tablas_comunes_fiscales.activar_tipo_documento_existente",
+    "tablas_comunes_fiscales.desactivar_tipo_documento_existente",
 ] %}
 {% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
 {% set es_asientos = endpoint_actual in [
@@ -175,6 +193,32 @@
                                 >
                                     <span class="ns-mega-link-title">Medios operativos</span>
                                     <span class="ns-mega-link-text">Cajas, bancos y medios usados para movimientos.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-condiciones-iva"
+                                    class="ns-mega-link {% if es_condiciones_iva %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes_fiscales.ver_listado_condiciones_iva') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes_fiscales.ver_listado_condiciones_iva"
+                                >
+                                    <span class="ns-mega-link-title">Condiciones IVA</span>
+                                    <span class="ns-mega-link-text">Condición fiscal frente al IVA.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-tipos-documento"
+                                    class="ns-mega-link {% if es_tipos_documento %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes_fiscales.ver_listado_tipos_documento') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes_fiscales.ver_listado_tipos_documento"
+                                >
+                                    <span class="ns-mega-link-title">Tipos de documento</span>
+                                    <span class="ns-mega-link-text">CUIT, DNI, pasaporte y otros documentos.</span>
                                 </a>
                             </section>
                         </div>

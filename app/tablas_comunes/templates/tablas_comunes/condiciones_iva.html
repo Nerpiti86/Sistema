@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
+
+{% block content %}
+<section id="civa-listado" data-table="condiciones_iva" data-query="listar_condiciones_iva" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="civa-titulo" class="h3 mb-1">Condiciones frente al IVA</h1>
+                <p id="civa-descripcion" class="text-muted mb-0">
+                    Catálogo fiscal transversal para clientes, proveedores y comprobantes.
+                </p>
+            </div>
+            <div id="civa-acciones-listado" class="d-flex gap-2">
+                {{ primary_link("Nueva condición", url_for("tablas_comunes_fiscales.ver_formulario_nueva_condicion_iva")) }}
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="civa-resumen" data-table="condiciones_iva" data-query="obtener_contexto_listado_condiciones_iva">
+            {% call card("Resumen", "Tablas comunes") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd id="civa-cantidad" data-field="cantidad_condiciones_iva" class="col-sm-9">{{ cantidad_condiciones_iva }}</dd>
+                    <dt class="col-sm-3">Activas</dt>
+                    <dd id="civa-cantidad-activas" data-field="cantidad_condiciones_iva_activas" class="col-sm-9 mb-0">{{ cantidad_condiciones_iva_activas }}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="civa-contenedor-tabla" data-table="condiciones_iva" data-query="listar_condiciones_iva">
+            {% call card("Listado", "condiciones_iva") %}
+                <div class="table-responsive">
+                    <table id="civa-tabla" data-table="condiciones_iva" data-query="listar_condiciones_iva" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="codigo">Código</th>
+                                <th data-field="descripcion">Descripción</th>
+                                <th data-field="activo" class="text-center">Activa</th>
+                                <th data-field="orden" class="text-end">Orden</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="civa-tbody">
+                            {% for condicion in condiciones_iva %}
+                                <tr id="civa-row-{{ condicion.codigo }}" data-table="condiciones_iva" data-query="listar_condiciones_iva" data-row-codigo="{{ condicion.codigo }}">
+                                    <td data-field="codigo" class="fw-semibold">{{ condicion.codigo }}</td>
+                                    <td data-field="descripcion">{{ condicion.descripcion }}</td>
+                                    <td data-field="activo" class="text-center">{% if condicion.esta_activo %}Si{% else %}No{% endif %}</td>
+                                    <td data-field="orden" class="text-end">{{ condicion.orden }}</td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('tablas_comunes_fiscales.ver_formulario_editar_condicion_iva', codigo_condicion_iva=condicion.codigo) }}">Editar</a>
+                                            {% if condicion.esta_activo %}
+                                                <form method="post" action="{{ url_for('tablas_comunes_fiscales.desactivar_condicion_iva_existente', codigo_condicion_iva=condicion.codigo) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desactivar</button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('tablas_comunes_fiscales.activar_condicion_iva_existente', codigo_condicion_iva=condicion.codigo) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="civa-row-sin-datos" data-table="condiciones_iva" data-query="listar_condiciones_iva">
+                                    <td id="civa-mensaje-sin-datos" colspan="5" class="text-center text-muted py-4">No hay condiciones frente al IVA cargadas.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
