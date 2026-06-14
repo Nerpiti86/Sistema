@@ -418,6 +418,28 @@ def test_formulario_cliente_respeta_orden_uiux_basico_y_contacto():
     assert contacto.index('id="cl-codigo-postal"') < contacto.index('id="cl-pais"')
     assert contacto.index('id="cl-pais"') < contacto.index('id="cl-provincia"')
 
+def test_formulario_cliente_respeta_orden_uiux_fiscal():
+    """Valida contrato visual de orden de campos fiscales del formulario de clientes."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        _crear_grupo_cliente_activo()
+        response = client.get("/gestion/clientes/nuevo/")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+
+    fiscal = html.split('id="cl-panel-fiscal"', 1)[1].split('id="cl-panel-contable"', 1)[0]
+
+    assert fiscal.index('id="cl-condicion-iva"') < fiscal.index('id="cl-tipo-documento-fiscal"')
+    assert fiscal.index('id="cl-tipo-documento-fiscal"') < fiscal.index('id="cl-numero-documento-fiscal"')
+
+    assert "Condición IVA" in fiscal
+    assert "Tipo documento fiscal" in fiscal
+    assert "Número documento fiscal" in fiscal
+
 def test_formulario_cliente_tabs_en_panel_secundario():
     """Valida que los tabs del formulario queden contenidos en un panel visual secundario."""
     app = create_app(TestConfig)
