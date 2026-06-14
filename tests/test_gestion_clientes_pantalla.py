@@ -386,3 +386,56 @@ def test_formulario_editar_cliente_no_pisa_geografia_vacia_con_default():
     assert b'id="cl-provincia"' in response.data
     assert b'Seleccionar pa' in response.data
     assert b'Seleccionar provincia' in response.data
+
+def test_formulario_cliente_respeta_orden_uiux_basico_y_contacto():
+    """Valida contrato visual de orden de campos del formulario de clientes."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        _crear_grupo_cliente_activo()
+        response = client.get("/gestion/clientes/nuevo/")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+
+    datos_principales = html.split('id="cl-datos-principales"', 1)[1].split('id="cl-tabs"', 1)[0]
+    contacto = html.split('id="cl-panel-contacto"', 1)[1].split('id="cl-panel-fiscal"', 1)[0]
+
+    assert datos_principales.index('id="cl-razon-social"') < datos_principales.index('id="cl-grupo-cliente"')
+    assert datos_principales.index('id="cl-grupo-cliente"') < datos_principales.index('id="cl-nombre-fantasia"')
+    assert datos_principales.index('id="cl-nombre-fantasia"') < datos_principales.index('id="cl-orden"')
+    assert datos_principales.index('id="cl-orden"') < datos_principales.index('id="cl-activo"')
+
+    assert "Nombre de fantasía" in datos_principales
+    assert "Correo" in contacto
+
+    assert contacto.index('id="cl-telefono"') < contacto.index('id="cl-email"')
+    assert contacto.index('id="cl-email"') < contacto.index('id="cl-domicilio"')
+    assert contacto.index('id="cl-domicilio"') < contacto.index('id="cl-ciudad"')
+    assert contacto.index('id="cl-ciudad"') < contacto.index('id="cl-codigo-postal"')
+    assert contacto.index('id="cl-codigo-postal"') < contacto.index('id="cl-pais"')
+    assert contacto.index('id="cl-pais"') < contacto.index('id="cl-provincia"')
+
+def test_formulario_cliente_tabs_en_panel_secundario():
+    """Valida que los tabs del formulario queden contenidos en un panel visual secundario."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        _crear_grupo_cliente_activo()
+        response = client.get("/gestion/clientes/nuevo/")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+
+    assert 'id="cl-tabs-panel"' in html
+    assert "border rounded-3 p-3 bg-body-tertiary" in html
+    assert html.index('id="cl-datos-principales"') < html.index('id="cl-tabs-panel"')
+    assert html.index('id="cl-tabs-panel"') < html.index('id="cl-tabs"')
+    assert html.index('id="cl-tabs"') < html.index('id="cl-tabs-contenido"')
+    assert html.index('id="cl-formulario"') < html.index('id="cl-datos-principales"')
+    assert html.index('id="cl-formulario"') < html.index('id="cl-tabs-panel"')
+

@@ -38,7 +38,7 @@
                         <h2 id="cl-datos-principales-titulo" class="h6 mb-0">Datos del cliente</h2>
                     </div>
 
-                    <div class="col-12 col-lg-6">
+                    <div class="col-12 col-lg-8">
                         <label for="cl-razon-social" class="form-label">Razón social</label>
                         <input
                             id="cl-razon-social"
@@ -51,19 +51,7 @@
                         >
                     </div>
 
-                    <div class="col-12 col-lg-6">
-                        <label for="cl-nombre-fantasia" class="form-label">Nombre fantasía</label>
-                        <input
-                            id="cl-nombre-fantasia"
-                            data-field="nombre_fantasia"
-                            name="nombre_fantasia"
-                            type="text"
-                            class="form-control"
-                            value="{{ cliente.nombre_fantasia | default('', true) }}"
-                        >
-                    </div>
-
-                    <div class="col-12 col-lg-6">
+                    <div class="col-12 col-lg-4">
                         <label for="cl-grupo-cliente" class="form-label">Grupo de clientes</label>
                         <select
                             id="cl-grupo-cliente"
@@ -81,6 +69,18 @@
                                 </option>
                             {% endfor %}
                         </select>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <label for="cl-nombre-fantasia" class="form-label">Nombre de fantasía</label>
+                        <input
+                            id="cl-nombre-fantasia"
+                            data-field="nombre_fantasia"
+                            name="nombre_fantasia"
+                            type="text"
+                            class="form-control"
+                            value="{{ cliente.nombre_fantasia | default('', true) }}"
+                        >
                     </div>
 
                     <div class="col-12 col-lg-3">
@@ -114,6 +114,7 @@
                     </div>
                 </div>
 
+                <div id="cl-tabs-panel" class="border rounded-3 p-3 bg-body-tertiary">
                 <ul id="cl-tabs" class="nav nav-tabs mb-3" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button
@@ -173,14 +174,9 @@
                                 <input id="cl-telefono" data-field="telefono" name="telefono" type="text" class="form-control" value="{{ cliente.telefono | default('', true) }}">
                             </div>
 
-                            <div class="col-12 col-lg-4">
-                                <label for="cl-email" class="form-label">Email</label>
+                            <div class="col-12 col-lg-8">
+                                <label for="cl-email" class="form-label">Correo</label>
                                 <input id="cl-email" data-field="email" name="email" type="email" class="form-control" value="{{ cliente.email | default('', true) }}">
-                            </div>
-
-                            <div class="col-12 col-lg-4">
-                                <label for="cl-codigo-postal" class="form-label">Código postal</label>
-                                <input id="cl-codigo-postal" data-field="codigo_postal" name="codigo_postal" type="text" class="form-control" value="{{ cliente.codigo_postal | default('', true) }}">
                             </div>
 
                             <div class="col-12 col-lg-6">
@@ -188,9 +184,14 @@
                                 <input id="cl-domicilio" data-field="domicilio" name="domicilio" type="text" class="form-control" value="{{ cliente.domicilio | default('', true) }}">
                             </div>
 
-                            <div class="col-12 col-lg-6">
+                            <div class="col-12 col-lg-3">
                                 <label for="cl-ciudad" class="form-label">Ciudad</label>
                                 <input id="cl-ciudad" data-field="ciudad" name="ciudad" type="text" class="form-control" value="{{ cliente.ciudad | default('', true) }}">
+                            </div>
+
+                            <div class="col-12 col-lg-3">
+                                <label for="cl-codigo-postal" class="form-label">Código postal</label>
+                                <input id="cl-codigo-postal" data-field="codigo_postal" name="codigo_postal" type="text" class="form-control" value="{{ cliente.codigo_postal | default('', true) }}">
                             </div>
 
                             <div class="col-12 col-lg-6">
@@ -338,6 +339,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
 
                 <div class="col-12 d-flex justify-content-end gap-2 mt-3">
