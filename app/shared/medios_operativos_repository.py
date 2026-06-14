@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any
 
 from app.db import get_db
+from app.shared.formatos import normalizar_decimal_argentino_a_entero_escala
 
 TIPOS_MEDIO_OPERATIVO = {
     "BANCO_PROPIO",
@@ -420,7 +421,13 @@ def _validar_centavos_nullable(valor: Any) -> int | None:
         return None
 
     try:
-        centavos = int(valor_normalizado)
+        if "," in valor_normalizado:
+            centavos = normalizar_decimal_argentino_a_entero_escala(
+                valor_normalizado,
+                2,
+            )
+        else:
+            centavos = int(valor_normalizado)
     except ValueError as exc:
         raise ValueError("La cotizacion default debe estar expresada en centavos.") from exc
 

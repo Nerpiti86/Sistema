@@ -1,5 +1,6 @@
 from typing import Any
 
+from app.shared.formatos import formatear_entero_escala_a_decimal_argentino
 from app.shared.bancos_repository import listar_bancos_activos
 from app.shared.medios_operativos_repository import (
     TIPOS_MEDIO_OPERATIVO,
@@ -43,18 +44,51 @@ def obtener_contexto_formulario_medio_operativo(
     medio_operativo: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Devuelve datos auxiliares para alta o edicion de medios operativos."""
+    medio_base = medio_operativo or {
+        "activo": 1,
+        "requiere_cotizacion": 0,
+        "tipo": "EFECTIVO",
+        "cotizacion_default_centavos": "",
+        "orden": 0,
+    }
+
     return {
-        "medio_operativo": medio_operativo or {
-            "activo": 1,
-            "requiere_cotizacion": 0,
-            "tipo": "EFECTIVO",
-            "cotizacion_default_centavos": "",
-            "orden": 0,
-        },
+        "medio_operativo": _preparar_medio_operativo_para_formulario(medio_base),
         "tipos_medios_operativos": obtener_tipos_medios_operativos(),
         "monedas": listar_monedas_activas(),
         "bancos": listar_bancos_activos(),
     }
+
+
+def _preparar_medio_operativo_para_formulario(
+    medio_operativo: dict[str, Any],
+) -> dict[str, Any]:
+    """Prepara valores persistidos para el contrato visual del formulario."""
+    medio_form = dict(medio_operativo)
+    medio_form["cotizacion_default_centavos"] = (
+        _formatear_cotizacion_default_para_formulario(
+            medio_form.get("cotizacion_default_centavos")
+        )
+    )
+    return medio_form
+
+
+def _formatear_cotizacion_default_para_formulario(valor: Any) -> str:
+    """Convierte centavos enteros a decimal argentino para data-money-ar."""
+    if valor is None:
+        return ""
+
+    valor_texto = str(valor).strip()
+    if not valor_texto:
+        return ""
+
+    if "," in valor_texto:
+        return valor_texto
+
+    try:
+        return formatear_entero_escala_a_decimal_argentino(int(valor_texto), 2)
+    except (TypeError, ValueError):
+        return valor_texto
 
 
 def obtener_contexto_detalle_medio_operativo(codigo: Any) -> dict[str, Any]:

@@ -11,6 +11,7 @@ from app.shared.medios_operativos_service import (
     crear_medio_operativo_desde_formulario,
     desactivar_medio_operativo,
     normalizar_codigo_medio_operativo_desde_formulario,
+    obtener_contexto_formulario_medio_operativo,
     obtener_contexto_listado_medios_operativos,
     obtener_medio_operativo_activo_por_codigo,
 )
@@ -172,6 +173,83 @@ def test_actualizar_medio_operativo_desde_formulario():
     assert medio["codigo"] == "1"
     assert medio["nombre"] == "Caja pesos editada"
     assert medio["orden"] == 15
+
+
+def test_formulario_medios_operativos_cotizacion_cumple_numero_argentino():
+    """
+    Valida contrato HTML del campo cotizacion default.
+
+    El campo persiste centavos INTEGER, pero la UI debe usar formato argentino
+    en vivo mediante data-money-ar=centavos.
+    """
+    contenido = Path(
+        "app/tablas_comunes/templates/tablas_comunes/medios_operativos_form.html"
+    ).read_text(encoding="utf-8")
+    inicio = contenido.index('id="mope-cotizacion"')
+    fin = contenido.index("</div>", inicio)
+    bloque = contenido[inicio:fin]
+
+    assert 'data-field="cotizacion_default_centavos"' in bloque
+    assert 'type="text"' in bloque
+    assert 'inputmode="decimal"' in bloque
+    assert 'data-money-ar="centavos"' in bloque
+    assert 'type="number"' not in bloque
+    assert 'step="1"' not in bloque
+
+
+def test_crear_medio_operativo_usd_parsea_cotizacion_default_argentina():
+    """
+    Valida POST con cotizacion default en formato argentino.
+
+    El formulario envia decimal argentino y el repository persiste INTEGER
+    escalado en centavos.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        _insertar_cuenta_prueba("1.1.01.02.001", "Caja USD")
+        medio = crear_medio_operativo_desde_formulario(
+            {
+                "codigo": "USD1",
+                "nombre": "Caja dolares",
+                "tipo": "EFECTIVO",
+                "moneda_codigo": "USD",
+                "cuenta_contable_codigo": "1.1.01.02.001",
+                "requiere_cotizacion": "1",
+                "cotizacion_default_centavos": "1.250,50",
+                "activo": "1",
+                "orden": "30",
+            }
+        )
+
+    assert medio["codigo"] == "USD1"
+    assert medio["moneda_codigo"] == "USD"
+    assert medio["requiere_cotizacion"] == 1
+    assert medio["cotizacion_default_centavos"] == 125050
+
+
+def test_contexto_formulario_medio_operativo_formatea_cotizacion_default():
+    """
+    Valida que el formulario reciba centavos como decimal argentino.
+
+    Evita que data-money-ar interprete un entero persistido como pesos enteros.
+    """
+    contexto = obtener_contexto_formulario_medio_operativo(
+        {
+            "codigo": "USD1",
+            "nombre": "Caja dolares",
+            "tipo": "EFECTIVO",
+            "moneda_codigo": "USD",
+            "cuenta_contable_codigo": "1.1.01.02.001",
+            "requiere_cotizacion": 1,
+            "cotizacion_default_centavos": 125050,
+            "activo": 1,
+            "orden": 30,
+        }
+    )
+
+    assert contexto["medio_operativo"]["cotizacion_default_centavos"] == "1.250,50"
 
 
 def test_activar_desactivar_medio_operativo():
