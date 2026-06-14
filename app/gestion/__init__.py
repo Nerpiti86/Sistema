@@ -1,0 +1,1 @@
+"""Modulo funcional de gestion."""
