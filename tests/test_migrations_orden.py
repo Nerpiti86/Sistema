@@ -25,6 +25,7 @@ def test_migrations_tienen_prefijo_numerico_unico_y_ordenado():
         "011_medios_operativos.sql",
         "012_catalogos_fiscales.sql",
         "013_grupos_clientes.sql",
+        "014_paises.sql",
     ]
     assert prefijos == [
         "001",
@@ -40,6 +41,7 @@ def test_migrations_tienen_prefijo_numerico_unico_y_ordenado():
         "011",
         "012",
         "013",
+        "014",
     ]
     assert len(prefijos) == len(set(prefijos))
 
