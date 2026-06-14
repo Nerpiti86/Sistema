@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
@@ -56,6 +58,38 @@ def test_formulario_nuevo_medio_operativo_responde_ok():
     assert b'id="mope-form"' in response.data
     assert b'id="mope-codigo"' in response.data
     assert b'id="mope-cuenta-contable"' in response.data
+
+
+def test_formulario_medio_operativo_respeta_orden_visual():
+    """
+    Valida el orden visual del formulario de medios operativos.
+
+    La pantalla debe leerse por bloques: identificacion, moneda/cambio,
+    cuenta contable, datos bancarios y estado operativo.
+    """
+    contenido = Path(
+        "app/tablas_comunes/templates/tablas_comunes/medios_operativos_form.html"
+    ).read_text(encoding="utf-8")
+    ids = [
+        'id="mope-codigo"',
+        'id="mope-nombre"',
+        'id="mope-tipo"',
+        'id="mope-moneda"',
+        'id="mope-requiere-cotizacion"',
+        'id="mope-cotizacion"',
+        'id="mope-cuenta-contable"',
+        'id="mope-banco"',
+        'id="mope-plaza"',
+        'id="mope-sucursal"',
+        'id="mope-numero-cuenta"',
+        'id="mope-cuit"',
+        'id="mope-activo"',
+        'id="mope-orden"',
+    ]
+
+    posiciones = [contenido.index(item) for item in ids]
+
+    assert posiciones == sorted(posiciones)
 
 
 def test_crear_medio_operativo_desde_pantalla():
