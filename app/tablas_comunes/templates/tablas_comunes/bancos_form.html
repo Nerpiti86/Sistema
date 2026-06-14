@@ -3,11 +3,15 @@
 {% from "components/buttons.html" import primary_button, secondary_link %}
 
 {% block content %}
+{% set titulo_visible = form_titulo %}
+{% if modo_formulario == "edicion" and banco.codigo and banco.nombre %}
+    {% set titulo_visible = "Editar banco " ~ banco.codigo ~ " - " ~ banco.nombre %}
+{% endif %}
 <section id="ba-form" data-table="bancos" data-action="{{ modo_formulario }}" class="row g-3">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
-                <h1 id="ba-form-titulo" class="h3 mb-1">{{ form_titulo }}</h1>
+                <h1 id="ba-form-titulo" class="h3 mb-1">{{ titulo_visible }}</h1>
                 <p id="ba-form-descripcion" class="text-muted mb-0">
                     Alta y edición manual del maestro transversal de bancos.
                 </p>
@@ -19,7 +23,7 @@
     </div>
 
     <div class="col-12 col-lg-8">
-        {% call card(form_titulo, "bancos") %}
+        {% call card(titulo_visible, "bancos") %}
             <form id="ba-formulario" method="post" action="{{ action_url }}" data-table="bancos">
                 <div class="row g-3">
                     <div class="col-12 col-md-4">
