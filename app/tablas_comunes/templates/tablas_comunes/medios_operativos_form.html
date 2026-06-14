@@ -3,7 +3,14 @@
 {% from "components/buttons.html" import primary_button, secondary_link %}
 
 {% block content %}
-<section id="mope-form" data-table="medios_operativos" data-action="{{ modo_formulario }}" class="row g-3">
+<section
+    id="mope-form"
+    data-table="medios_operativos"
+    data-action="{{ modo_formulario }}"
+    data-cuentas-imputables-url="{{ url_for('contabilidad.buscar_cuentas_contables_imputables_json') }}"
+    data-cuentas-imputables-limite="10"
+    class="row g-3"
+>
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
@@ -124,168 +131,5 @@
     </div>
 </section>
 
-<script>
-(function () {
-    const tipo = document.getElementById("mope-tipo");
-    const moneda = document.getElementById("mope-moneda");
-    const requiereCotizacion = document.getElementById("mope-requiere-cotizacion");
-    const cotizacion = document.getElementById("mope-cotizacion");
-    const cuentaContable = document.getElementById("mope-cuenta-contable");
-    const cuentaContableEstado = document.getElementById("mope-cuenta-contable-estado");
-    const cuentasContablesLista = document.getElementById("mope-cuentas-contables-lista");
-    const camposBanco = Array.from(document.querySelectorAll("[data-mope-bank-field]"));
-    let cuentaLookupTimeout = null;
-
-    function limpiarCampo(campo) {
-        if (campo.type === "checkbox") {
-            campo.checked = false;
-            return;
-        }
-        campo.value = "";
-    }
-
-    function actualizarCamposBanco() {
-        const usaBanco = tipo && tipo.value === "BANCO_PROPIO";
-
-        camposBanco.forEach((campo) => {
-            campo.disabled = !usaBanco;
-            if (!usaBanco) {
-                limpiarCampo(campo);
-            }
-        });
-    }
-
-    function actualizarCamposCotizacion() {
-        const monedaEsArs = moneda && moneda.value === "ARS";
-        const permiteCambio = !monedaEsArs;
-
-        if (requiereCotizacion) {
-            requiereCotizacion.disabled = !permiteCambio;
-            if (!permiteCambio) {
-                requiereCotizacion.checked = false;
-            }
-        }
-
-        if (cotizacion) {
-            const deshabilitarCotizacion = !permiteCambio || !requiereCotizacion || !requiereCotizacion.checked;
-            cotizacion.disabled = deshabilitarCotizacion;
-            if (deshabilitarCotizacion) {
-                cotizacion.value = "";
-            }
-        }
-    }
-
-    function pintarEstadoCuenta(mensaje, estado) {
-        if (!cuentaContableEstado || !cuentaContable) {
-            return;
-        }
-
-        cuentaContableEstado.textContent = mensaje;
-        cuentaContableEstado.classList.remove("text-muted", "text-success", "text-danger", "text-warning");
-        cuentaContableEstado.classList.add(estado);
-    }
-
-    function resetearLookupCuenta() {
-        if (!cuentaContable || !cuentasContablesLista) {
-            return;
-        }
-
-        cuentasContablesLista.innerHTML = "";
-        cuentaContable.setCustomValidity("");
-        pintarEstadoCuenta("Ingrese una cuenta imputable existente.", "text-muted");
-    }
-
-    function validarCuentaContableVisual() {
-        if (!cuentaContable || !cuentasContablesLista) {
-            return;
-        }
-
-        const q = cuentaContable.value.trim();
-
-        cuentasContablesLista.innerHTML = "";
-
-        if (!q) {
-            cuentaContable.setCustomValidity("La cuenta contable es obligatoria.");
-            pintarEstadoCuenta("Ingrese una cuenta imputable existente.", "text-muted");
-            return;
-        }
-
-        if (q.length < 3) {
-            cuentaContable.setCustomValidity("Ingrese al menos 3 caracteres para buscar la cuenta.");
-            pintarEstadoCuenta("Ingrese al menos 3 caracteres para buscar la cuenta.", "text-warning");
-            return;
-        }
-
-        fetch(`/contabilidad/cuentas-contables/imputables/buscar/?q=${encodeURIComponent(q)}&limite=10`)
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("No se pudo validar la cuenta contable.");
-                }
-                return response.json();
-            })
-            .then((data) => {
-                const resultados = Array.isArray(data.resultados) ? data.resultados : [];
-
-                resultados.forEach((cuenta) => {
-                    const option = document.createElement("option");
-                    option.value = cuenta.cuenta;
-                    option.label = cuenta.label;
-                    cuentasContablesLista.appendChild(option);
-                });
-
-                const cuentaExacta = resultados.find((cuenta) => cuenta.cuenta === q);
-
-                if (cuentaExacta) {
-                    cuentaContable.setCustomValidity("");
-                    pintarEstadoCuenta(`Cuenta imputable: ${cuentaExacta.descripcion}`, "text-success");
-                    return;
-                }
-
-                cuentaContable.setCustomValidity("La cuenta contable no existe o no es imputable.");
-
-                if (resultados.length > 0) {
-                    pintarEstadoCuenta("Seleccione una cuenta imputable de las sugerencias.", "text-warning");
-                    return;
-                }
-
-                pintarEstadoCuenta("La cuenta contable no existe o no es imputable.", "text-danger");
-            })
-            .catch(() => {
-                cuentaContable.setCustomValidity("No se pudo validar la cuenta contable.");
-                pintarEstadoCuenta("No se pudo validar la cuenta contable.", "text-danger");
-            });
-    }
-
-    function programarLookupCuenta() {
-        if (cuentaLookupTimeout) {
-            window.clearTimeout(cuentaLookupTimeout);
-        }
-
-        cuentaLookupTimeout = window.setTimeout(validarCuentaContableVisual, 250);
-    }
-
-    if (tipo) {
-        tipo.addEventListener("change", actualizarCamposBanco);
-    }
-    if (moneda) {
-        moneda.addEventListener("change", actualizarCamposCotizacion);
-    }
-    if (requiereCotizacion) {
-        requiereCotizacion.addEventListener("change", actualizarCamposCotizacion);
-    }
-    if (cuentaContable) {
-        cuentaContable.addEventListener("input", programarLookupCuenta);
-        cuentaContable.addEventListener("blur", validarCuentaContableVisual);
-    }
-
-    actualizarCamposBanco();
-    actualizarCamposCotizacion();
-
-    if (cuentaContable && cuentaContable.value.trim()) {
-        validarCuentaContableVisual();
-    } else {
-        resetearLookupCuenta();
-    }
-}());
-</script>
+<script src="{{ url_for('static', filename='js/medios_operativos_form.js') }}"></script>
 {% endblock %}

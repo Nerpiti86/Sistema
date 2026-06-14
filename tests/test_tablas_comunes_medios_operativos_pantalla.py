@@ -277,3 +277,53 @@ def _insertar_medio_prueba():
             "2026-01-01 10:00:00",
         ),
     )
+
+
+def test_formulario_medio_operativo_no_usa_js_inline():
+    """
+    Contrato: el formulario de medios operativos solo declara hooks HTML.
+
+    El comportamiento de pantalla debe vivir en asset estatico JS, no en un
+    bloque script pegado dentro del template.
+    """
+    contenido = Path(
+        "app/tablas_comunes/templates/tablas_comunes/medios_operativos_form.html"
+    ).read_text(encoding="utf-8")
+
+    assert "<script>" not in contenido
+    assert "js/medios_operativos_form.js" in contenido
+
+
+def test_formulario_medio_operativo_declara_url_lookup_por_data_attribute():
+    """
+    Contrato: las URLs Flask se generan en template con url_for.
+
+    El JS debe leerlas desde data-* para evitar endpoints hardcodeados dentro
+    del asset estatico.
+    """
+    contenido = Path(
+        "app/tablas_comunes/templates/tablas_comunes/medios_operativos_form.html"
+    ).read_text(encoding="utf-8")
+
+    assert "data-cuentas-imputables-url=" in contenido
+    assert "contabilidad.buscar_cuentas_contables_imputables_json" in contenido
+    assert "data-cuentas-imputables-limite=\"10\"" in contenido
+
+
+def test_js_medios_operativos_form_respeta_contrato_asset_estatico():
+    """
+    Contrato: el JS especifico de medios operativos vive en app/static/js.
+
+    Debe tomar el endpoint desde dataset, usar fetch JSON y no contener rutas
+    Flask hardcodeadas.
+    """
+    contenido = Path("app/static/js/medios_operativos_form.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "dataset.cuentasImputablesUrl" in contenido
+    assert "dataset.cuentasImputablesLimite" in contenido
+    assert "new URL(" in contenido
+    assert "fetch(" in contenido
+    assert "/contabilidad/cuentas-contables/imputables/buscar/" not in contenido
+
