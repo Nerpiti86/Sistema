@@ -84,6 +84,15 @@
     "gestion.activar_cliente_existente",
     "gestion.desactivar_cliente_existente",
 ] %}
+{% set es_productos_servicios_venta = endpoint_actual in [
+    "gestion.ver_listado_productos_servicios_venta",
+    "gestion.ver_formulario_nuevo_producto_servicio_venta",
+    "gestion.crear_producto_servicio_venta_nuevo",
+    "gestion.ver_formulario_editar_producto_servicio_venta",
+    "gestion.actualizar_producto_servicio_venta_existente",
+    "gestion.activar_producto_servicio_venta_existente",
+    "gestion.desactivar_producto_servicio_venta_existente",
+] %}
 {% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
 {% set es_asientos = endpoint_actual in [
     "contabilidad.ver_listado_asientos_contables",
@@ -352,6 +361,26 @@
                                     <span class="ns-mega-link-text">Segmentación comercial de clientes.</span>
                                 </a>
                             </section>
+
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-ventas">
+                                <h2 id="ns-nav-ventas" class="ns-mega-section-title {% if es_productos_servicios_venta %}active{% endif %}">
+                                    Ventas
+                                </h2>
+
+                                <a
+                                    id="ns-nav-productos-servicios-venta"
+                                    class="ns-mega-link {% if es_productos_servicios_venta %}active{% endif %}"
+                                    href="{{ url_for('gestion.ver_listado_productos_servicios_venta') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="gestion"
+                                    data-endpoint="gestion.ver_listado_productos_servicios_venta"
+                                >
+                                    <span class="ns-mega-link-title">Productos o servicios para la venta</span>
+                                    <span class="ns-mega-link-text">Maestro de conceptos vendibles del circuito de ventas.</span>
+                                </a>
+                            </section>
+
                         </div>
                     </div>
                 </li>
