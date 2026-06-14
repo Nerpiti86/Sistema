@@ -3,6 +3,10 @@
 {% from "components/buttons.html" import secondary_link %}
 
 {% block content %}
+{% set titulo_visible = form_titulo|default('Nueva cuenta contable') %}
+{% if form_data_action|default('crear_cuenta_contable') == 'editar_cuenta_contable' and cuenta_contable.get('cuenta') and cuenta_contable.get('descripcion') %}
+    {% set titulo_visible = "Editar cuenta contable " ~ cuenta_contable.get('cuenta') ~ " - " ~ cuenta_contable.get('descripcion') %}
+{% endif %}
 <section
     id="cc-form"
     data-table="cuentas_contables"
@@ -13,7 +17,7 @@
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
                 <h1 id="cc-form-titulo" class="h3 mb-1">
-                    {{ form_titulo|default('Nueva cuenta contable') }}
+                    {{ titulo_visible }}
                 </h1>
                 <p id="cc-form-descripcion" class="text-muted mb-0">
                     {{ form_descripcion|default('Alta del maestro de cuentas contables.') }}
@@ -26,7 +30,7 @@
     </div>
 
     <div class="col-12">
-        {% call card("Datos de la cuenta", "Maestro contable") %}
+        {% call card(titulo_visible, "Maestro contable") %}
             <form
                 id="cc-formulario"
                 data-table="cuentas_contables"
