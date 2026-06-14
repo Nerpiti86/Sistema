@@ -128,7 +128,7 @@ def test_editar_banco_desde_pantalla():
         ).fetchone()
 
     assert get_response.status_code == 200
-    assert b"Editar banco 285" in get_response.data
+    assert b"Editar banco 285 - BANCO MACRO S.A." in get_response.data
     assert post_response.status_code == 200
     assert banco["nombre"] == "BANCO MACRO PANTALLA"
     assert banco["orden"] == 333
