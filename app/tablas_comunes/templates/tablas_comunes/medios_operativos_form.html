@@ -41,7 +41,7 @@
 
                     <div class="col-12 col-md-3">
                         <label for="mope-tipo" class="form-label">Tipo</label>
-                        <select id="mope-tipo" data-field="tipo" name="tipo" class="form-select" required>
+                        <select id="mope-tipo" data-ns-select="normal" data-table="medios_operativos" data-field="tipo" name="tipo" class="form-select" required>
                             {% for tipo in tipos_medios_operativos %}
                                 <option value="{{ tipo.codigo }}" {% if medio_operativo.tipo | default('EFECTIVO', true) == tipo.codigo %}selected{% endif %}>{{ tipo.nombre }}</option>
                             {% endfor %}
@@ -50,7 +50,7 @@
 
                     <div class="col-12 col-md-3">
                         <label for="mope-moneda" class="form-label">Moneda</label>
-                        <select id="mope-moneda" data-field="moneda_codigo" name="moneda_codigo" class="form-select" required>
+                        <select id="mope-moneda" data-ns-select="normal" data-table="medios_operativos" data-field="moneda_codigo" name="moneda_codigo" class="form-select" required>
                             <option value="">Seleccionar moneda...</option>
                             {% for moneda in monedas %}
                                 <option value="{{ moneda.codigo }}" {% if medio_operativo.moneda_codigo | default('', true) == moneda.codigo %}selected{% endif %}>{{ moneda.codigo }} - {{ moneda.nombre }}</option>
@@ -81,7 +81,7 @@
 
                     <div class="col-12 col-md-3">
                         <label for="mope-banco" class="form-label">Banco</label>
-                        <select id="mope-banco" data-field="banco_codigo" name="banco_codigo" class="form-select" data-mope-bank-field>
+                        <select id="mope-banco" data-ns-select="normal" data-table="medios_operativos" data-field="banco_codigo" name="banco_codigo" class="form-select" data-mope-bank-field>
                             <option value="">Sin banco</option>
                             {% for banco in bancos %}
                                 <option value="{{ banco.codigo }}" {% if medio_operativo.banco_codigo | default('', true) == banco.codigo %}selected{% endif %}>{{ banco.codigo }} - {{ banco.nombre }}</option>
