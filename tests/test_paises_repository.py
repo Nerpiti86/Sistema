@@ -3,7 +3,7 @@ import pytest
 from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations
-from app.gestion.paises_repository import (
+from app.comunes.paises_repository import (
     actualizar_pais_por_id,
     cambiar_estado_pais,
     crear_pais,

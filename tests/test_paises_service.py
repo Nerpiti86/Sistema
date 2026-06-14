@@ -5,8 +5,8 @@ import pytest
 from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations
-from app.gestion.paises_repository import crear_pais
-from app.gestion.paises_service import (
+from app.comunes.paises_repository import crear_pais
+from app.comunes.paises_service import (
     activar_pais,
     actualizar_pais_desde_formulario,
     crear_pais_desde_formulario,
@@ -21,7 +21,7 @@ from app.gestion.paises_service import (
 
 def test_paises_service_no_usa_sql_directo():
     """Valida que el service de paises no ejecute SQL ni use get_db."""
-    contenido = Path("app/gestion/paises_service.py").read_text(encoding="utf-8")
+    contenido = Path("app/comunes/paises_service.py").read_text(encoding="utf-8")
 
     assert "get_db" not in contenido
     assert ".execute(" not in contenido
