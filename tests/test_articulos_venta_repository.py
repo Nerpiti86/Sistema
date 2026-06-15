@@ -5,6 +5,7 @@ from app.config import TestConfig
 from app.db import apply_migrations
 from app.gestion.articulos_venta_repository import (
     actualizar_articulo_venta_por_id,
+    buscar_articulos_venta_activos,
     cambiar_estado_articulo_venta,
     crear_articulo_venta,
     listar_articulos_venta,
@@ -350,3 +351,33 @@ def test_repository_rechaza_ids_invalidos_o_inexistentes():
 
         with pytest.raises(ValueError, match="No existe"):
             cambiar_estado_articulo_venta(999, 1)
+
+def test_buscar_articulos_venta_activos_encuentra_label_con_moneda():
+    """
+    Valida que el lookup acepte el mismo label visible que usa el formulario.
+
+    El input HTML muestra "Nombre - MONEDA"; al submit, ese texto completo
+    debe poder resolverse nuevamente contra el endpoint.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        crear_articulo_venta(
+            {
+                "nombre": "Sesiones de Psicoterapia Individual",
+                "tipo": "SERVICIO",
+                "moneda_codigo": "ARS",
+                "activo": 1,
+            }
+        )
+
+        resultados = buscar_articulos_venta_activos(
+            "Sesiones de Psicoterapia Individual - ARS",
+            10,
+        )
+
+    assert len(resultados) == 1
+    assert resultados[0]["nombre"] == "Sesiones de Psicoterapia Individual"
+    assert resultados[0]["moneda_codigo"] == "ARS"

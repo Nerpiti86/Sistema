@@ -98,12 +98,19 @@ def buscar_articulos_venta_activos(
                 articulos_venta.nombre LIKE ?
              OR articulos_venta.tipo LIKE ?
              OR articulos_venta.moneda_codigo LIKE ?
+             OR (articulos_venta.nombre || ' - ' || articulos_venta.moneda_codigo) LIKE ?
           )
         ORDER BY articulos_venta.orden,
                  articulos_venta.nombre
         LIMIT ?
         """,
-        (patron_busqueda, patron_busqueda, patron_busqueda, limite_validado),
+        (
+            patron_busqueda,
+            patron_busqueda,
+            patron_busqueda,
+            patron_busqueda,
+            limite_validado,
+        ),
     ).fetchall()
 
     return [
