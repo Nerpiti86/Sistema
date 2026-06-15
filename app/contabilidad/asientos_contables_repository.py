@@ -136,6 +136,13 @@ def crear_asiento_contable(
 
     try:
         with db:
+            numero_asiento = _resolver_numero_asiento_para_insert(
+                db,
+                ejercicio_id,
+                estado,
+                numero_asiento,
+            )
+
             cursor = db.execute(
                 """
                 INSERT INTO asientos_contables (
@@ -221,6 +228,38 @@ def crear_asiento_contable(
         raise ValueError("No se pudo recuperar el asiento contable creado.")
 
     return asiento_creado
+
+
+def _resolver_numero_asiento_para_insert(
+    db,
+    ejercicio_id: int,
+    estado: str,
+    numero_asiento: int | None,
+) -> int | None:
+    """
+    Resuelve numero_asiento antes de insertar.
+
+    Los asientos CONFIRMADOS nacen numerados por ejercicio contable.
+    Los BORRADOR pueden quedar sin numero hasta que exista circuito de
+    confirmacion de asientos manuales.
+    """
+    if numero_asiento is not None:
+        return numero_asiento
+
+    if estado != "CONFIRMADO":
+        return None
+
+    fila = db.execute(
+        """
+        SELECT COALESCE(MAX(numero_asiento), 0) + 1 AS proximo_numero
+        FROM asientos_contables
+        WHERE ejercicio_id = ?
+          AND numero_asiento IS NOT NULL
+        """,
+        (ejercicio_id,),
+    ).fetchone()
+
+    return int(fila["proximo_numero"])
 
 
 def obtener_asiento_contable_por_id(asiento_id: Any) -> dict[str, Any] | None:

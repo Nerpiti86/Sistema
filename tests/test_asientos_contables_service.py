@@ -25,6 +25,9 @@ def _crear_ejercicio(
     codigo: str = "2026",
     estado: str = "ABIERTO",
     bloqueado: int = 0,
+    activo: int = 1,
+    fecha_desde: str = "2026-01-01",
+    fecha_hasta: str = "2026-12-31",
 ) -> int:
     db.execute(
         """
@@ -45,10 +48,10 @@ def _crear_ejercicio(
         (
             codigo,
             f"Ejercicio service asientos {codigo}",
-            "2026-01-01",
-            "2026-12-31",
+            fecha_desde,
+            fecha_hasta,
             estado,
-            1,
+            activo,
             "2026-01-01 00:00:00",
             "ABIERTO",
             bloqueado,
@@ -197,6 +200,137 @@ def test_service_crea_asiento_automatico_confirmado_con_confirmado_en():
     assert asiento["creado_en"]
     assert asiento["confirmado_en"] == asiento["creado_en"]
     assert asiento["anulado_en"] is None
+
+
+def test_service_numera_asientos_automaticos_confirmados_por_ejercicio():
+    """
+    Valida numeracion correlativa de asientos automaticos confirmados.
+
+    La operacion economica/comprobante puede tener su propia numeracion
+    continua, pero el asiento contable confirmado se numera dentro del ejercicio.
+    """
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _crear_ejercicio(db)
+        cuenta_debe = _crear_cuenta(db, "1.1.01.01.999")
+        cuenta_haber = _crear_cuenta(db, "4.1.01.01.999")
+
+        asiento_1 = crear_asiento_contable_automatico_confirmado(
+            {
+                **_datos_asiento_base(ejercicio_id),
+                "descripcion": "Asiento automatico 1",
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "nominal_debe_centavos": 10000,
+                    "debe_centavos": 10000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "nominal_haber_centavos": 10000,
+                    "haber_centavos": 10000,
+                },
+            ],
+        )
+
+        asiento_2 = crear_asiento_contable_automatico_confirmado(
+            {
+                **_datos_asiento_base(ejercicio_id),
+                "descripcion": "Asiento automatico 2",
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "nominal_debe_centavos": 20000,
+                    "debe_centavos": 20000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "nominal_haber_centavos": 20000,
+                    "haber_centavos": 20000,
+                },
+            ],
+        )
+
+    assert asiento_1["estado"] == "CONFIRMADO"
+    assert asiento_1["numero_asiento"] == 1
+    assert asiento_1["confirmado_en"] == asiento_1["creado_en"]
+
+    assert asiento_2["estado"] == "CONFIRMADO"
+    assert asiento_2["numero_asiento"] == 2
+    assert asiento_2["confirmado_en"] == asiento_2["creado_en"]
+
+
+def test_service_reinicia_numeracion_de_asientos_confirmados_en_otro_ejercicio():
+    """
+    Valida que numero_asiento reinicie por ejercicio contable.
+
+    Los asientos usan correlativo por ejercicio_id; no comparten la numeracion
+    infinita propia de operaciones economicas o comprobantes.
+    """
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_2026_id = _crear_ejercicio(db)
+        ejercicio_2027_id = _crear_ejercicio(
+            db,
+            codigo="2027",
+            activo=0,
+            fecha_desde="2027-01-01",
+            fecha_hasta="2027-12-31",
+        )
+        cuenta_debe = _crear_cuenta(db, "1.1.01.01.999")
+        cuenta_haber = _crear_cuenta(db, "4.1.01.01.999")
+
+        asiento_2026 = crear_asiento_contable_automatico_confirmado(
+            {
+                **_datos_asiento_base(ejercicio_2026_id),
+                "fecha": "2026-06-10",
+                "descripcion": "Asiento automatico 2026",
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "nominal_debe_centavos": 10000,
+                    "debe_centavos": 10000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "nominal_haber_centavos": 10000,
+                    "haber_centavos": 10000,
+                },
+            ],
+        )
+
+        asiento_2027 = crear_asiento_contable_automatico_confirmado(
+            {
+                **_datos_asiento_base(ejercicio_2027_id),
+                "fecha": "2027-06-10",
+                "descripcion": "Asiento automatico 2027",
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "nominal_debe_centavos": 20000,
+                    "debe_centavos": 20000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "nominal_haber_centavos": 20000,
+                    "haber_centavos": 20000,
+                },
+            ],
+        )
+
+    assert asiento_2026["numero_asiento"] == 1
+    assert asiento_2027["numero_asiento"] == 1
+    assert asiento_2026["ejercicio_id"] != asiento_2027["ejercicio_id"]
 
 
 def test_service_rechaza_asiento_desbalanceado():
