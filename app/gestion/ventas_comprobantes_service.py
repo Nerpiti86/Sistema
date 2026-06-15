@@ -1,18 +1,33 @@
 import re
 from typing import Any
 
+from app.contabilidad.asientos_contables_service import (
+    crear_asiento_contable_automatico_confirmado,
+)
+from app.contabilidad.ejercicios_contables_repository import (
+    obtener_ejercicio_contable_por_fecha,
+)
 from app.gestion.articulos_venta_repository import obtener_articulo_venta_por_id
 from app.gestion.clientes_repository import (
     obtener_cliente_por_id,
     validar_cliente_activo,
 )
+from app.gestion.clientes_cuenta_corriente_service import (
+    crear_movimiento_debe_cliente,
+    crear_movimiento_haber_cliente,
+)
 from app.gestion.ventas_comprobantes_repository import (
     crear_venta_comprobante,
     listar_ventas_comprobantes,
+    marcar_venta_comprobante_confirmado,
     obtener_venta_comprobante_por_id,
 )
 
 _TIPOS_COMPROBANTE_VALIDOS = {"FACTURA", "NOTA_DEBITO", "NOTA_CREDITO"}
+_TIPOS_COMPROBANTE_DEBE_CLIENTE = {"FACTURA", "NOTA_DEBITO"}
+_TIPO_ORIGEN_VENTA_COMPROBANTE = "VENTA_COMPROBANTE"
+_MONEDA_CONTABLE = "ARS"
+_ESCALA_COTIZACION_CONTABLE = 1_000_000
 _PATRON_FECHA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PATRON_MONEDA = re.compile(r"^[A-Z]{3}$")
 _ESCALA_CANTIDAD = 1_000_000
@@ -75,6 +90,212 @@ def crear_borrador_comprobante_venta(
     }
 
     return crear_venta_comprobante(datos_repository, detalles_normalizados)
+
+
+def confirmar_comprobante_venta(comprobante_id: Any) -> dict[str, Any]:
+    """
+    Confirma un comprobante de venta sin IVA.
+
+    Genera asiento contable, genera movimiento confirmado de cuenta corriente y
+    luego marca el comprobante comercial como CONFIRMADO. No mueve fondos.
+    """
+    comprobante = obtener_comprobante_venta(comprobante_id)
+    _validar_comprobante_confirmable(comprobante)
+
+    cliente = _obtener_cliente_activo(comprobante["cliente_id"])
+    cuenta_deudores_codigo = _obtener_cuenta_deudores_cliente(cliente)
+    ejercicio = _obtener_ejercicio_para_confirmacion(comprobante["fecha"])
+    descripcion = _descripcion_confirmacion_venta(comprobante)
+
+    asiento = crear_asiento_contable_automatico_confirmado(
+        {
+            "ejercicio_id": ejercicio["id"],
+            "fecha": comprobante["fecha"],
+            "descripcion": descripcion,
+            "tipo": "AJUSTE",
+            "cotizacion_tipo": "CIERRE",
+        },
+        _armar_detalles_asiento_confirmacion(
+            comprobante,
+            cuenta_deudores_codigo,
+            descripcion,
+        ),
+    )
+
+    movimiento_cuenta_corriente = _crear_movimiento_cuenta_corriente_confirmacion(
+        comprobante,
+        asiento["id"],
+        descripcion,
+    )
+
+    comprobante_confirmado = marcar_venta_comprobante_confirmado(
+        comprobante["id"],
+        asiento["id"],
+    )
+
+    return {
+        "comprobante": comprobante_confirmado,
+        "asiento": asiento,
+        "movimiento_cuenta_corriente": movimiento_cuenta_corriente,
+    }
+
+
+def _validar_comprobante_confirmable(comprobante: dict[str, Any]) -> None:
+    if comprobante["estado"] != "BORRADOR":
+        raise ValueError("Solo se puede confirmar un comprobante en BORRADOR.")
+
+    if comprobante["moneda_codigo"] != _MONEDA_CONTABLE:
+        raise ValueError("Solo se pueden confirmar comprobantes en ARS en esta etapa.")
+
+    if int(comprobante["iva_centavos"]) != 0:
+        raise ValueError("No se puede confirmar una venta con IVA en esta etapa.")
+
+    if int(comprobante["recargo_centavos"]) != 0:
+        raise ValueError(
+            "No se puede confirmar una venta con recargo global sin cuenta contable."
+        )
+
+    if int(comprobante["total_centavos"]) <= 0:
+        raise ValueError("El total del comprobante debe ser positivo para confirmar.")
+
+    detalles = list(comprobante.get("detalles") or [])
+
+    if not detalles:
+        raise ValueError("El comprobante de venta debe tener detalle para confirmar.")
+
+    subtotal_detalles = sum(int(detalle["subtotal_centavos"]) for detalle in detalles)
+    descuento_detalles = sum(int(detalle["descuento_centavos"]) for detalle in detalles)
+    iva_detalles = sum(int(detalle["iva_centavos"]) for detalle in detalles)
+    total_detalles = sum(int(detalle["total_linea_centavos"]) for detalle in detalles)
+
+    if subtotal_detalles != int(comprobante["subtotal_centavos"]):
+        raise ValueError("El subtotal del comprobante no coincide con sus renglones.")
+
+    if descuento_detalles != int(comprobante["descuento_centavos"]):
+        raise ValueError(
+            "No se puede confirmar una venta con descuento global sin cuenta contable."
+        )
+
+    if iva_detalles != 0:
+        raise ValueError("No se puede confirmar una venta con IVA en esta etapa.")
+
+    if total_detalles != int(comprobante["total_centavos"]):
+        raise ValueError("El total del comprobante no coincide con sus renglones.")
+
+    for indice, detalle in enumerate(detalles, start=1):
+        if int(detalle["total_linea_centavos"]) <= 0:
+            raise ValueError(f"El renglon {indice} debe tener importe positivo.")
+
+        if not _normalizar_texto_opcional(detalle.get("cuenta_ingreso_codigo")):
+            raise ValueError(f"El renglon {indice} no tiene cuenta de ingreso.")
+
+
+def _obtener_cuenta_deudores_cliente(cliente: dict[str, Any]) -> str:
+    return _validar_texto_obligatorio(
+        cliente.get("cuenta_deudores_ventas_codigo"),
+        "El cliente no tiene cuenta de deudores por ventas configurada.",
+    )
+
+
+def _obtener_ejercicio_para_confirmacion(fecha: str) -> dict[str, Any]:
+    ejercicio = obtener_ejercicio_contable_por_fecha(fecha)
+
+    if ejercicio is None:
+        raise ValueError("No existe ejercicio contable para la fecha de la venta.")
+
+    if ejercicio["estado"] != "ABIERTO":
+        raise ValueError("El ejercicio contable de la venta no esta abierto.")
+
+    if int(ejercicio["bloqueado"]) == 1:
+        raise ValueError("El ejercicio contable de la venta esta bloqueado.")
+
+    return ejercicio
+
+
+def _descripcion_confirmacion_venta(comprobante: dict[str, Any]) -> str:
+    return (
+        f"Venta {comprobante['tipo_comprobante']} "
+        f"{comprobante['numero_formateado']}"
+    )
+
+
+def _armar_detalles_asiento_confirmacion(
+    comprobante: dict[str, Any],
+    cuenta_deudores_codigo: str,
+    descripcion: str,
+) -> list[dict[str, Any]]:
+    es_nota_credito = comprobante["tipo_comprobante"] == "NOTA_CREDITO"
+    total_centavos = int(comprobante["total_centavos"])
+    detalles_asiento: list[dict[str, Any]] = []
+
+    detalles_asiento.append(
+        _crear_renglon_asiento_confirmacion(
+            cuenta_deudores_codigo,
+            descripcion,
+            debe_centavos=0 if es_nota_credito else total_centavos,
+            haber_centavos=total_centavos if es_nota_credito else 0,
+        )
+    )
+
+    for detalle in comprobante["detalles"]:
+        importe_linea = int(detalle["total_linea_centavos"])
+        cuenta_ingreso_codigo = _validar_texto_obligatorio(
+            detalle.get("cuenta_ingreso_codigo"),
+            "El renglon no tiene cuenta de ingreso.",
+        )
+
+        detalles_asiento.append(
+            _crear_renglon_asiento_confirmacion(
+                cuenta_ingreso_codigo,
+                str(detalle["descripcion"]),
+                debe_centavos=importe_linea if es_nota_credito else 0,
+                haber_centavos=0 if es_nota_credito else importe_linea,
+            )
+        )
+
+    return detalles_asiento
+
+
+def _crear_renglon_asiento_confirmacion(
+    cuenta_contable_codigo: str,
+    descripcion: str,
+    debe_centavos: int,
+    haber_centavos: int,
+) -> dict[str, Any]:
+    return {
+        "cuenta_contable_codigo": cuenta_contable_codigo,
+        "descripcion": descripcion,
+        "moneda_codigo": _MONEDA_CONTABLE,
+        "cotizacion_1000000": _ESCALA_COTIZACION_CONTABLE,
+        "nominal_debe_centavos": debe_centavos,
+        "nominal_haber_centavos": haber_centavos,
+        "debe_centavos": debe_centavos,
+        "haber_centavos": haber_centavos,
+    }
+
+
+def _crear_movimiento_cuenta_corriente_confirmacion(
+    comprobante: dict[str, Any],
+    asiento_id: int,
+    descripcion: str,
+) -> dict[str, Any]:
+    datos_movimiento = {
+        "cliente_id": comprobante["cliente_id"],
+        "fecha": comprobante["fecha"],
+        "tipo_movimiento": comprobante["tipo_comprobante"],
+        "descripcion": descripcion,
+        "moneda_codigo": comprobante["moneda_codigo"],
+        "estado": "CONFIRMADO",
+        "origen_tipo": _TIPO_ORIGEN_VENTA_COMPROBANTE,
+        "origen_id": comprobante["id"],
+        "asiento_id": asiento_id,
+        "importe_centavos": comprobante["total_centavos"],
+    }
+
+    if comprobante["tipo_comprobante"] in _TIPOS_COMPROBANTE_DEBE_CLIENTE:
+        return crear_movimiento_debe_cliente(datos_movimiento)
+
+    return crear_movimiento_haber_cliente(datos_movimiento)
 
 
 def _obtener_cliente_activo(cliente_id: int) -> dict[str, Any]:

@@ -4,6 +4,7 @@ from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.gestion.ventas_comprobantes_service import (
+    confirmar_comprobante_venta,
     crear_borrador_comprobante_venta,
     listar_comprobantes_venta,
     obtener_comprobante_venta,
@@ -73,6 +74,96 @@ def _crear_cuenta_contable(db, cuenta: str, descripcion: str) -> str:
         ),
     )
     return cuenta
+
+
+
+def _crear_cuenta_deudores_ventas(db, cuenta="1.1.03.01.997") -> str:
+    db.execute(
+        """
+        INSERT INTO cuentas_contables (
+            cuenta,
+            descripcion,
+            saldo_habitual,
+            naturaleza,
+            imputable,
+            monetaria,
+            sumarizadora,
+            creado_en
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            cuenta,
+            "Deudores por ventas test",
+            "DEBE",
+            "PATRIMONIAL",
+            1,
+            1,
+            None,
+            "2026-01-01 10:00:00",
+        ),
+    )
+    return cuenta
+
+
+def _asignar_cuenta_deudores_cliente(db, cliente_id: int, cuenta_codigo: str) -> None:
+    db.execute(
+        """
+        UPDATE clientes
+        SET cuenta_deudores_ventas_codigo = ?
+        WHERE id = ?
+        """,
+        (cuenta_codigo, cliente_id),
+    )
+
+
+def _obtener_o_crear_ejercicio_venta(db) -> int:
+    fila = db.execute(
+        """
+        SELECT id
+        FROM ejercicios_contables
+        WHERE fecha_desde <= ?
+          AND fecha_hasta >= ?
+        ORDER BY id
+        LIMIT 1
+        """,
+        ("2026-01-15", "2026-01-15"),
+    ).fetchone()
+
+    if fila is not None:
+        return int(fila["id"])
+
+    cursor = db.execute(
+        """
+        INSERT INTO ejercicios_contables (
+            codigo,
+            nombre,
+            fecha_desde,
+            fecha_hasta,
+            estado,
+            activo,
+            creado_en,
+            fase_cierre,
+            bloqueado,
+            es_primer_ejercicio
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "2026",
+            "Ejercicio test ventas",
+            "2026-01-01",
+            "2026-12-31",
+            "ABIERTO",
+            1,
+            "2026-01-01 00:00:00",
+            "ABIERTO",
+            0,
+            1,
+        ),
+    )
+
+    return int(cursor.lastrowid)
 
 
 def _crear_articulo_venta(
@@ -474,3 +565,226 @@ def test_service_ventas_comprobantes_no_usa_sql_ni_get_db():
     assert "INSERT " not in contenido
     assert "UPDATE " not in contenido
     assert "DELETE " not in contenido
+
+
+def test_confirmar_comprobante_venta_factura_genera_asiento_y_cuenta_corriente():
+    """Confirma factura ARS sin IVA y genera impactos contables y de cuenta corriente."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id),
+            [_detalle(articulo_id)],
+        )
+
+        resultado = confirmar_comprobante_venta(comprobante["id"])
+
+    comprobante_confirmado = resultado["comprobante"]
+    asiento = resultado["asiento"]
+    movimiento = resultado["movimiento_cuenta_corriente"]
+
+    assert comprobante_confirmado["estado"] == "CONFIRMADO"
+    assert comprobante_confirmado["asiento_id"] == asiento["id"]
+    assert asiento["estado"] == "CONFIRMADO"
+    assert asiento["tipo"] == "AJUSTE"
+    assert movimiento["estado"] == "CONFIRMADO"
+    assert movimiento["tipo_movimiento"] == "FACTURA"
+    assert movimiento["debe_centavos"] == 100000
+    assert movimiento["haber_centavos"] == 0
+    assert movimiento["origen_tipo"] == "VENTA_COMPROBANTE"
+    assert movimiento["origen_id"] == comprobante["id"]
+    assert movimiento["asiento_id"] == asiento["id"]
+
+    detalles_asiento = asiento["detalles"]
+    assert detalles_asiento[0]["cuenta_contable_codigo"] == cuenta_deudores
+    assert detalles_asiento[0]["debe_centavos"] == 100000
+    assert detalles_asiento[0]["haber_centavos"] == 0
+    assert detalles_asiento[1]["cuenta_contable_codigo"] == cuenta_ingreso
+    assert detalles_asiento[1]["debe_centavos"] == 0
+    assert detalles_asiento[1]["haber_centavos"] == 100000
+
+
+def test_confirmar_comprobante_venta_nota_credito_invierte_asiento_y_ctacte():
+    """Confirma nota de credito ARS sin IVA invirtiendo DEBE/HABER."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id),
+                "tipo_comprobante": "NOTA_CREDITO",
+            },
+            [_detalle(articulo_id)],
+        )
+
+        resultado = confirmar_comprobante_venta(comprobante["id"])
+
+    asiento = resultado["asiento"]
+    movimiento = resultado["movimiento_cuenta_corriente"]
+    detalles_asiento = asiento["detalles"]
+
+    assert movimiento["tipo_movimiento"] == "NOTA_CREDITO"
+    assert movimiento["debe_centavos"] == 0
+    assert movimiento["haber_centavos"] == 100000
+    assert detalles_asiento[0]["cuenta_contable_codigo"] == cuenta_deudores
+    assert detalles_asiento[0]["debe_centavos"] == 0
+    assert detalles_asiento[0]["haber_centavos"] == 100000
+    assert detalles_asiento[1]["cuenta_contable_codigo"] == cuenta_ingreso
+    assert detalles_asiento[1]["debe_centavos"] == 100000
+    assert detalles_asiento[1]["haber_centavos"] == 0
+
+
+def test_confirmar_comprobante_venta_rechaza_cliente_sin_cuenta_deudores():
+    """La confirmacion exige cuenta deudores por ventas en el cliente."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        cliente_id = _crear_cliente(db)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id),
+            [_detalle(articulo_id)],
+        )
+
+        with pytest.raises(ValueError, match="deudores"):
+            confirmar_comprobante_venta(comprobante["id"])
+
+
+def test_confirmar_comprobante_venta_rechaza_confirmar_dos_veces():
+    """No permite confirmar nuevamente un comprobante ya confirmado."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id),
+            [_detalle(articulo_id)],
+        )
+
+        confirmar_comprobante_venta(comprobante["id"])
+
+        with pytest.raises(ValueError, match="BORRADOR"):
+            confirmar_comprobante_venta(comprobante["id"])
+
+
+def test_confirmar_comprobante_venta_rechaza_moneda_no_ars():
+    """La primera etapa de confirmacion solo confirma ventas ARS."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso, moneda_codigo="USD")
+
+        comprobante = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id),
+                "moneda_codigo": "USD",
+            },
+            [_detalle(articulo_id)],
+        )
+
+        with pytest.raises(ValueError, match="ARS"):
+            confirmar_comprobante_venta(comprobante["id"])
+
+
+def test_confirmar_comprobante_venta_rechaza_descuento_global_no_asignable():
+    """La confirmacion bloquea descuentos globales sin cuenta contable definida."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id),
+                "descuento_centavos": "5000",
+            },
+            [_detalle(articulo_id)],
+        )
+
+        with pytest.raises(ValueError, match="descuento global"):
+            confirmar_comprobante_venta(comprobante["id"])
+
+
+def test_service_ventas_comprobantes_confirmacion_sigue_sin_sql_ni_get_db():
+    """Contrato de capas: confirmacion en service sin SQL directo ni get_db."""
+    from pathlib import Path
+
+    contenido = Path("app/gestion/ventas_comprobantes_service.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "get_db" not in contenido
+    assert "SELECT " not in contenido
+    assert "INSERT " not in contenido
+    assert "UPDATE " not in contenido
+    assert "DELETE " not in contenido
+

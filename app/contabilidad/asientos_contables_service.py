@@ -82,6 +82,47 @@ def crear_asiento_contable_borrador(
     return crear_asiento_contable(datos_validados, detalles_validados)
 
 
+def crear_asiento_contable_automatico_confirmado(
+    datos_asiento: dict[str, Any],
+    detalles_asiento: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Crea un asiento contable confirmado generado por otro modulo.
+
+    Aplica las mismas reglas de negocio del alta de asiento: ejercicio vigente,
+    cuentas imputables, contabilidad en ARS y balance entre debe/haber.
+    """
+    datos_validados = _copiar_dict(
+        datos_asiento,
+        "Los datos del asiento son obligatorios.",
+    )
+
+    fecha = str(datos_validados.get("fecha") or "").strip()
+    ejercicio_id = _validar_entero_positivo(
+        datos_validados.get("ejercicio_id"),
+        "El ejercicio contable es obligatorio.",
+    )
+
+    _validar_ejercicio_operacion(ejercicio_id, fecha)
+
+    datos_validados["ejercicio_id"] = ejercicio_id
+    datos_validados["estado"] = "CONFIRMADO"
+    datos_validados["tipo"] = str(datos_validados.get("tipo") or "AJUSTE").strip().upper()
+    datos_validados["moneda_origen_codigo"] = _MONEDA_CONTABLE
+    datos_validados["moneda_destino_codigo"] = _MONEDA_CONTABLE
+    datos_validados.setdefault("cotizacion_tipo", _TIPO_COTIZACION_DEFAULT)
+    datos_validados = _resolver_cotizacion_cabecera(datos_validados, fecha)
+
+    detalles_validados = _validar_y_completar_detalles(
+        detalles_asiento,
+        datos_validados,
+        fecha,
+    )
+    _validar_balance_ars(detalles_validados)
+
+    return crear_asiento_contable(datos_validados, detalles_validados)
+
+
 def obtener_asiento_contable(asiento_id: Any) -> dict[str, Any] | None:
     """Devuelve un asiento contable con detalle."""
     return obtener_asiento_contable_por_id(asiento_id)
