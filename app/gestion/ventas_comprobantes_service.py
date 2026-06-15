@@ -4,6 +4,7 @@ from typing import Any
 from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
     formatear_fecha_iso_a_argentina,
+    normalizar_decimal_argentino_a_entero_escala,
 )
 from app.contabilidad.asientos_contables_service import (
     crear_asiento_contable_automatico_confirmado,
@@ -11,8 +12,12 @@ from app.contabilidad.asientos_contables_service import (
 from app.contabilidad.ejercicios_contables_repository import (
     obtener_ejercicio_contable_por_fecha,
 )
-from app.gestion.articulos_venta_repository import obtener_articulo_venta_por_id
+from app.gestion.articulos_venta_repository import (
+    listar_articulos_venta,
+    obtener_articulo_venta_por_id,
+)
 from app.gestion.clientes_repository import (
+    listar_clientes_activos,
     obtener_cliente_por_id,
     validar_cliente_activo,
 )
@@ -35,6 +40,7 @@ _ESCALA_COTIZACION_CONTABLE = 1_000_000
 _PATRON_FECHA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PATRON_MONEDA = re.compile(r"^[A-Z]{3}$")
 _ESCALA_CANTIDAD = 1_000_000
+_TIPOS_COMPROBANTE_FORM = ("FACTURA", "NOTA_DEBITO", "NOTA_CREDITO")
 
 
 def listar_comprobantes_venta() -> list[dict[str, Any]]:
@@ -158,6 +164,184 @@ def _formatear_fecha_iso_opcional(fecha: Any) -> str:
 
 def _formatear_centavos(valor: Any) -> str:
     return formatear_entero_escala_a_decimal_argentino(int(valor or 0), 2)
+
+
+def obtener_contexto_formulario_comprobante_venta(
+    comprobante_form: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """
+    Devuelve contexto para alta minima de comprobante de venta.
+
+    En esta etapa se carga un comprobante BORRADOR con un solo renglon.
+    """
+    formulario = _preparar_comprobante_venta_formulario(comprobante_form or {})
+    clientes = listar_clientes_activos()
+    articulos_venta = [
+        articulo for articulo in listar_articulos_venta() if articulo["esta_activo"]
+    ]
+
+    return {
+        "comprobante_form": formulario,
+        "clientes": clientes,
+        "articulos_venta": articulos_venta,
+        "tipos_comprobante_venta": list(_TIPOS_COMPROBANTE_FORM),
+        "cantidad_clientes": len(clientes),
+        "cantidad_articulos_venta": len(articulos_venta),
+    }
+
+
+def crear_borrador_comprobante_venta_desde_formulario(
+    formulario: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Crea un comprobante de venta BORRADOR desde pantalla.
+
+    El alta minima carga un solo renglon y no confirma, no cobra ni mueve fondos.
+    """
+    datos_comprobante, detalle = _normalizar_formulario_borrador_comprobante_venta(
+        formulario
+    )
+
+    return crear_borrador_comprobante_venta(datos_comprobante, [detalle])
+
+
+def _preparar_comprobante_venta_formulario(
+    comprobante_form: dict[str, Any],
+) -> dict[str, Any]:
+    formulario = dict(comprobante_form)
+    formulario.setdefault("fecha", "")
+    formulario.setdefault("fecha_vencimiento", "")
+    formulario.setdefault("tipo_comprobante", "FACTURA")
+    formulario.setdefault("letra", "X")
+    formulario.setdefault("punto_venta", "0")
+    formulario.setdefault("numero", "0")
+    formulario.setdefault("moneda_codigo", _MONEDA_CONTABLE)
+    formulario.setdefault("cotizacion_centavos", "100")
+    formulario.setdefault("cantidad", "1,000000")
+    formulario.setdefault("precio_unitario_centavos", "")
+    formulario.setdefault("descripcion", "")
+    formulario.setdefault("observaciones", "")
+
+    return formulario
+
+
+def _normalizar_formulario_borrador_comprobante_venta(
+    formulario: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    tipo_comprobante = _validar_opcion(
+        formulario.get("tipo_comprobante"),
+        _TIPOS_COMPROBANTE_VALIDOS,
+        "El tipo de comprobante es invalido.",
+    )
+    moneda_codigo = _validar_codigo_moneda(
+        formulario.get("moneda_codigo", _MONEDA_CONTABLE),
+        "La moneda del comprobante es obligatoria.",
+    )
+
+    if moneda_codigo != _MONEDA_CONTABLE:
+        raise ValueError("El alta de comprobantes de venta solo permite ARS en esta etapa.")
+
+    datos_comprobante = {
+        "cliente_id": _validar_entero_positivo(
+            formulario.get("cliente_id"),
+            "El cliente es obligatorio.",
+        ),
+        "fecha": _validar_fecha_iso(
+            formulario.get("fecha"),
+            "La fecha del comprobante es obligatoria.",
+        ),
+        "fecha_vencimiento": _validar_fecha_iso_opcional(
+            formulario.get("fecha_vencimiento"),
+            "La fecha de vencimiento debe tener formato YYYY-MM-DD.",
+        ),
+        "tipo_comprobante": tipo_comprobante,
+        "letra": _validar_texto_obligatorio(
+            formulario.get("letra", "X"),
+            "La letra del comprobante es obligatoria.",
+        ).upper(),
+        "punto_venta": _validar_entero_no_negativo(
+            formulario.get("punto_venta", 0),
+            "El punto de venta debe ser un entero no negativo.",
+        ),
+        "numero": _validar_entero_no_negativo(
+            formulario.get("numero", 0),
+            "El numero del comprobante debe ser un entero no negativo.",
+        ),
+        "moneda_codigo": moneda_codigo,
+        "cotizacion_centavos": _validar_entero_positivo(
+            formulario.get("cotizacion_centavos", 100),
+            "La cotizacion debe ser positiva.",
+        ),
+        "observaciones": _normalizar_texto_opcional(formulario.get("observaciones")),
+    }
+
+    detalle = {
+        "articulo_venta_id": _validar_entero_positivo(
+            formulario.get("articulo_venta_id"),
+            "El producto o servicio es obligatorio.",
+        ),
+        "cantidad_1000000": _normalizar_cantidad_formulario_a_1000000(
+            formulario.get("cantidad")
+        ),
+        "iva_centavos": 0,
+        "orden": 1,
+    }
+
+    descripcion = _normalizar_texto_opcional(formulario.get("descripcion"))
+    if descripcion is not None:
+        detalle["descripcion"] = descripcion
+
+    precio_unitario_centavos = _normalizar_precio_unitario_formulario(
+        formulario.get("precio_unitario_centavos")
+    )
+    if precio_unitario_centavos is not None:
+        detalle["precio_unitario_centavos"] = precio_unitario_centavos
+
+    return datos_comprobante, detalle
+
+
+def _normalizar_cantidad_formulario_a_1000000(valor: Any) -> int:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        raise ValueError("La cantidad del renglon es obligatoria.")
+
+    try:
+        cantidad_1000000 = normalizar_decimal_argentino_a_entero_escala(
+            valor_normalizado,
+            6,
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "La cantidad debe respetar formato argentino 9.999,999999."
+        ) from exc
+
+    if cantidad_1000000 <= 0:
+        raise ValueError("La cantidad del renglon debe ser positiva.")
+
+    return cantidad_1000000
+
+
+def _normalizar_precio_unitario_formulario(valor: Any) -> int | None:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return None
+
+    try:
+        precio_unitario_centavos = normalizar_decimal_argentino_a_entero_escala(
+            valor_normalizado,
+            2,
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "El precio unitario debe respetar formato argentino 9.999,99."
+        ) from exc
+
+    if precio_unitario_centavos < 0:
+        raise ValueError("El precio unitario no puede ser negativo.")
+
+    return precio_unitario_centavos
 
 
 def crear_borrador_comprobante_venta(

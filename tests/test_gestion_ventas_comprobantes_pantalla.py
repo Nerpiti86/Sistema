@@ -319,3 +319,212 @@ def test_confirmar_venta_desde_pantalla_muestra_error_funcional():
     assert b"deudores" in response.data
     assert b"BORRADOR" in response.data
     assert b'id="vc-confirmar"' in response.data
+
+
+def test_formulario_nuevo_comprobante_venta_responde_ok():
+    """Valida pantalla de alta minima de comprobante de venta."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_cuenta_contable(
+            db,
+            CUENTA_DEUDORES,
+            "Deudores por ventas pantalla",
+            "DEBE",
+            "PATRIMONIAL",
+            1,
+        )
+        _crear_cuenta_contable(
+            db,
+            CUENTA_INGRESO,
+            "Ingresos por servicios pantalla",
+            "HABER",
+            "RESULTADO",
+            0,
+        )
+        _crear_cliente(db)
+        _crear_articulo_venta(db)
+
+        response = client.get("/gestion/ventas/comprobantes/nuevo/")
+
+    assert response.status_code == 200
+    assert b"Nuevo comprobante de venta" in response.data
+    assert b'id="vc-form"' in response.data
+    assert b'id="vc-cliente"' in response.data
+    assert b'id="vc-articulo"' in response.data
+    assert b'id="vc-cantidad"' in response.data
+    assert b'id="vc-precio-unitario"' in response.data
+    assert b'name="tipo_comprobante"' in response.data
+    assert b"Cliente pantalla venta" in response.data
+    assert b"Servicio pantalla venta" in response.data
+    assert b"Crear BORRADOR" in response.data
+
+
+def test_listado_ventas_comprobantes_muestra_boton_nuevo():
+    """Valida acceso desde listado al alta minima."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        response = client.get("/gestion/ventas/comprobantes/")
+
+    assert response.status_code == 200
+    assert b"Nuevo comprobante" in response.data
+    assert b"/gestion/ventas/comprobantes/nuevo/" in response.data
+
+
+def test_crear_borrador_comprobante_venta_desde_pantalla():
+    """Valida POST de alta minima: crea BORRADOR sin confirmar."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_cuenta_contable(
+            db,
+            CUENTA_DEUDORES,
+            "Deudores por ventas pantalla",
+            "DEBE",
+            "PATRIMONIAL",
+            1,
+        )
+        _crear_cuenta_contable(
+            db,
+            CUENTA_INGRESO,
+            "Ingresos por servicios pantalla",
+            "HABER",
+            "RESULTADO",
+            0,
+        )
+        cliente_id = _crear_cliente(db)
+        articulo_id = _crear_articulo_venta(db)
+
+        response = client.post(
+            "/gestion/ventas/comprobantes/nuevo/",
+            data={
+                "cliente_id": str(cliente_id),
+                "fecha": "2026-01-15",
+                "fecha_vencimiento": "2026-02-15",
+                "tipo_comprobante": "FACTURA",
+                "letra": "X",
+                "punto_venta": "1",
+                "numero": "26",
+                "moneda_codigo": "ARS",
+                "articulo_venta_id": str(articulo_id),
+                "cantidad": "1,000000",
+                "precio_unitario_centavos": "1.500,00",
+                "descripcion": "Consulta desde pantalla",
+                "observaciones": "Alta minima.",
+            },
+            follow_redirects=True,
+        )
+
+        comprobante = db.execute(
+            """
+            SELECT estado, total_centavos, asiento_id
+            FROM ventas_comprobantes
+            WHERE numero = ?
+            """,
+            (26,),
+        ).fetchone()
+
+    assert response.status_code == 200
+    assert b"Comprobante de venta creado en BORRADOR." in response.data
+    assert b"Consulta desde pantalla" in response.data
+    assert b"1.500,00" in response.data
+    assert b"BORRADOR" in response.data
+    assert comprobante["estado"] == "BORRADOR"
+    assert comprobante["total_centavos"] == 150000
+    assert comprobante["asiento_id"] is None
+
+
+def test_crear_borrador_comprobante_venta_desde_pantalla_rechaza_cliente_vacio():
+    """Valida re-render 400 cuando falta cliente."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_cuenta_contable(
+            db,
+            CUENTA_INGRESO,
+            "Ingresos por servicios pantalla",
+            "HABER",
+            "RESULTADO",
+            0,
+        )
+        articulo_id = _crear_articulo_venta(db)
+
+        response = client.post(
+            "/gestion/ventas/comprobantes/nuevo/",
+            data={
+                "cliente_id": "",
+                "fecha": "2026-01-15",
+                "tipo_comprobante": "FACTURA",
+                "letra": "X",
+                "punto_venta": "1",
+                "numero": "27",
+                "moneda_codigo": "ARS",
+                "articulo_venta_id": str(articulo_id),
+                "cantidad": "1,000000",
+            },
+        )
+
+    assert response.status_code == 400
+    assert b"El cliente es obligatorio." in response.data
+    assert b'id="vc-form"' in response.data
+
+
+def test_crear_borrador_comprobante_venta_desde_pantalla_rechaza_precio_invalido():
+    """Valida formato argentino para precio unitario manual."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_cuenta_contable(
+            db,
+            CUENTA_DEUDORES,
+            "Deudores por ventas pantalla",
+            "DEBE",
+            "PATRIMONIAL",
+            1,
+        )
+        _crear_cuenta_contable(
+            db,
+            CUENTA_INGRESO,
+            "Ingresos por servicios pantalla",
+            "HABER",
+            "RESULTADO",
+            0,
+        )
+        cliente_id = _crear_cliente(db)
+        articulo_id = _crear_articulo_venta(db)
+
+        response = client.post(
+            "/gestion/ventas/comprobantes/nuevo/",
+            data={
+                "cliente_id": str(cliente_id),
+                "fecha": "2026-01-15",
+                "tipo_comprobante": "FACTURA",
+                "letra": "X",
+                "punto_venta": "1",
+                "numero": "28",
+                "moneda_codigo": "ARS",
+                "articulo_venta_id": str(articulo_id),
+                "cantidad": "1,000000",
+                "precio_unitario_centavos": "123456",
+            },
+        )
+
+    assert response.status_code == 400
+    assert b"formato argentino" in response.data
+    assert b'value="123456"' in response.data
+

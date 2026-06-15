@@ -28,7 +28,9 @@ from app.gestion.grupos_clientes_service import (
 )
 from app.gestion.ventas_comprobantes_service import (
     confirmar_comprobante_venta,
+    crear_borrador_comprobante_venta_desde_formulario,
     obtener_contexto_detalle_comprobante_venta,
+    obtener_contexto_formulario_comprobante_venta,
     obtener_contexto_listado_comprobantes_venta,
 )
 
@@ -356,6 +358,51 @@ def ver_listado_comprobantes_venta():
         "gestion/ventas_comprobantes.html",
         page_title="Comprobantes de venta",
         **contexto,
+    )
+
+
+
+@bp.get("/ventas/comprobantes/nuevo/")
+def ver_formulario_nuevo_comprobante_venta():
+    """Muestra formulario minimo de alta de comprobante de venta."""
+    contexto = obtener_contexto_formulario_comprobante_venta()
+
+    return render_template(
+        "gestion/ventas_comprobantes_form.html",
+        page_title="Nuevo comprobante de venta",
+        action_url=url_for("gestion.crear_comprobante_venta_nuevo"),
+        form_cancelar_url=url_for("gestion.ver_listado_comprobantes_venta"),
+        **contexto,
+    )
+
+
+@bp.post("/ventas/comprobantes/nuevo/")
+def crear_comprobante_venta_nuevo():
+    """Crea un comprobante de venta BORRADOR desde formulario."""
+    try:
+        comprobante = crear_borrador_comprobante_venta_desde_formulario(request.form)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        contexto = obtener_contexto_formulario_comprobante_venta(
+            _normalizar_formulario_para_template(request.form)
+        )
+        return (
+            render_template(
+                "gestion/ventas_comprobantes_form.html",
+                page_title="Nuevo comprobante de venta",
+                action_url=url_for("gestion.crear_comprobante_venta_nuevo"),
+                form_cancelar_url=url_for("gestion.ver_listado_comprobantes_venta"),
+                **contexto,
+            ),
+            400,
+        )
+
+    flash("Comprobante de venta creado en BORRADOR.", "success")
+    return redirect(
+        url_for(
+            "gestion.ver_detalle_comprobante_venta",
+            comprobante_id=comprobante["id"],
+        )
     )
 
 
