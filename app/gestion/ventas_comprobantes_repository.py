@@ -1,0 +1,589 @@
+import re
+import sqlite3
+from datetime import datetime
+from typing import Any
+
+from app.db import get_db
+
+_COLUMNAS_SELECT_VENTAS_COMPROBANTES = """
+    ventas_comprobantes.id,
+    ventas_comprobantes.cliente_id,
+    ventas_comprobantes.fecha,
+    ventas_comprobantes.fecha_vencimiento,
+    ventas_comprobantes.tipo_comprobante,
+    ventas_comprobantes.letra,
+    ventas_comprobantes.punto_venta,
+    ventas_comprobantes.numero,
+    ventas_comprobantes.moneda_codigo,
+    ventas_comprobantes.cotizacion_centavos,
+    ventas_comprobantes.subtotal_centavos,
+    ventas_comprobantes.descuento_centavos,
+    ventas_comprobantes.recargo_centavos,
+    ventas_comprobantes.iva_centavos,
+    ventas_comprobantes.total_centavos,
+    ventas_comprobantes.estado,
+    ventas_comprobantes.asiento_id,
+    ventas_comprobantes.observaciones,
+    ventas_comprobantes.creado_en,
+    ventas_comprobantes.actualizado_en,
+    ventas_comprobantes.confirmado_en,
+    ventas_comprobantes.anulado_en,
+    clientes.razon_social AS cliente_razon_social,
+    clientes.nombre_fantasia AS cliente_nombre_fantasia,
+    monedas.nombre AS moneda_nombre,
+    monedas.simbolo AS moneda_simbolo,
+    monedas.decimales AS moneda_decimales
+"""
+
+_COLUMNAS_SELECT_VENTAS_DETALLE = """
+    ventas_comprobantes_detalle.id,
+    ventas_comprobantes_detalle.comprobante_id,
+    ventas_comprobantes_detalle.articulo_venta_id,
+    ventas_comprobantes_detalle.descripcion,
+    ventas_comprobantes_detalle.cantidad_1000000,
+    ventas_comprobantes_detalle.precio_unitario_centavos,
+    ventas_comprobantes_detalle.descuento_centavos,
+    ventas_comprobantes_detalle.subtotal_centavos,
+    ventas_comprobantes_detalle.iva_centavos,
+    ventas_comprobantes_detalle.total_linea_centavos,
+    ventas_comprobantes_detalle.cuenta_ingreso_codigo,
+    ventas_comprobantes_detalle.orden,
+    ventas_comprobantes_detalle.observaciones,
+    articulos_venta.nombre AS articulo_venta_nombre,
+    cuentas_contables.descripcion AS cuenta_ingreso_descripcion
+"""
+
+_TIPOS_COMPROBANTE_VALIDOS = {"FACTURA", "NOTA_DEBITO", "NOTA_CREDITO"}
+_ESTADOS_COMPROBANTE_VALIDOS = {"BORRADOR", "CONFIRMADO", "ANULADO"}
+_PATRON_FECHA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_PATRON_MONEDA = re.compile(r"^[A-Z]{3}$")
+
+
+def listar_ventas_comprobantes() -> list[dict[str, Any]]:
+    """
+    Devuelve comprobantes de venta ordenados para gestion.
+
+    No calcula saldos ni estados de cobranza: eso pertenece a cuenta corriente
+    y aplicaciones.
+    """
+    filas_comprobantes = get_db().execute(
+        f"""
+        SELECT {_COLUMNAS_SELECT_VENTAS_COMPROBANTES}
+        FROM ventas_comprobantes
+        JOIN clientes
+          ON clientes.id = ventas_comprobantes.cliente_id
+        JOIN monedas
+          ON monedas.codigo = ventas_comprobantes.moneda_codigo
+        ORDER BY ventas_comprobantes.fecha DESC,
+                 ventas_comprobantes.id DESC
+        """
+    ).fetchall()
+
+    return [
+        _normalizar_fila_comprobante(fila_comprobante)
+        for fila_comprobante in filas_comprobantes
+    ]
+
+
+def obtener_venta_comprobante_por_id(
+    comprobante_id: Any,
+    incluir_detalles: bool = True,
+) -> dict[str, Any] | None:
+    """Devuelve un comprobante de venta por id, o None si no existe."""
+    comprobante_id_validado = _validar_entero_positivo(
+        comprobante_id,
+        "El id del comprobante es obligatorio.",
+    )
+
+    fila_comprobante = get_db().execute(
+        f"""
+        SELECT {_COLUMNAS_SELECT_VENTAS_COMPROBANTES}
+        FROM ventas_comprobantes
+        JOIN clientes
+          ON clientes.id = ventas_comprobantes.cliente_id
+        JOIN monedas
+          ON monedas.codigo = ventas_comprobantes.moneda_codigo
+        WHERE ventas_comprobantes.id = ?
+        LIMIT 1
+        """,
+        (comprobante_id_validado,),
+    ).fetchone()
+
+    if fila_comprobante is None:
+        return None
+
+    comprobante = _normalizar_fila_comprobante(fila_comprobante)
+
+    if incluir_detalles:
+        comprobante["detalles"] = listar_ventas_comprobantes_detalle(
+            comprobante_id_validado
+        )
+        comprobante["cantidad_detalles"] = len(comprobante["detalles"])
+
+    return comprobante
+
+
+def listar_ventas_comprobantes_detalle(
+    comprobante_id: Any,
+) -> list[dict[str, Any]]:
+    """Devuelve renglones de un comprobante de venta ordenados."""
+    comprobante_id_validado = _validar_entero_positivo(
+        comprobante_id,
+        "El id del comprobante es obligatorio.",
+    )
+
+    filas_detalle = get_db().execute(
+        f"""
+        SELECT {_COLUMNAS_SELECT_VENTAS_DETALLE}
+        FROM ventas_comprobantes_detalle
+        JOIN articulos_venta
+          ON articulos_venta.id = ventas_comprobantes_detalle.articulo_venta_id
+        JOIN cuentas_contables
+          ON cuentas_contables.cuenta = ventas_comprobantes_detalle.cuenta_ingreso_codigo
+        WHERE ventas_comprobantes_detalle.comprobante_id = ?
+        ORDER BY ventas_comprobantes_detalle.orden,
+                 ventas_comprobantes_detalle.id
+        """,
+        (comprobante_id_validado,),
+    ).fetchall()
+
+    return [_normalizar_fila_detalle(fila_detalle) for fila_detalle in filas_detalle]
+
+
+def crear_venta_comprobante(
+    datos_comprobante: dict[str, Any],
+    detalles: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Inserta cabecera y detalle de un comprobante de venta.
+
+    Este repository solo persiste el documento comercial. No impacta cuenta
+    corriente, fondos ni contabilidad.
+    """
+    datos_validados = _validar_datos_comprobante(datos_comprobante)
+    detalles_validados = _validar_detalles(detalles)
+    creado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+
+    db = get_db()
+
+    try:
+        with db:
+            cursor = db.execute(
+                """
+                INSERT INTO ventas_comprobantes (
+                    cliente_id,
+                    fecha,
+                    fecha_vencimiento,
+                    tipo_comprobante,
+                    letra,
+                    punto_venta,
+                    numero,
+                    moneda_codigo,
+                    cotizacion_centavos,
+                    subtotal_centavos,
+                    descuento_centavos,
+                    recargo_centavos,
+                    iva_centavos,
+                    total_centavos,
+                    estado,
+                    asiento_id,
+                    observaciones,
+                    creado_en
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    datos_validados["cliente_id"],
+                    datos_validados["fecha"],
+                    datos_validados["fecha_vencimiento"],
+                    datos_validados["tipo_comprobante"],
+                    datos_validados["letra"],
+                    datos_validados["punto_venta"],
+                    datos_validados["numero"],
+                    datos_validados["moneda_codigo"],
+                    datos_validados["cotizacion_centavos"],
+                    datos_validados["subtotal_centavos"],
+                    datos_validados["descuento_centavos"],
+                    datos_validados["recargo_centavos"],
+                    datos_validados["iva_centavos"],
+                    datos_validados["total_centavos"],
+                    datos_validados["estado"],
+                    datos_validados["asiento_id"],
+                    datos_validados["observaciones"],
+                    creado_en,
+                ),
+            )
+            comprobante_id = int(cursor.lastrowid)
+
+            for detalle in detalles_validados:
+                db.execute(
+                    """
+                    INSERT INTO ventas_comprobantes_detalle (
+                        comprobante_id,
+                        articulo_venta_id,
+                        descripcion,
+                        cantidad_1000000,
+                        precio_unitario_centavos,
+                        descuento_centavos,
+                        subtotal_centavos,
+                        iva_centavos,
+                        total_linea_centavos,
+                        cuenta_ingreso_codigo,
+                        orden,
+                        observaciones
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        comprobante_id,
+                        detalle["articulo_venta_id"],
+                        detalle["descripcion"],
+                        detalle["cantidad_1000000"],
+                        detalle["precio_unitario_centavos"],
+                        detalle["descuento_centavos"],
+                        detalle["subtotal_centavos"],
+                        detalle["iva_centavos"],
+                        detalle["total_linea_centavos"],
+                        detalle["cuenta_ingreso_codigo"],
+                        detalle["orden"],
+                        detalle["observaciones"],
+                    ),
+                )
+    except sqlite3.IntegrityError as exc:
+        raise ValueError(
+            "No se pudo crear el comprobante de venta. Revise cliente, moneda, "
+            "articulos, cuentas contables o numeracion duplicada."
+        ) from exc
+
+    comprobante = obtener_venta_comprobante_por_id(comprobante_id)
+
+    if comprobante is None:
+        raise ValueError("No se pudo recuperar el comprobante de venta creado.")
+
+    return comprobante
+
+
+def _normalizar_fila_comprobante(fila_comprobante) -> dict[str, Any]:
+    """Convierte una fila SQLite de ventas_comprobantes en dict explicito."""
+    comprobante = dict(fila_comprobante)
+
+    for campo in (
+        "id",
+        "cliente_id",
+        "punto_venta",
+        "numero",
+        "cotizacion_centavos",
+        "subtotal_centavos",
+        "descuento_centavos",
+        "recargo_centavos",
+        "iva_centavos",
+        "total_centavos",
+    ):
+        comprobante[campo] = int(comprobante[campo])
+
+    if comprobante.get("asiento_id") is not None:
+        comprobante["asiento_id"] = int(comprobante["asiento_id"])
+
+    if comprobante.get("moneda_decimales") is not None:
+        comprobante["moneda_decimales"] = int(comprobante["moneda_decimales"])
+
+    comprobante["esta_borrador"] = comprobante["estado"] == "BORRADOR"
+    comprobante["esta_confirmado"] = comprobante["estado"] == "CONFIRMADO"
+    comprobante["esta_anulado"] = comprobante["estado"] == "ANULADO"
+    comprobante["numero_formateado"] = _formatear_numero_comprobante(comprobante)
+
+    return comprobante
+
+
+def _normalizar_fila_detalle(fila_detalle) -> dict[str, Any]:
+    """Convierte una fila SQLite de ventas_comprobantes_detalle en dict explicito."""
+    detalle = dict(fila_detalle)
+
+    for campo in (
+        "id",
+        "comprobante_id",
+        "articulo_venta_id",
+        "cantidad_1000000",
+        "precio_unitario_centavos",
+        "descuento_centavos",
+        "subtotal_centavos",
+        "iva_centavos",
+        "total_linea_centavos",
+        "orden",
+    ):
+        detalle[campo] = int(detalle[campo])
+
+    return detalle
+
+
+def _validar_datos_comprobante(datos_comprobante: dict[str, Any]) -> dict[str, Any]:
+    cliente_id = _validar_entero_positivo(
+        datos_comprobante.get("cliente_id"),
+        "El cliente es obligatorio.",
+    )
+    fecha = _validar_fecha_iso(
+        datos_comprobante.get("fecha"),
+        "La fecha del comprobante es obligatoria.",
+    )
+    fecha_vencimiento = _validar_fecha_iso_opcional(
+        datos_comprobante.get("fecha_vencimiento"),
+        "La fecha de vencimiento debe tener formato YYYY-MM-DD.",
+    )
+    tipo_comprobante = _validar_opcion(
+        datos_comprobante.get("tipo_comprobante"),
+        _TIPOS_COMPROBANTE_VALIDOS,
+        "El tipo de comprobante es invalido.",
+    )
+    letra = _validar_texto_obligatorio(
+        datos_comprobante.get("letra", "X"),
+        "La letra del comprobante es obligatoria.",
+    ).upper()
+    punto_venta = _validar_entero_no_negativo(
+        datos_comprobante.get("punto_venta", 0),
+        "El punto de venta debe ser un entero no negativo.",
+    )
+    numero = _validar_entero_no_negativo(
+        datos_comprobante.get("numero", 0),
+        "El numero del comprobante debe ser un entero no negativo.",
+    )
+    moneda_codigo = _validar_codigo_moneda(
+        datos_comprobante.get("moneda_codigo", "ARS"),
+        "La moneda del comprobante es obligatoria.",
+    )
+    cotizacion_centavos = _validar_entero_positivo(
+        datos_comprobante.get("cotizacion_centavos", 100),
+        "La cotizacion debe ser positiva.",
+    )
+    subtotal_centavos = _validar_entero_no_negativo(
+        datos_comprobante.get("subtotal_centavos", 0),
+        "El subtotal debe ser un entero no negativo.",
+    )
+    descuento_centavos = _validar_entero_no_negativo(
+        datos_comprobante.get("descuento_centavos", 0),
+        "El descuento debe ser un entero no negativo.",
+    )
+    recargo_centavos = _validar_entero_no_negativo(
+        datos_comprobante.get("recargo_centavos", 0),
+        "El recargo debe ser un entero no negativo.",
+    )
+    iva_centavos = _validar_entero_no_negativo(
+        datos_comprobante.get("iva_centavos", 0),
+        "El IVA debe ser un entero no negativo.",
+    )
+    total_centavos = _validar_entero_no_negativo(
+        datos_comprobante.get("total_centavos", 0),
+        "El total debe ser un entero no negativo.",
+    )
+    estado = _validar_opcion(
+        datos_comprobante.get("estado", "BORRADOR"),
+        _ESTADOS_COMPROBANTE_VALIDOS,
+        "El estado del comprobante es invalido.",
+    )
+    asiento_id = _validar_entero_positivo_opcional(datos_comprobante.get("asiento_id"))
+    observaciones = _normalizar_texto_opcional(datos_comprobante.get("observaciones"))
+
+    total_esperado = (
+        subtotal_centavos - descuento_centavos + recargo_centavos + iva_centavos
+    )
+
+    if total_centavos != total_esperado:
+        raise ValueError("El total del comprobante no coincide con sus importes.")
+
+    return {
+        "cliente_id": cliente_id,
+        "fecha": fecha,
+        "fecha_vencimiento": fecha_vencimiento,
+        "tipo_comprobante": tipo_comprobante,
+        "letra": letra,
+        "punto_venta": punto_venta,
+        "numero": numero,
+        "moneda_codigo": moneda_codigo,
+        "cotizacion_centavos": cotizacion_centavos,
+        "subtotal_centavos": subtotal_centavos,
+        "descuento_centavos": descuento_centavos,
+        "recargo_centavos": recargo_centavos,
+        "iva_centavos": iva_centavos,
+        "total_centavos": total_centavos,
+        "estado": estado,
+        "asiento_id": asiento_id,
+        "observaciones": observaciones,
+    }
+
+
+def _validar_detalles(detalles: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not detalles:
+        raise ValueError("El comprobante de venta debe tener al menos un renglon.")
+
+    return [_validar_detalle(detalle, indice) for indice, detalle in enumerate(detalles, 1)]
+
+
+def _validar_detalle(detalle: dict[str, Any], indice: int) -> dict[str, Any]:
+    articulo_venta_id = _validar_entero_positivo(
+        detalle.get("articulo_venta_id"),
+        f"El articulo del renglon {indice} es obligatorio.",
+    )
+    descripcion = _validar_texto_obligatorio(
+        detalle.get("descripcion"),
+        f"La descripcion del renglon {indice} es obligatoria.",
+    )
+    cantidad_1000000 = _validar_entero_positivo(
+        detalle.get("cantidad_1000000", 1000000),
+        f"La cantidad del renglon {indice} debe ser positiva.",
+    )
+    precio_unitario_centavos = _validar_entero_no_negativo(
+        detalle.get("precio_unitario_centavos", 0),
+        f"El precio unitario del renglon {indice} debe ser no negativo.",
+    )
+    descuento_centavos = _validar_entero_no_negativo(
+        detalle.get("descuento_centavos", 0),
+        f"El descuento del renglon {indice} debe ser no negativo.",
+    )
+    subtotal_centavos = _validar_entero_no_negativo(
+        detalle.get("subtotal_centavos", 0),
+        f"El subtotal del renglon {indice} debe ser no negativo.",
+    )
+    iva_centavos = _validar_entero_no_negativo(
+        detalle.get("iva_centavos", 0),
+        f"El IVA del renglon {indice} debe ser no negativo.",
+    )
+    total_linea_centavos = _validar_entero_no_negativo(
+        detalle.get("total_linea_centavos", 0),
+        f"El total del renglon {indice} debe ser no negativo.",
+    )
+    cuenta_ingreso_codigo = _validar_texto_obligatorio(
+        detalle.get("cuenta_ingreso_codigo"),
+        f"La cuenta de ingreso del renglon {indice} es obligatoria.",
+    )
+    orden = _validar_entero_no_negativo(
+        detalle.get("orden", indice),
+        f"El orden del renglon {indice} debe ser no negativo.",
+    )
+    observaciones = _normalizar_texto_opcional(detalle.get("observaciones"))
+
+    total_esperado = subtotal_centavos - descuento_centavos + iva_centavos
+
+    if total_linea_centavos != total_esperado:
+        raise ValueError(f"El total del renglon {indice} no coincide con sus importes.")
+
+    return {
+        "articulo_venta_id": articulo_venta_id,
+        "descripcion": descripcion,
+        "cantidad_1000000": cantidad_1000000,
+        "precio_unitario_centavos": precio_unitario_centavos,
+        "descuento_centavos": descuento_centavos,
+        "subtotal_centavos": subtotal_centavos,
+        "iva_centavos": iva_centavos,
+        "total_linea_centavos": total_linea_centavos,
+        "cuenta_ingreso_codigo": cuenta_ingreso_codigo,
+        "orden": orden,
+        "observaciones": observaciones,
+    }
+
+
+def _formatear_numero_comprobante(comprobante: dict[str, Any]) -> str:
+    if comprobante["punto_venta"] <= 0 or comprobante["numero"] <= 0:
+        return ""
+
+    return f"{comprobante['letra']} {comprobante['punto_venta']:04d}-{comprobante['numero']:08d}"
+
+
+def _validar_texto_obligatorio(valor: Any, mensaje: str) -> str:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        raise ValueError(mensaje)
+
+    return valor_normalizado
+
+
+def _normalizar_texto_opcional(valor: Any) -> str | None:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return None
+
+    return valor_normalizado
+
+
+def _validar_entero_positivo(valor: Any, mensaje: str) -> int:
+    if isinstance(valor, bool):
+        raise ValueError(mensaje)
+
+    try:
+        valor_entero = int(str(valor).strip())
+    except (TypeError, ValueError) as exc:
+        raise ValueError(mensaje) from exc
+
+    if valor_entero <= 0:
+        raise ValueError(mensaje)
+
+    return valor_entero
+
+
+def _validar_entero_positivo_opcional(valor: Any) -> int | None:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return None
+
+    return _validar_entero_positivo(
+        valor_normalizado,
+        "El id opcional informado debe ser positivo.",
+    )
+
+
+def _validar_entero_no_negativo(valor: Any, mensaje: str) -> int:
+    if isinstance(valor, bool):
+        raise ValueError(mensaje)
+
+    try:
+        valor_entero = int(str(valor).strip())
+    except (TypeError, ValueError) as exc:
+        raise ValueError(mensaje) from exc
+
+    if valor_entero < 0:
+        raise ValueError(mensaje)
+
+    return valor_entero
+
+
+def _validar_opcion(valor: Any, opciones_validas: set[str], mensaje: str) -> str:
+    valor_normalizado = str(valor or "").strip().upper()
+
+    if valor_normalizado not in opciones_validas:
+        raise ValueError(mensaje)
+
+    return valor_normalizado
+
+
+def _validar_codigo_moneda(valor: Any, mensaje: str) -> str:
+    valor_normalizado = str(valor or "").strip().upper()
+
+    if not _PATRON_MONEDA.match(valor_normalizado):
+        raise ValueError(mensaje)
+
+    return valor_normalizado
+
+
+def _validar_fecha_iso(valor: Any, mensaje: str) -> str:
+    valor_normalizado = str(valor or "").strip()
+
+    if not _PATRON_FECHA_ISO.match(valor_normalizado):
+        raise ValueError(mensaje)
+
+    mes = int(valor_normalizado[5:7])
+    dia = int(valor_normalizado[8:10])
+
+    if mes < 1 or mes > 12 or dia < 1 or dia > 31:
+        raise ValueError(mensaje)
+
+    return valor_normalizado
+
+
+def _validar_fecha_iso_opcional(valor: Any, mensaje: str) -> str | None:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return None
+
+    return _validar_fecha_iso(valor_normalizado, mensaje)
