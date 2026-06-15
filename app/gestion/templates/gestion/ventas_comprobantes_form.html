@@ -57,6 +57,38 @@
                             </select>
                         </div>
 
+                        {% set requiere_comprobante_asociado = comprobante_form.tipo_comprobante in ["012", "013", "NOTA_DEBITO", "NOTA_CREDITO"] %}
+                        <div
+                            id="vc-comprobante-asociado-contenedor"
+                            data-role="vc-comprobante-asociado-contenedor"
+                            class="col-12 {% if not requiere_comprobante_asociado %}d-none{% endif %}"
+                        >
+                            <label for="vc-comprobante-asociado" class="form-label">FC que modifica</label>
+                            <select
+                                id="vc-comprobante-asociado"
+                                name="comprobante_asociado_id"
+                                class="form-select"
+                                data-ns-select="search"
+                                data-ns-select-placeholder="Seleccionar FC confirmada..."
+                                data-ns-select-search-placeholder="Buscar FC..."
+                                {% if not requiere_comprobante_asociado %}disabled{% endif %}
+                            >
+                                <option value="">Seleccionar FC confirmada...</option>
+                                {% for factura in facturas_confirmadas_asociables %}
+                                    <option
+                                        value="{{ factura.id }}"
+                                        data-cliente-id="{{ factura.cliente_id }}"
+                                        {% if comprobante_form.comprobante_asociado_id|string == factura.id|string %}selected{% endif %}
+                                    >
+                                        {{ factura.opcion_asociacion }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div id="vc-comprobante-asociado-ayuda" class="form-text">
+                                Para ND/NC, elegí la FC confirmada del mismo cliente.
+                            </div>
+                        </div>
+
                         <div class="col-12 col-md-3">
                             <label for="vc-letra" class="form-label">Letra</label>
                             <input id="vc-letra" name="letra" type="text" class="form-control" value="{{ comprobante_form.letra }}" maxlength="10" readonly>

@@ -361,6 +361,7 @@ def obtener_contexto_formulario_comprobante_venta(
     ]
     unidades_medida = listar_catalogo_fiscal_activo("unidades_medida")
     tipos_bonificacion = listar_catalogo_fiscal_activo("tipos_bonificacion")
+    facturas_confirmadas_asociables = _listar_facturas_confirmadas_para_asociacion()
 
     return {
         "comprobante_form": formulario,
@@ -369,11 +370,35 @@ def obtener_contexto_formulario_comprobante_venta(
         "tipos_comprobante_venta": tipos_comprobante_venta,
         "unidades_medida": unidades_medida,
         "tipos_bonificacion": tipos_bonificacion,
+        "facturas_confirmadas_asociables": facturas_confirmadas_asociables,
         "cantidad_clientes": len(clientes),
         "cantidad_articulos_venta": len(articulos_venta),
         "cantidad_unidades_medida": len(unidades_medida),
         "cantidad_tipos_bonificacion": len(tipos_bonificacion),
+        "cantidad_facturas_confirmadas_asociables": len(facturas_confirmadas_asociables),
     }
+
+
+def _listar_facturas_confirmadas_para_asociacion() -> list[dict[str, Any]]:
+    """Devuelve FC confirmadas disponibles para asociar ND/NC desde pantalla."""
+    facturas = []
+
+    for comprobante in listar_comprobantes_venta():
+        if comprobante.get("tipo_comprobante") != "FACTURA":
+            continue
+
+        if comprobante.get("estado") != "CONFIRMADO":
+            continue
+
+        factura = _preparar_comprobante_venta_para_pantalla(comprobante)
+        factura["opcion_asociacion"] = (
+            f"{factura['numero_formateado']} - "
+            f"{factura['fecha_argentina']} - "
+            f"{factura['total_argentina']}"
+        )
+        facturas.append(factura)
+
+    return facturas
 
 
 def crear_borrador_comprobante_venta_desde_formulario(
@@ -416,6 +441,7 @@ def _preparar_comprobante_venta_formulario(
     formulario.setdefault("bonificacion_valor", "")
     formulario.setdefault("descripcion", "")
     formulario.setdefault("observaciones", "")
+    formulario.setdefault("comprobante_asociado_id", "")
 
     return formulario
 

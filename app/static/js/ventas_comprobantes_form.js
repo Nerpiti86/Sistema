@@ -6,6 +6,12 @@
     const ESCALA_PORCENTAJE_CALCULO = 100 * ESCALA_PORCENTAJE;
     const TIPO_BONIFICACION_PORCENTAJE = "1";
     const TIPO_BONIFICACION_MONTO = "2";
+    const TIPOS_COMPROBANTE_MODIFICADORES = new Set([
+        "012",
+        "013",
+        "NOTA_DEBITO",
+        "NOTA_CREDITO",
+    ]);
 
     const SELECTORES = {
         formulario: "#vc-formulario",
@@ -387,7 +393,139 @@
         }
     };
 
+    const obtenerElementoAsociacion = () => ({
+        cliente: document.getElementById("vc-cliente"),
+        tipoComprobante: document.getElementById("vc-tipo-comprobante"),
+        contenedor: document.getElementById("vc-comprobante-asociado-contenedor"),
+        select: document.getElementById("vc-comprobante-asociado"),
+        ayuda: document.getElementById("vc-comprobante-asociado-ayuda"),
+        submit: document.getElementById("vc-submit"),
+    });
+
+    const requiereComprobanteAsociado = () => {
+        const { tipoComprobante } = obtenerElementoAsociacion();
+        const valorTipo = tipoComprobante ? tipoComprobante.value : "";
+
+        return TIPOS_COMPROBANTE_MODIFICADORES.has(valorTipo);
+    };
+
+    const actualizarControlNeriSoftSelect = (select, deshabilitado) => {
+        if (!select) {
+            return;
+        }
+
+        const contenedor = select.closest(".ns-select");
+        const control = contenedor
+            ? contenedor.querySelector(".ns-select__control")
+            : null;
+
+        if (!control) {
+            return;
+        }
+
+        control.disabled = deshabilitado;
+        control.classList.toggle("disabled", deshabilitado);
+
+        if (deshabilitado) {
+            control.setAttribute("tabindex", "-1");
+            return;
+        }
+
+        control.removeAttribute("tabindex");
+    };
+
+    const sincronizarSelectorComprobanteAsociado = () => {
+        const {
+            cliente,
+            contenedor,
+            select,
+            ayuda,
+            submit,
+        } = obtenerElementoAsociacion();
+        const requiereAsociacion = requiereComprobanteAsociado();
+        const clienteId = cliente ? cliente.value : "";
+
+        if (!contenedor || !select) {
+            return;
+        }
+
+        contenedor.classList.toggle("d-none", !requiereAsociacion);
+        select.required = requiereAsociacion;
+        select.disabled = !requiereAsociacion || !clienteId;
+
+        let cantidadOpcionesCliente = 0;
+
+        Array.from(select.options).forEach((opcion) => {
+            if (!opcion.value) {
+                opcion.disabled = false;
+                return;
+            }
+
+            const perteneceAlCliente = Boolean(clienteId) &&
+                opcion.dataset.clienteId === clienteId;
+            opcion.disabled = !perteneceAlCliente;
+
+            if (perteneceAlCliente) {
+                cantidadOpcionesCliente += 1;
+            }
+        });
+
+        if (
+            select.value &&
+            select.options[select.selectedIndex] &&
+            select.options[select.selectedIndex].disabled
+        ) {
+            select.value = "";
+        }
+
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        actualizarControlNeriSoftSelect(select, select.disabled);
+
+        if (ayuda) {
+            if (!requiereAsociacion) {
+                ayuda.textContent = "FC no requiere comprobante asociado.";
+            } else if (!clienteId) {
+                ayuda.textContent = "Elegí un cliente para listar sus FC confirmadas.";
+            } else if (cantidadOpcionesCliente === 0) {
+                ayuda.textContent = "No hay FC confirmadas para el cliente seleccionado.";
+            } else {
+                ayuda.textContent = "Elegí la FC confirmada que modifica esta ND/NC. El guardado se habilita en el próximo paso.";
+            }
+        }
+
+        if (submit) {
+            if (!submit.dataset.textoOriginal) {
+                submit.dataset.textoOriginal = submit.textContent;
+            }
+
+            submit.disabled = requiereAsociacion;
+            submit.textContent = requiereAsociacion
+                ? "Confirmación ND/NC pendiente"
+                : submit.dataset.textoOriginal;
+        }
+    };
+
+    const bloquearEnvioComprobanteModificadorPendiente = (evento) => {
+        if (!requiereComprobanteAsociado()) {
+            return false;
+        }
+
+        evento.preventDefault();
+        sincronizarSelectorComprobanteAsociado();
+
+        const { contenedor } = obtenerElementoAsociacion();
+        if (contenedor) {
+            contenedor.scrollIntoView({ block: "center" });
+        }
+
+        return true;
+    };
+
     const validarArticuloAntesDeEnviar = async (evento) => {
+        if (bloquearEnvioComprobanteModificadorPendiente(evento)) {
+            return;
+        }
+
         const formulario = evento.target;
         const inputLookup = document.querySelector(SELECTORES.lookupArticulos);
         const hiddenArticulo = inputLookup ? obtenerHiddenLookup(inputLookup) : null;
@@ -479,11 +617,23 @@
             });
         });
 
+        const cliente = document.getElementById("vc-cliente");
+        const tipoComprobante = document.getElementById("vc-tipo-comprobante");
+
+        if (cliente) {
+            cliente.addEventListener("change", sincronizarSelectorComprobanteAsociado);
+        }
+
+        if (tipoComprobante) {
+            tipoComprobante.addEventListener("change", sincronizarSelectorComprobanteAsociado);
+        }
+
         const formulario = document.querySelector(SELECTORES.formulario);
         if (formulario) {
             formulario.addEventListener("submit", validarArticuloAntesDeEnviar);
         }
 
+        sincronizarSelectorComprobanteAsociado();
         actualizarSubtotalLinea();
     });
 })();

@@ -3,7 +3,10 @@ from pathlib import Path
 from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
-from app.gestion.ventas_comprobantes_service import crear_borrador_comprobante_venta
+from app.gestion.ventas_comprobantes_service import (
+    confirmar_comprobante_venta,
+    crear_borrador_comprobante_venta,
+)
 
 
 CUENTA_DEUDORES = "1.1.03.01.995"
@@ -404,11 +407,35 @@ def test_formulario_nuevo_comprobante_venta_responde_ok():
     assert b'id="vc-numero"' in response.data
     assert b'value="1"' in response.data
     assert b'name="tipo_comprobante"' in response.data
+    assert b'id="vc-comprobante-asociado-contenedor"' in response.data
+    assert b'id="vc-comprobante-asociado"' in response.data
+    assert b'name="comprobante_asociado_id"' in response.data
     assert b'id="vc-letra"' in response.data
     assert b'readonly' in response.data
     assert b"Cliente pantalla venta" in response.data
     assert b'data-lookup="ventas-articulos-activos"' in response.data
     assert b"Confirmar comprobante" in response.data
+
+
+def test_formulario_nuevo_comprobante_venta_lista_fc_confirmadas_para_asociar():
+    """Valida que el formulario tenga FC confirmadas disponibles para ND/NC."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_ejercicio(db)
+        comprobante = _crear_comprobante_borrador(db)
+        confirmar_comprobante_venta(comprobante["id"])
+
+        response = client.get("/gestion/ventas/comprobantes/nuevo/")
+
+    assert response.status_code == 200
+    assert b'id="vc-comprobante-asociado"' in response.data
+    assert f'data-cliente-id="{comprobante["cliente_id"]}"'.encode() in response.data
+    assert comprobante["numero_formateado"].encode() in response.data
+    assert b"FC C " in response.data
 
 
 def test_listado_ventas_comprobantes_muestra_boton_nuevo():
