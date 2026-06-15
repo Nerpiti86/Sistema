@@ -40,17 +40,17 @@
 
                         <div class="col-12 col-md-4">
                             <label for="vc-fecha-form" class="form-label">Fecha</label>
-                            <input id="vc-fecha-form" name="fecha" type="date" class="form-control" value="{{ comprobante_form.fecha }}" required>
+                            <input id="vc-fecha-form" name="fecha" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ comprobante_form.fecha }}" placeholder="dd/mm/aaaa" autocomplete="off" required>
                         </div>
 
                         <div class="col-12 col-md-4">
                             <label for="vc-fecha-vencimiento-form" class="form-label">Vencimiento</label>
-                            <input id="vc-fecha-vencimiento-form" name="fecha_vencimiento" type="date" class="form-control" value="{{ comprobante_form.fecha_vencimiento }}">
+                            <input id="vc-fecha-vencimiento-form" name="fecha_vencimiento" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ comprobante_form.fecha_vencimiento }}" placeholder="dd/mm/aaaa" autocomplete="off">
                         </div>
 
                         <div class="col-12 col-md-4">
                             <label for="vc-tipo-comprobante" class="form-label">Tipo</label>
-                            <select id="vc-tipo-comprobante" name="tipo_comprobante" class="form-select" required>
+                            <select id="vc-tipo-comprobante" name="tipo_comprobante" class="form-select" data-ns-select="normal" data-ns-select-placeholder="Seleccionar tipo..." required>
                                 {% for tipo in tipos_comprobante_venta %}
                                     <option value="{{ tipo.codigo }}" {% if comprobante_form.tipo_comprobante == tipo.codigo %}selected{% endif %}>{{ tipo.codigo }} - {{ tipo.descripcion }}</option>
                                 {% endfor %}

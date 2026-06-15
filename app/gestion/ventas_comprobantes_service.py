@@ -6,6 +6,7 @@ from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
     formatear_fecha_iso_a_argentina,
     normalizar_decimal_argentino_a_entero_escala,
+    normalizar_fecha_argentina_a_iso,
 )
 from app.contabilidad.asientos_contables_service import (
     crear_asiento_contable_automatico_confirmado,
@@ -353,6 +354,12 @@ def _preparar_comprobante_venta_formulario(
     formulario = dict(comprobante_form)
     formulario.setdefault("fecha", "")
     formulario.setdefault("fecha_vencimiento", "")
+    formulario["fecha"] = _formatear_fecha_formulario_para_pantalla(
+        formulario.get("fecha")
+    )
+    formulario["fecha_vencimiento"] = _formatear_fecha_formulario_para_pantalla(
+        formulario.get("fecha_vencimiento")
+    )
     formulario.setdefault("tipo_comprobante", "011")
     formulario.setdefault("letra", "C")
     formulario.setdefault("punto_venta", str(_PUNTO_VENTA_DEFAULT))
@@ -368,6 +375,18 @@ def _preparar_comprobante_venta_formulario(
     formulario.setdefault("observaciones", "")
 
     return formulario
+
+
+def _formatear_fecha_formulario_para_pantalla(valor: Any) -> str:
+    fecha_normalizada = str(valor or "").strip()
+
+    if not fecha_normalizada:
+        return ""
+
+    if _PATRON_FECHA_ISO.match(fecha_normalizada):
+        return _formatear_fecha_iso_opcional(fecha_normalizada)
+
+    return fecha_normalizada
 
 
 def _normalizar_formulario_borrador_comprobante_venta(
@@ -1176,6 +1195,12 @@ def _validar_codigo_moneda(valor: Any, mensaje: str) -> str:
 
 def _validar_fecha_iso(valor: Any, mensaje: str) -> str:
     valor_normalizado = str(valor or "").strip()
+
+    if "/" in valor_normalizado:
+        try:
+            valor_normalizado = normalizar_fecha_argentina_a_iso(valor_normalizado)
+        except ValueError as exc:
+            raise ValueError(mensaje) from exc
 
     if not _PATRON_FECHA_ISO.match(valor_normalizado):
         raise ValueError(mensaje)
