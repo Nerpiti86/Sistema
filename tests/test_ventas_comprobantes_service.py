@@ -6,6 +6,7 @@ from app.db import apply_migrations, get_db
 from app.gestion.ventas_comprobantes_service import (
     confirmar_comprobante_venta,
     crear_borrador_comprobante_venta,
+    crear_y_confirmar_comprobante_venta_desde_formulario,
     listar_comprobantes_venta,
     obtener_comprobante_venta,
 )
@@ -641,6 +642,56 @@ def test_service_ventas_comprobantes_no_usa_sql_ni_get_db():
     assert "INSERT " not in contenido
     assert "UPDATE " not in contenido
     assert "DELETE " not in contenido
+
+
+def test_crear_y_confirmar_comprobante_venta_desde_formulario_genera_venta_asiento_y_ctacte():
+    """
+    Contrato: el usuario carga datos y al confirmar se genera todo el circuito.
+
+    La operacion crea venta confirmada, asiento confirmado y movimiento de
+    cuenta corriente confirmado. No debe quedar BORRADOR como resultado final.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.996",
+            "Ingresos por servicios confirmacion directa",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        resultado = crear_y_confirmar_comprobante_venta_desde_formulario(
+            {
+                **_datos_comprobante(cliente_id, numero=27),
+                "articulo_venta_id": str(articulo_id),
+                "cantidad": "1,00",
+                "precio_unitario_centavos": "1.000,00",
+                "unidad_medida_codigo": "7",
+                "tipo_bonificacion_codigo": "",
+                "bonificacion_valor": "0,00",
+            }
+        )
+
+    comprobante = resultado["comprobante"]
+    asiento = resultado["asiento"]
+    movimiento = resultado["movimiento_cuenta_corriente"]
+
+    assert comprobante["estado"] == "CONFIRMADO"
+    assert comprobante["asiento_id"] == asiento["id"]
+    assert asiento["estado"] == "CONFIRMADO"
+    assert asiento["numero_asiento"] == 1
+    assert movimiento["estado"] == "CONFIRMADO"
+    assert movimiento["tipo_movimiento"] == "FACTURA"
+    assert movimiento["origen_tipo"] == "VENTA_COMPROBANTE"
+    assert movimiento["origen_id"] == comprobante["id"]
+    assert movimiento["asiento_id"] == asiento["id"]
 
 
 def test_confirmar_comprobante_venta_factura_genera_asiento_y_cuenta_corriente():

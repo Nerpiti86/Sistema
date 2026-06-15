@@ -6,13 +6,13 @@
 {% endblock %}
 
 {% block content %}
-<section id="vc-form" data-table="ventas_comprobantes" data-form="alta-borrador" class="row g-3">
+<section id="vc-form" data-table="ventas_comprobantes" data-form="alta-confirmacion" class="row g-3">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
                 <h1 id="vc-form-titulo" class="h3 mb-1">Nuevo comprobante de venta</h1>
                 <p id="vc-form-descripcion" class="text-muted mb-0">
-                    Alta mínima de comprobante en BORRADOR. No confirma, no cobra y no mueve fondos.
+                    Cargá los datos y confirmá el comprobante. Al confirmar genera venta, asiento contable y cuenta corriente. No mueve fondos.
                 </p>
             </div>
             <div id="vc-form-acciones-superiores">
@@ -226,7 +226,7 @@
             <div class="col-12">
                 <div id="vc-form-acciones" class="d-flex justify-content-end gap-2">
                     <a class="btn btn-outline-secondary" href="{{ form_cancelar_url }}">Cancelar</a>
-                    <button id="vc-submit" type="submit" class="btn btn-primary">Crear BORRADOR</button>
+                    <button id="vc-submit" type="submit" class="btn btn-primary">Confirmar comprobante</button>
                 </div>
             </div>
         </div>

@@ -30,6 +30,7 @@ from app.gestion.grupos_clientes_service import (
 from app.gestion.ventas_comprobantes_service import (
     confirmar_comprobante_venta,
     crear_borrador_comprobante_venta_desde_formulario,
+    crear_y_confirmar_comprobante_venta_desde_formulario,
     obtener_contexto_detalle_comprobante_venta,
     obtener_contexto_formulario_comprobante_venta,
     obtener_contexto_listado_comprobantes_venta,
@@ -381,7 +382,8 @@ def ver_formulario_nuevo_comprobante_venta():
 def crear_comprobante_venta_nuevo():
     """Crea un comprobante de venta BORRADOR desde formulario."""
     try:
-        comprobante = crear_borrador_comprobante_venta_desde_formulario(request.form)
+        resultado_confirmacion = crear_y_confirmar_comprobante_venta_desde_formulario(request.form)
+        comprobante = resultado_confirmacion["comprobante"]
     except ValueError as exc:
         flash(str(exc), "danger")
         contexto = obtener_contexto_formulario_comprobante_venta(
@@ -398,7 +400,7 @@ def crear_comprobante_venta_nuevo():
             400,
         )
 
-    flash("Comprobante de venta creado en BORRADOR.", "success")
+    flash("Comprobante de venta confirmado correctamente.", "success")
     return redirect(
         url_for(
             "gestion.ver_detalle_comprobante_venta",

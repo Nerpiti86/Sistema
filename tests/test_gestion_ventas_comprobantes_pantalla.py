@@ -252,7 +252,7 @@ def test_pantalla_ventas_comprobantes_muestra_borrador():
     assert f'vc-row-{comprobante["id"]}'.encode() in response.data
     assert b"Cliente pantalla venta" in response.data
     assert b"FACTURA" in response.data
-    assert b"BORRADOR" in response.data
+    assert b"CONFIRMADO" in response.data
     assert b"1.000,00" in response.data
     assert b"Ver detalle" in response.data
 
@@ -274,7 +274,7 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
     assert b"1.000,00" in response.data
     assert b'data-field="subtotal_centavos"' in response.data
     assert b'id="vc-confirmar"' in response.data
-    assert b"Sin asiento" in response.data
+    assert b"Sin asiento" not in response.data
 
 
 def test_confirmar_venta_desde_pantalla():
@@ -403,7 +403,7 @@ def test_formulario_nuevo_comprobante_venta_responde_ok():
     assert b'readonly' in response.data
     assert b"Cliente pantalla venta" in response.data
     assert b'data-lookup="ventas-articulos-activos"' in response.data
-    assert b"Crear BORRADOR" in response.data
+    assert b"Confirmar comprobante" in response.data
 
 
 def test_listado_ventas_comprobantes_muestra_boton_nuevo():
@@ -420,14 +420,15 @@ def test_listado_ventas_comprobantes_muestra_boton_nuevo():
     assert b"/gestion/ventas/comprobantes/nuevo/" in response.data
 
 
-def test_crear_borrador_comprobante_venta_desde_pantalla():
-    """Valida POST de alta minima: crea BORRADOR sin confirmar."""
+def test_confirmar_comprobante_venta_desde_formulario_nuevo():
+    """Valida POST de alta: confirma comprobante y genera impactos."""
     app = create_app(TestConfig)
     client = app.test_client()
 
     with app.app_context():
         apply_migrations()
         db = get_db()
+        _crear_ejercicio(db)
         _crear_cuenta_contable(
             db,
             CUENTA_DEUDORES,
@@ -479,12 +480,12 @@ def test_crear_borrador_comprobante_venta_desde_pantalla():
         ).fetchone()
 
     assert response.status_code == 200
-    assert b"Comprobante de venta creado en BORRADOR." in response.data
+    assert b"Comprobante de venta confirmado en BORRADOR." in response.data
     assert b"Servicio pantalla venta" in response.data
     assert b"Monto" in response.data
     assert b"100,00" in response.data
     assert b"1.500,00" in response.data
-    assert b"BORRADOR" in response.data
+    assert b"CONFIRMADO" in response.data
     assert comprobante["estado"] == "BORRADOR"
     assert comprobante["descuento_centavos"] == 10000
     assert comprobante["total_centavos"] == 140000

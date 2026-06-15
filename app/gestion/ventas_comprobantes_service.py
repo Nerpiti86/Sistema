@@ -530,6 +530,24 @@ def crear_borrador_comprobante_venta(
     return crear_venta_comprobante(datos_repository, detalles_normalizados)
 
 
+def crear_y_confirmar_comprobante_venta_desde_formulario(formulario: Any) -> dict[str, Any]:
+    """
+    Crea y confirma una venta desde el formulario Nuevo comprobante.
+
+    Contrato: el usuario carga los datos y al confirmar se genera la venta,
+    el asiento contable y el movimiento de cuenta corriente. Si falla cualquier
+    parte, no queda comprobante borrador huerfano.
+    """
+
+    def _crear_y_confirmar() -> dict[str, Any]:
+        comprobante_borrador = crear_borrador_comprobante_venta_desde_formulario(
+            formulario
+        )
+        return confirmar_comprobante_venta(comprobante_borrador["id"])
+
+    return ejecutar_en_transaccion(_crear_y_confirmar)
+
+
 def confirmar_comprobante_venta(comprobante_id: Any) -> dict[str, Any]:
     """
     Confirma un comprobante de venta sin IVA.
