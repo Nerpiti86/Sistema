@@ -1,23 +1,40 @@
 from collections.abc import Callable
-from contextlib import nullcontext
+from contextlib import contextmanager
+from itertools import count
 from typing import TypeVar
 
 from app.db import get_db
 
 T = TypeVar("T")
 
+_savepoint_counter = count(1)
 
+
+@contextmanager
 def contexto_escritura(db):
     """
-    Devuelve contexto de escritura sin commitear si ya hay transaccion activa.
+    Contexto de escritura para repositories.
 
-    Permite que repositories sigan funcionando solos, pero no corten una
-    transaccion de negocio abierta por un orquestador.
+    Si no hay transaccion abierta, usa el context manager nativo de sqlite.
+    Si ya hay transaccion abierta, usa SAVEPOINT para conservar atomicidad del
+    repository sin cortar la transaccion de negocio externa.
     """
-    if db.in_transaction:
-        return nullcontext()
+    if not db.in_transaction:
+        with db:
+            yield
+        return
 
-    return db
+    savepoint = f"nerisoft_repository_{next(_savepoint_counter)}"
+    db.execute(f"SAVEPOINT {savepoint}")
+
+    try:
+        yield
+    except Exception:
+        db.execute(f"ROLLBACK TO {savepoint}")
+        db.execute(f"RELEASE {savepoint}")
+        raise
+
+    db.execute(f"RELEASE {savepoint}")
 
 
 def ejecutar_en_transaccion(operacion: Callable[[], T]) -> T:
@@ -27,7 +44,7 @@ def ejecutar_en_transaccion(operacion: Callable[[], T]) -> T:
     db = get_db()
 
     if db.in_transaction:
-        savepoint = "nerisoft_operacion_negocio"
+        savepoint = f"nerisoft_operacion_negocio_{next(_savepoint_counter)}"
         db.execute(f"SAVEPOINT {savepoint}")
         try:
             resultado = operacion()
