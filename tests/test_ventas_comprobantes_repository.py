@@ -7,6 +7,7 @@ from app.gestion.ventas_comprobantes_repository import (
     crear_venta_comprobante,
     listar_ventas_comprobantes,
     listar_ventas_comprobantes_detalle,
+    marcar_venta_comprobante_confirmado,
     obtener_venta_comprobante_por_id,
 )
 
@@ -431,3 +432,183 @@ def test_crear_venta_comprobante_rechaza_tipo_invalido():
                 },
                 [],
             )
+
+
+def _obtener_o_crear_ejercicio_confirmacion_venta(db) -> int:
+    fila_ejercicio = db.execute(
+        """
+        SELECT id
+        FROM ejercicios_contables
+        ORDER BY id
+        LIMIT 1
+        """
+    ).fetchone()
+
+    if fila_ejercicio is not None:
+        return int(fila_ejercicio["id"])
+
+    cursor = db.execute(
+        """
+        INSERT INTO ejercicios_contables (
+            codigo,
+            nombre,
+            fecha_desde,
+            fecha_hasta,
+            estado,
+            activo,
+            creado_en,
+            fase_cierre,
+            bloqueado,
+            es_primer_ejercicio
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "2026",
+            "Ejercicio test confirmacion venta",
+            "2026-01-01",
+            "2026-12-31",
+            "ABIERTO",
+            1,
+            "2026-01-01 00:00:00",
+            "ABIERTO",
+            0,
+            1,
+        ),
+    )
+
+    return int(cursor.lastrowid)
+
+
+def _crear_asiento_confirmacion_venta(db) -> int:
+    ejercicio_id = _obtener_o_crear_ejercicio_confirmacion_venta(db)
+
+    cursor = db.execute(
+        """
+        INSERT INTO asientos_contables (
+            ejercicio_id,
+            fecha,
+            descripcion,
+            estado,
+            tipo,
+            moneda_origen_codigo,
+            moneda_destino_codigo,
+            cotizacion_fecha,
+            cotizacion_tipo,
+            cotizacion_1000000,
+            creado_en
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            ejercicio_id,
+            "2026-01-15",
+            "Asiento test confirmacion venta",
+            "CONFIRMADO",
+            "AJUSTE",
+            "ARS",
+            "ARS",
+            "2026-01-15",
+            "CIERRE",
+            1000000,
+            "2026-01-15 10:00:00",
+        ),
+    )
+
+    return int(cursor.lastrowid)
+
+
+def test_marcar_venta_comprobante_confirmado_actualiza_estado_y_asiento():
+    """Valida primitiva repository para marcar venta confirmada."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+        comprobante = crear_venta_comprobante(
+            _datos_comprobante(cliente_id),
+            [_detalle(articulo_id, cuenta_ingreso)],
+        )
+        asiento_id = _crear_asiento_confirmacion_venta(db)
+
+        comprobante_confirmado = marcar_venta_comprobante_confirmado(
+            comprobante["id"],
+            asiento_id,
+        )
+
+    assert comprobante_confirmado["id"] == comprobante["id"]
+    assert comprobante_confirmado["estado"] == "CONFIRMADO"
+    assert comprobante_confirmado["esta_confirmado"] is True
+    assert comprobante_confirmado["esta_borrador"] is False
+    assert comprobante_confirmado["asiento_id"] == asiento_id
+    assert comprobante_confirmado["confirmado_en"] is not None
+    assert comprobante_confirmado["cantidad_detalles"] == 1
+
+
+def test_marcar_venta_comprobante_confirmado_rechaza_inexistente():
+    """Valida error funcional para comprobante inexistente."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        asiento_id = _crear_asiento_confirmacion_venta(get_db())
+
+        with pytest.raises(ValueError, match="No existe"):
+            marcar_venta_comprobante_confirmado(999, asiento_id)
+
+
+def test_marcar_venta_comprobante_confirmado_rechaza_no_borrador():
+    """Valida que un comprobante confirmado no se confirme dos veces."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+        comprobante = crear_venta_comprobante(
+            _datos_comprobante(cliente_id),
+            [_detalle(articulo_id, cuenta_ingreso)],
+        )
+        asiento_id = _crear_asiento_confirmacion_venta(db)
+
+        marcar_venta_comprobante_confirmado(comprobante["id"], asiento_id)
+
+        with pytest.raises(ValueError, match="BORRADOR"):
+            marcar_venta_comprobante_confirmado(comprobante["id"], asiento_id)
+
+
+def test_marcar_venta_comprobante_confirmado_rechaza_asiento_inexistente():
+    """Valida FK contra asiento contable existente."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+        comprobante = crear_venta_comprobante(
+            _datos_comprobante(cliente_id),
+            [_detalle(articulo_id, cuenta_ingreso)],
+        )
+
+        with pytest.raises(ValueError, match="asiento"):
+            marcar_venta_comprobante_confirmado(comprobante["id"], 999)
+

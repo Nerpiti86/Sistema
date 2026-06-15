@@ -263,6 +263,78 @@ def crear_venta_comprobante(
     return comprobante
 
 
+def marcar_venta_comprobante_confirmado(
+    comprobante_id: Any,
+    asiento_id: Any,
+) -> dict[str, Any]:
+    """
+    Marca un comprobante de venta BORRADOR como CONFIRMADO.
+
+    Esta primitiva solo actualiza el documento comercial. La creacion del
+    asiento contable y del movimiento de cuenta corriente pertenece al service
+    orquestador de confirmacion.
+    """
+    comprobante_id_validado = _validar_entero_positivo(
+        comprobante_id,
+        "El id del comprobante es obligatorio.",
+    )
+    asiento_id_validado = _validar_entero_positivo(
+        asiento_id,
+        "El id del asiento es obligatorio.",
+    )
+
+    comprobante_actual = obtener_venta_comprobante_por_id(
+        comprobante_id_validado,
+        incluir_detalles=False,
+    )
+
+    if comprobante_actual is None:
+        raise ValueError("No existe el comprobante de venta informado.")
+
+    if comprobante_actual["estado"] != "BORRADOR":
+        raise ValueError("Solo se puede confirmar un comprobante en BORRADOR.")
+
+    actualizado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+    db = get_db()
+
+    try:
+        with db:
+            cursor = db.execute(
+                """
+                UPDATE ventas_comprobantes
+                SET
+                    estado = ?,
+                    asiento_id = ?,
+                    actualizado_en = ?,
+                    confirmado_en = ?
+                WHERE id = ?
+                  AND estado = ?
+                """,
+                (
+                    "CONFIRMADO",
+                    asiento_id_validado,
+                    actualizado_en,
+                    actualizado_en,
+                    comprobante_id_validado,
+                    "BORRADOR",
+                ),
+            )
+    except sqlite3.IntegrityError as exc:
+        raise ValueError(
+            "No se pudo confirmar el comprobante de venta. Revise el asiento asociado."
+        ) from exc
+
+    if cursor.rowcount != 1:
+        raise ValueError("No se pudo confirmar el comprobante de venta.")
+
+    comprobante_confirmado = obtener_venta_comprobante_por_id(comprobante_id_validado)
+
+    if comprobante_confirmado is None:
+        raise ValueError("No se pudo recuperar el comprobante de venta confirmado.")
+
+    return comprobante_confirmado
+
+
 def _normalizar_fila_comprobante(fila_comprobante) -> dict[str, Any]:
     """Convierte una fila SQLite de ventas_comprobantes en dict explicito."""
     comprobante = dict(fila_comprobante)
