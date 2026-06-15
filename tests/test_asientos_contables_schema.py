@@ -658,3 +658,58 @@ def test_detalle_rechaza_ars_con_cotizacion_distinta_de_uno():
                     12500000,
                 ),
             )
+
+
+def test_asientos_contables_permite_tipo_venta():
+    """
+    Contrato: los asientos generados desde comprobantes de venta no son ajustes.
+
+    El tipo VENTA permite diferenciar asientos comerciales automaticos de
+    asientos manuales, ajustes, apertura, cierre y reversiones.
+    """
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _primer_ejercicio_id(db)
+
+        db.execute(
+            """
+            INSERT INTO asientos_contables (
+                ejercicio_id,
+                fecha,
+                descripcion,
+                estado,
+                tipo,
+                cotizacion_fecha,
+                creado_en
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                ejercicio_id,
+                "2026-06-19",
+                "Venta test",
+                "BORRADOR",
+                "VENTA",
+                "2026-06-19",
+                "2026-06-19 10:00:00",
+            ),
+        )
+
+        fila = db.execute(
+            """
+            SELECT tipo
+            FROM asientos_contables
+            WHERE descripcion = ?
+            """,
+            ("Venta test",),
+        ).fetchone()
+
+        fk_detalle = db.execute(
+            "PRAGMA foreign_key_list(asientos_contables_detalle)"
+        ).fetchall()
+
+    assert fila["tipo"] == "VENTA"
+    assert any(fk["table"] == "asientos_contables" for fk in fk_detalle)

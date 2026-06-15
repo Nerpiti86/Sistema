@@ -728,7 +728,7 @@ def test_confirmar_comprobante_venta_factura_genera_asiento_y_cuenta_corriente()
     assert comprobante_confirmado["estado"] == "CONFIRMADO"
     assert comprobante_confirmado["asiento_id"] == asiento["id"]
     assert asiento["estado"] == "CONFIRMADO"
-    assert asiento["tipo"] == "AJUSTE"
+    assert asiento["tipo"] == "VENTA"
     assert movimiento["estado"] == "CONFIRMADO"
     assert movimiento["tipo_movimiento"] == "FACTURA"
     assert movimiento["debe_centavos"] == 100000

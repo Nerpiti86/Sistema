@@ -728,7 +728,7 @@ def confirmar_comprobante_venta(comprobante_id: Any) -> dict[str, Any]:
                 "ejercicio_id": ejercicio["id"],
                 "fecha": comprobante["fecha"],
                 "descripcion": descripcion,
-                "tipo": "AJUSTE",
+                "tipo": "VENTA",
                 "cotizacion_tipo": "CIERRE",
             },
             _armar_detalles_asiento_confirmacion(
