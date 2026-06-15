@@ -31,9 +31,11 @@ from app.gestion.clientes_cuenta_corriente_service import (
     obtener_contexto_cuenta_corriente_cliente,
 )
 from app.gestion.ventas_comprobantes_repository import (
+    crear_asociacion_comprobante_venta as crear_asociacion_comprobante_venta_repository,
     crear_venta_comprobante,
     listar_ventas_comprobantes,
     marcar_venta_comprobante_confirmado,
+    obtener_asociacion_comprobante_venta as obtener_asociacion_comprobante_venta_repository,
     obtener_venta_comprobante_por_id,
     obtener_proximo_numero_venta_comprobante,
 )
@@ -88,6 +90,47 @@ def obtener_comprobante_venta(comprobante_id: Any) -> dict[str, Any]:
         raise ValueError("No existe el comprobante de venta informado.")
 
     return comprobante
+
+
+def obtener_asociacion_comprobante_venta(
+    comprobante_id: Any,
+) -> dict[str, Any] | None:
+    """Devuelve la relacion comercial del comprobante, si existe."""
+    return obtener_asociacion_comprobante_venta_repository(comprobante_id)
+
+
+def asociar_comprobante_venta_a_factura(
+    comprobante_id: Any,
+    factura_id: Any,
+) -> dict[str, Any]:
+    """
+    Vincula una ND/NC en BORRADOR con la FC confirmada que modifica.
+    """
+    comprobante = obtener_comprobante_venta(comprobante_id)
+    factura = obtener_comprobante_venta(factura_id)
+
+    if comprobante["tipo_comprobante"] not in {"NOTA_DEBITO", "NOTA_CREDITO"}:
+        raise ValueError("Solo ND o NC pueden modificar una FC.")
+
+    if comprobante["estado"] != "BORRADOR":
+        raise ValueError("La ND/NC debe estar en BORRADOR para asociarla.")
+
+    if factura["tipo_comprobante"] != "FACTURA":
+        raise ValueError("El comprobante asociado debe ser una FC.")
+
+    if factura["estado"] != "CONFIRMADO":
+        raise ValueError("La FC asociada debe estar CONFIRMADA.")
+
+    if int(comprobante["cliente_id"]) != int(factura["cliente_id"]):
+        raise ValueError("La FC asociada debe pertenecer al mismo cliente.")
+
+    return crear_asociacion_comprobante_venta_repository(
+        {
+            "comprobante_id": comprobante["id"],
+            "comprobante_asociado_id": factura["id"],
+            "tipo_relacion": "MODIFICA",
+        }
+    )
 
 
 def obtener_contexto_listado_comprobantes_venta() -> dict[str, Any]:

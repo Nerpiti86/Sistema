@@ -225,6 +225,138 @@ def listar_ventas_comprobantes_detalle(
     return [_normalizar_fila_detalle(fila_detalle) for fila_detalle in filas_detalle]
 
 
+def crear_asociacion_comprobante_venta(datos_asociacion: dict[str, Any]) -> dict[str, Any]:
+    """Inserta la relacion comercial entre una ND/NC y la FC que modifica."""
+    datos_validados = _validar_datos_asociacion_comprobante(datos_asociacion)
+    creado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+
+    db = get_db()
+
+    try:
+        with contexto_escritura(db):
+            cursor = db.execute(
+                """
+                INSERT INTO ventas_comprobantes_asociaciones (
+                    comprobante_id,
+                    comprobante_asociado_id,
+                    tipo_relacion,
+                    creado_en
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    datos_validados["comprobante_id"],
+                    datos_validados["comprobante_asociado_id"],
+                    datos_validados["tipo_relacion"],
+                    creado_en,
+                ),
+            )
+            asociacion_id = int(cursor.lastrowid)
+    except sqlite3.IntegrityError as exc:
+        raise ValueError(
+            "La asociacion de comprobantes de venta es invalida o ya existe."
+        ) from exc
+
+    asociacion = obtener_asociacion_comprobante_venta_por_id(asociacion_id)
+
+    if asociacion is None:
+        raise RuntimeError("No se pudo recuperar la asociacion creada.")
+
+    return asociacion
+
+
+def obtener_asociacion_comprobante_venta(
+    comprobante_id: Any,
+) -> dict[str, Any] | None:
+    """Devuelve la asociacion de un comprobante modificador, si existe."""
+    comprobante_id_validado = _validar_entero_positivo(
+        comprobante_id,
+        "El id del comprobante es obligatorio.",
+    )
+
+    fila = get_db().execute(
+        """
+        SELECT
+            asociaciones.id,
+            asociaciones.comprobante_id,
+            asociaciones.comprobante_asociado_id,
+            asociaciones.tipo_relacion,
+            asociaciones.creado_en,
+            comprobante.tipo_comprobante AS comprobante_tipo,
+            comprobante.cliente_id AS comprobante_cliente_id,
+            comprobante.estado AS comprobante_estado,
+            comprobante.letra AS comprobante_letra,
+            comprobante.punto_venta AS comprobante_punto_venta,
+            comprobante.numero AS comprobante_numero,
+            asociado.tipo_comprobante AS asociado_tipo,
+            asociado.cliente_id AS asociado_cliente_id,
+            asociado.estado AS asociado_estado,
+            asociado.letra AS asociado_letra,
+            asociado.punto_venta AS asociado_punto_venta,
+            asociado.numero AS asociado_numero
+        FROM ventas_comprobantes_asociaciones AS asociaciones
+        JOIN ventas_comprobantes AS comprobante
+          ON comprobante.id = asociaciones.comprobante_id
+        JOIN ventas_comprobantes AS asociado
+          ON asociado.id = asociaciones.comprobante_asociado_id
+        WHERE asociaciones.comprobante_id = ?
+        LIMIT 1
+        """,
+        (comprobante_id_validado,),
+    ).fetchone()
+
+    if fila is None:
+        return None
+
+    return _normalizar_fila_asociacion_comprobante(fila)
+
+
+def obtener_asociacion_comprobante_venta_por_id(
+    asociacion_id: Any,
+) -> dict[str, Any] | None:
+    """Devuelve una asociacion por id interno."""
+    asociacion_id_validado = _validar_entero_positivo(
+        asociacion_id,
+        "El id de la asociacion es obligatorio.",
+    )
+
+    fila = get_db().execute(
+        """
+        SELECT
+            asociaciones.id,
+            asociaciones.comprobante_id,
+            asociaciones.comprobante_asociado_id,
+            asociaciones.tipo_relacion,
+            asociaciones.creado_en,
+            comprobante.tipo_comprobante AS comprobante_tipo,
+            comprobante.cliente_id AS comprobante_cliente_id,
+            comprobante.estado AS comprobante_estado,
+            comprobante.letra AS comprobante_letra,
+            comprobante.punto_venta AS comprobante_punto_venta,
+            comprobante.numero AS comprobante_numero,
+            asociado.tipo_comprobante AS asociado_tipo,
+            asociado.cliente_id AS asociado_cliente_id,
+            asociado.estado AS asociado_estado,
+            asociado.letra AS asociado_letra,
+            asociado.punto_venta AS asociado_punto_venta,
+            asociado.numero AS asociado_numero
+        FROM ventas_comprobantes_asociaciones AS asociaciones
+        JOIN ventas_comprobantes AS comprobante
+          ON comprobante.id = asociaciones.comprobante_id
+        JOIN ventas_comprobantes AS asociado
+          ON asociado.id = asociaciones.comprobante_asociado_id
+        WHERE asociaciones.id = ?
+        LIMIT 1
+        """,
+        (asociacion_id_validado,),
+    ).fetchone()
+
+    if fila is None:
+        return None
+
+    return _normalizar_fila_asociacion_comprobante(fila)
+
+
 def crear_venta_comprobante(
     datos_comprobante: dict[str, Any],
     detalles: list[dict[str, Any]],
@@ -450,6 +582,42 @@ def _normalizar_fila_comprobante(fila_comprobante) -> dict[str, Any]:
     return comprobante
 
 
+def _normalizar_fila_asociacion_comprobante(fila_asociacion) -> dict[str, Any]:
+    asociacion = dict(fila_asociacion)
+
+    for campo in (
+        "id",
+        "comprobante_id",
+        "comprobante_asociado_id",
+        "comprobante_cliente_id",
+        "comprobante_punto_venta",
+        "comprobante_numero",
+        "asociado_cliente_id",
+        "asociado_punto_venta",
+        "asociado_numero",
+    ):
+        asociacion[campo] = int(asociacion[campo])
+
+    asociacion["comprobante_numero_formateado"] = _formatear_numero_comprobante(
+        {
+            "tipo_comprobante": asociacion["comprobante_tipo"],
+            "letra": asociacion["comprobante_letra"],
+            "punto_venta": asociacion["comprobante_punto_venta"],
+            "numero": asociacion["comprobante_numero"],
+        }
+    )
+    asociacion["comprobante_asociado_numero_formateado"] = _formatear_numero_comprobante(
+        {
+            "tipo_comprobante": asociacion["asociado_tipo"],
+            "letra": asociacion["asociado_letra"],
+            "punto_venta": asociacion["asociado_punto_venta"],
+            "numero": asociacion["asociado_numero"],
+        }
+    )
+
+    return asociacion
+
+
 def _normalizar_fila_detalle(fila_detalle) -> dict[str, Any]:
     """Convierte una fila SQLite de ventas_comprobantes_detalle en dict explicito."""
     detalle = dict(fila_detalle)
@@ -470,6 +638,34 @@ def _normalizar_fila_detalle(fila_detalle) -> dict[str, Any]:
         detalle[campo] = int(detalle[campo])
 
     return detalle
+
+
+def _validar_datos_asociacion_comprobante(
+    datos_asociacion: dict[str, Any],
+) -> dict[str, Any]:
+    comprobante_id = _validar_entero_positivo(
+        datos_asociacion.get("comprobante_id"),
+        "El comprobante modificador es obligatorio.",
+    )
+    comprobante_asociado_id = _validar_entero_positivo(
+        datos_asociacion.get("comprobante_asociado_id"),
+        "El comprobante asociado es obligatorio.",
+    )
+
+    if comprobante_id == comprobante_asociado_id:
+        raise ValueError("Un comprobante no puede asociarse a si mismo.")
+
+    tipo_relacion = _validar_opcion(
+        datos_asociacion.get("tipo_relacion", "MODIFICA"),
+        {"MODIFICA"},
+        "El tipo de relacion de comprobantes es invalido.",
+    )
+
+    return {
+        "comprobante_id": comprobante_id,
+        "comprobante_asociado_id": comprobante_asociado_id,
+        "tipo_relacion": tipo_relacion,
+    }
 
 
 def _validar_datos_comprobante(datos_comprobante: dict[str, Any]) -> dict[str, Any]:

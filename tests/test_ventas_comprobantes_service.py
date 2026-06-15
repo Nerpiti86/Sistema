@@ -4,10 +4,12 @@ from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.gestion.ventas_comprobantes_service import (
+    asociar_comprobante_venta_a_factura,
     confirmar_comprobante_venta,
     crear_borrador_comprobante_venta,
     crear_y_confirmar_comprobante_venta_desde_formulario,
     listar_comprobantes_venta,
+    obtener_asociacion_comprobante_venta,
     obtener_comprobante_venta,
 )
 
@@ -978,3 +980,155 @@ def test_service_ventas_comprobantes_confirmacion_sigue_sin_sql_ni_get_db():
     assert "UPDATE " not in contenido
     assert "DELETE " not in contenido
 
+
+
+def test_asociar_comprobante_venta_a_factura_vincula_nd_con_fc_confirmada():
+    """Contrato: una ND en BORRADOR puede modificar una FC confirmada del mismo cliente."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.991",
+            "Ingresos por servicios asociacion",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        fc = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=1),
+            [_detalle(articulo_id)],
+        )
+        fc_confirmada = confirmar_comprobante_venta(fc["id"])["comprobante"]
+
+        nd = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id, numero=1),
+                "tipo_comprobante": "NOTA_DEBITO",
+            },
+            [_detalle(articulo_id)],
+        )
+
+        asociacion = asociar_comprobante_venta_a_factura(
+            nd["id"],
+            fc_confirmada["id"],
+        )
+        asociacion_leida = obtener_asociacion_comprobante_venta(nd["id"])
+
+    assert asociacion["comprobante_id"] == nd["id"]
+    assert asociacion["comprobante_asociado_id"] == fc_confirmada["id"]
+    assert asociacion["tipo_relacion"] == "MODIFICA"
+    assert asociacion["comprobante_numero_formateado"].startswith("ND C ")
+    assert asociacion["comprobante_asociado_numero_formateado"].startswith("FC C ")
+    assert asociacion_leida["id"] == asociacion["id"]
+
+
+def test_asociar_comprobante_venta_a_factura_rechaza_factura_como_modificadora():
+    """Contrato: una FC no modifica otra FC; solo ND/NC pueden hacerlo."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.992",
+            "Ingresos por servicios asociacion",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        fc_origen = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=1),
+            [_detalle(articulo_id)],
+        )
+        fc_confirmada = confirmar_comprobante_venta(fc_origen["id"])["comprobante"]
+
+        fc_modificadora = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=2),
+            [_detalle(articulo_id)],
+        )
+
+        with pytest.raises(ValueError, match="ND o NC"):
+            asociar_comprobante_venta_a_factura(
+                fc_modificadora["id"],
+                fc_confirmada["id"],
+            )
+
+
+def test_asociar_comprobante_venta_a_factura_rechaza_fc_de_otro_cliente():
+    """Contrato: la FC asociada debe pertenecer al mismo cliente de la ND/NC."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.993",
+            "Ingresos por servicios asociacion",
+        )
+        cliente_fc_id = _crear_cliente(db, "Cliente FC")
+        cliente_nd_id = _crear_cliente(db, "Cliente ND")
+        _asignar_cuenta_deudores_cliente(db, cliente_fc_id, cuenta_deudores)
+        _asignar_cuenta_deudores_cliente(db, cliente_nd_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        fc = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_fc_id, numero=1),
+            [_detalle(articulo_id)],
+        )
+        fc_confirmada = confirmar_comprobante_venta(fc["id"])["comprobante"]
+
+        nd = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_nd_id, numero=1),
+                "tipo_comprobante": "NOTA_DEBITO",
+            },
+            [_detalle(articulo_id)],
+        )
+
+        with pytest.raises(ValueError, match="mismo cliente"):
+            asociar_comprobante_venta_a_factura(nd["id"], fc_confirmada["id"])
+
+
+def test_asociar_comprobante_venta_a_factura_rechaza_fc_no_confirmada():
+    """Contrato: una ND/NC debe modificar una FC ya confirmada."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.994",
+            "Ingresos por servicios asociacion",
+        )
+        cliente_id = _crear_cliente(db)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        fc_borrador = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=1),
+            [_detalle(articulo_id)],
+        )
+
+        nc = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id, numero=1),
+                "tipo_comprobante": "NOTA_CREDITO",
+            },
+            [_detalle(articulo_id)],
+        )
+
+        with pytest.raises(ValueError, match="CONFIRMADA"):
+            asociar_comprobante_venta_a_factura(nc["id"], fc_borrador["id"])
