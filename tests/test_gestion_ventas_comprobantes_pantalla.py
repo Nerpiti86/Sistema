@@ -472,12 +472,41 @@ def test_confirmar_comprobante_venta_desde_formulario_nuevo():
 
         comprobante = db.execute(
             """
-            SELECT estado, descuento_centavos, total_centavos, asiento_id
+            SELECT id, estado, descuento_centavos, total_centavos, asiento_id
             FROM ventas_comprobantes
             WHERE numero = ?
             """,
             (1,),
         ).fetchone()
+
+        asiento = db.execute(
+            """
+            SELECT id, estado, numero_asiento
+            FROM asientos_contables
+            WHERE id = ?
+            """,
+            (comprobante["asiento_id"],),
+        ).fetchone()
+
+        movimiento = db.execute(
+            """
+            SELECT id, estado, tipo_movimiento, origen_tipo, origen_id, asiento_id
+            FROM clientes_cuenta_corriente_movimientos
+            WHERE origen_tipo = 'VENTA_COMPROBANTE'
+              AND origen_id = ?
+            """,
+            (comprobante["id"],),
+        ).fetchone()
+
+        cantidad_movimientos = db.execute(
+            """
+            SELECT COUNT(*) AS cantidad
+            FROM clientes_cuenta_corriente_movimientos
+            WHERE origen_tipo = 'VENTA_COMPROBANTE'
+              AND origen_id = ?
+            """,
+            (comprobante["id"],),
+        ).fetchone()["cantidad"]
 
     assert response.status_code == 200
     assert b"Comprobante de venta confirmado correctamente." in response.data
@@ -486,10 +515,24 @@ def test_confirmar_comprobante_venta_desde_formulario_nuevo():
     assert b"100,00" in response.data
     assert b"1.500,00" in response.data
     assert b"CONFIRMADO" in response.data
+
     assert comprobante["estado"] == "CONFIRMADO"
     assert comprobante["descuento_centavos"] == 10000
     assert comprobante["total_centavos"] == 140000
     assert comprobante["asiento_id"] is not None
+
+    assert asiento is not None
+    assert asiento["estado"] == "CONFIRMADO"
+    assert asiento["numero_asiento"] == 1
+
+    assert movimiento is not None
+    assert movimiento["estado"] == "CONFIRMADO"
+    assert movimiento["tipo_movimiento"] == "FACTURA"
+    assert movimiento["origen_tipo"] == "VENTA_COMPROBANTE"
+    assert movimiento["origen_id"] == comprobante["id"]
+    assert movimiento["asiento_id"] == asiento["id"]
+    assert cantidad_movimientos == 1
+
     assert b"Sin asiento" not in response.data
     assert b"EJ2026-0000001" in response.data
 
