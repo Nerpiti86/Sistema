@@ -224,6 +224,13 @@ def _normalizar_detalle_comprobante(
         detalle.get("iva_centavos", 0),
         f"El IVA del renglon {indice} debe ser no negativo.",
     )
+
+    if iva_centavos != 0:
+        raise ValueError(
+            "El IVA de ventas todavia no esta habilitado. "
+            "Debe resolverse por condicion fiscal antes de permitirlo."
+        )
+
     orden = _validar_entero_no_negativo(
         detalle.get("orden", indice),
         f"El orden del renglon {indice} debe ser no negativo.",

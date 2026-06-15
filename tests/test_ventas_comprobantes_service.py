@@ -130,7 +130,7 @@ def _detalle(articulo_id: int) -> dict:
     return {
         "articulo_venta_id": str(articulo_id),
         "cantidad_1000000": "1000000",
-        "iva_centavos": "21000",
+        "iva_centavos": "0",
         "orden": "1",
     }
 
@@ -170,8 +170,8 @@ def test_crear_borrador_comprobante_venta_copia_datos_del_articulo():
     assert comprobante["subtotal_centavos"] == 100000
     assert comprobante["descuento_centavos"] == 0
     assert comprobante["recargo_centavos"] == 0
-    assert comprobante["iva_centavos"] == 21000
-    assert comprobante["total_centavos"] == 121000
+    assert comprobante["iva_centavos"] == 0
+    assert comprobante["total_centavos"] == 100000
     assert comprobante["cantidad_detalles"] == 1
     assert comprobante["detalles"][0]["descripcion"] == "Sesion de psicologia"
     assert comprobante["detalles"][0]["precio_unitario_centavos"] == 100000
@@ -200,7 +200,6 @@ def test_crear_borrador_comprobante_venta_permite_descripcion_y_precio_manual():
                     **_detalle(articulo_id),
                     "descripcion": "Consulta inicial",
                     "precio_unitario_centavos": "150000",
-                    "iva_centavos": "31500",
                 }
             ],
         )
@@ -209,10 +208,10 @@ def test_crear_borrador_comprobante_venta_permite_descripcion_y_precio_manual():
     assert detalle["descripcion"] == "Consulta inicial"
     assert detalle["precio_unitario_centavos"] == 150000
     assert detalle["subtotal_centavos"] == 150000
-    assert detalle["iva_centavos"] == 31500
-    assert detalle["total_linea_centavos"] == 181500
+    assert detalle["iva_centavos"] == 0
+    assert detalle["total_linea_centavos"] == 150000
     assert detalle["cuenta_ingreso_codigo"] == cuenta_ingreso
-    assert comprobante["total_centavos"] == 181500
+    assert comprobante["total_centavos"] == 150000
 
 
 def test_crear_borrador_comprobante_venta_calcula_cantidad_escalada():
@@ -240,14 +239,13 @@ def test_crear_borrador_comprobante_venta_calcula_cantidad_escalada():
                 {
                     **_detalle(articulo_id),
                     "cantidad_1000000": "500000",
-                    "iva_centavos": "10500",
                 }
             ],
         )
 
     assert comprobante["subtotal_centavos"] == 50000
-    assert comprobante["iva_centavos"] == 10500
-    assert comprobante["total_centavos"] == 60500
+    assert comprobante["iva_centavos"] == 0
+    assert comprobante["total_centavos"] == 50000
 
 
 def test_crear_borrador_comprobante_venta_suma_descuentos_de_linea_y_global():
@@ -275,7 +273,6 @@ def test_crear_borrador_comprobante_venta_suma_descuentos_de_linea_y_global():
                 {
                     **_detalle(articulo_id),
                     "descuento_centavos": "10000",
-                    "iva_centavos": "18900",
                 }
             ],
         )
@@ -283,8 +280,35 @@ def test_crear_borrador_comprobante_venta_suma_descuentos_de_linea_y_global():
     assert comprobante["subtotal_centavos"] == 100000
     assert comprobante["descuento_centavos"] == 15000
     assert comprobante["recargo_centavos"] == 2000
-    assert comprobante["iva_centavos"] == 18900
-    assert comprobante["total_centavos"] == 105900
+    assert comprobante["iva_centavos"] == 0
+    assert comprobante["total_centavos"] == 87000
+
+
+def test_crear_borrador_comprobante_venta_rechaza_iva_hasta_contrato_fiscal():
+    """El service bloquea IVA hasta definir condicion fiscal, alicuota y cuenta."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        with pytest.raises(ValueError, match="IVA"):
+            crear_borrador_comprobante_venta(
+                _datos_comprobante(cliente_id),
+                [
+                    {
+                        **_detalle(articulo_id),
+                        "iva_centavos": "21000",
+                    }
+                ],
+            )
 
 
 def test_crear_borrador_comprobante_venta_rechaza_cliente_inactivo():
