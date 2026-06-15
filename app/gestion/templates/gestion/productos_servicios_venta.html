@@ -43,6 +43,8 @@
                                 <th data-field="tipo">Tipo</th>
                                 <th data-field="moneda_codigo">Moneda</th>
                                 <th data-field="precio_unitario_sugerido_centavos" class="text-end">Precio sugerido</th>
+                                <th data-field="cotizacion_1000000" class="text-end">Cotización ARS</th>
+                                <th data-field="precio_unitario_sugerido_ars_centavos" class="text-end">Precio sugerido ARS</th>
                                 <th data-field="cuenta_ingreso_codigo">Cuenta ingreso sugerida</th>
                                 <th data-field="activo" class="text-center">Activo</th>
                                 <th data-field="orden" class="text-end">Orden</th>
@@ -74,6 +76,8 @@
                                         {% endif %}
                                     </td>
                                     <td data-field="precio_unitario_sugerido_centavos" class="text-end">{{ articulo.precio_unitario_sugerido_argentina }}</td>
+                                    <td data-field="cotizacion_1000000" class="text-end">{{ articulo.cotizacion_argentina }}</td>
+                                    <td data-field="precio_unitario_sugerido_ars_centavos" class="text-end">{{ articulo.precio_unitario_sugerido_ars_argentina }}</td>
                                     <td data-field="cuenta_ingreso_codigo">
                                         {% if articulo.cuenta_ingreso_codigo %}
                                             <div>{{ articulo.cuenta_ingreso_codigo }}</div>

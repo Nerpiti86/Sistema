@@ -10,6 +10,7 @@ _COLUMNAS_SELECT_ARTICULOS_VENTA = """
     articulos_venta.tipo,
     articulos_venta.moneda_codigo,
     articulos_venta.precio_unitario_sugerido_centavos,
+    articulos_venta.cotizacion_1000000,
     articulos_venta.cuenta_ingreso_codigo,
     articulos_venta.activo,
     articulos_venta.orden,
@@ -112,19 +113,21 @@ def crear_articulo_venta(datos_articulo: dict[str, Any]) -> dict[str, Any]:
                     tipo,
                     moneda_codigo,
                     precio_unitario_sugerido_centavos,
+                    cotizacion_1000000,
                     cuenta_ingreso_codigo,
                     activo,
                     orden,
                     observaciones,
                     creado_en
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     datos_validados["nombre"],
                     datos_validados["tipo"],
                     datos_validados["moneda_codigo"],
                     datos_validados["precio_unitario_sugerido_centavos"],
+                    datos_validados["cotizacion_1000000"],
                     datos_validados["cuenta_ingreso_codigo"],
                     datos_validados["activo"],
                     datos_validados["orden"],
@@ -171,6 +174,7 @@ def actualizar_articulo_venta_por_id(
                     tipo = ?,
                     moneda_codigo = ?,
                     precio_unitario_sugerido_centavos = ?,
+                    cotizacion_1000000 = ?,
                     cuenta_ingreso_codigo = ?,
                     activo = ?,
                     orden = ?,
@@ -183,6 +187,7 @@ def actualizar_articulo_venta_por_id(
                     datos_validados["tipo"],
                     datos_validados["moneda_codigo"],
                     datos_validados["precio_unitario_sugerido_centavos"],
+                    datos_validados["cotizacion_1000000"],
                     datos_validados["cuenta_ingreso_codigo"],
                     datos_validados["activo"],
                     datos_validados["orden"],
@@ -251,6 +256,7 @@ def _normalizar_fila_articulo_venta(fila_articulo) -> dict[str, Any]:
     articulo["precio_unitario_sugerido_centavos"] = int(
         articulo["precio_unitario_sugerido_centavos"]
     )
+    articulo["cotizacion_1000000"] = int(articulo["cotizacion_1000000"])
     articulo["activo"] = int(articulo["activo"])
     articulo["orden"] = int(articulo["orden"])
     articulo["esta_activo"] = articulo["activo"] == 1
@@ -262,17 +268,23 @@ def _normalizar_fila_articulo_venta(fila_articulo) -> dict[str, Any]:
 
 
 def _validar_datos_articulo_venta(datos_articulo: dict[str, Any]) -> dict[str, Any]:
+    moneda_codigo = _validar_codigo_moneda(datos_articulo.get("moneda_codigo"))
+
     return {
         "nombre": _validar_texto_obligatorio(
             datos_articulo.get("nombre"),
             "El nombre del producto o servicio es obligatorio.",
         ),
         "tipo": _validar_tipo_articulo_venta(datos_articulo.get("tipo")),
-        "moneda_codigo": _validar_codigo_moneda(datos_articulo.get("moneda_codigo")),
+        "moneda_codigo": moneda_codigo,
         "precio_unitario_sugerido_centavos": _validar_entero_no_negativo(
             datos_articulo.get("precio_unitario_sugerido_centavos", 0),
             "El precio sugerido debe ser numerico.",
             "El precio sugerido no puede ser negativo.",
+        ),
+        "cotizacion_1000000": _validar_cotizacion_articulo_venta(
+            moneda_codigo,
+            datos_articulo.get("cotizacion_1000000", 1000000),
         ),
         "cuenta_ingreso_codigo": _validar_texto_opcional(
             datos_articulo.get("cuenta_ingreso_codigo")
@@ -331,6 +343,24 @@ def _validar_entero_no_negativo(
         raise ValueError(mensaje_negativo)
 
     return valor_validado
+
+
+def _validar_cotizacion_articulo_venta(moneda_codigo: str, valor: Any) -> int:
+    if moneda_codigo == "ARS":
+        return 1000000
+
+    if isinstance(valor, bool):
+        raise ValueError("La cotizacion del producto o servicio es invalida.")
+
+    try:
+        cotizacion_validada = int(str(valor or "").strip())
+    except ValueError as exc:
+        raise ValueError("La cotizacion del producto o servicio es invalida.") from exc
+
+    if cotizacion_validada <= 0:
+        raise ValueError("La cotizacion del producto o servicio debe ser mayor a cero.")
+
+    return cotizacion_validada
 
 
 def _validar_texto_obligatorio(valor: Any, mensaje_error: str) -> str:

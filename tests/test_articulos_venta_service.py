@@ -30,6 +30,7 @@ def test_crear_articulo_venta_desde_formulario_normaliza_y_valida_moneda():
                 "tipo": " servicio ",
                 "moneda_codigo": " ars ",
                 "precio_unitario_sugerido_centavos": "12.500,00",
+                "cotizacion_1000000": "1250,500000",
                 "activo": "1",
                 "orden": "3",
                 "observaciones": " Precio sugerido general. ",
@@ -40,6 +41,7 @@ def test_crear_articulo_venta_desde_formulario_normaliza_y_valida_moneda():
     assert articulo["tipo"] == "SERVICIO"
     assert articulo["moneda_codigo"] == "ARS"
     assert articulo["precio_unitario_sugerido_centavos"] == 1250000
+    assert articulo["cotizacion_1000000"] == 1000000
     assert articulo["activo"] == 1
     assert articulo["esta_activo"] is True
     assert articulo["orden"] == 3
@@ -107,6 +109,7 @@ def test_actualizar_articulo_venta_desde_formulario_valida_y_actualiza():
                 "tipo": "PRODUCTO",
                 "moneda_codigo": "USD",
                 "precio_unitario_sugerido_centavos": "5,00",
+                "cotizacion_1000000": "1250,500000",
                 "activo": "1",
                 "orden": "8",
                 "observaciones": "Actualizado.",
@@ -118,6 +121,7 @@ def test_actualizar_articulo_venta_desde_formulario_valida_y_actualiza():
     assert actualizado["tipo"] == "PRODUCTO"
     assert actualizado["moneda_codigo"] == "USD"
     assert actualizado["precio_unitario_sugerido_centavos"] == 500
+    assert actualizado["cotizacion_1000000"] == 1250500000
     assert actualizado["orden"] == 8
     assert actualizado["observaciones"] == "Actualizado."
 
@@ -154,6 +158,8 @@ def test_contextos_articulos_venta():
     assert contexto_formulario["articulo"]["activo"] == 1
     assert contexto_formulario["articulo"]["orden"] == 0
     assert contexto_formulario["articulo"]["precio_unitario_sugerido_argentina"] == "0,00"
+    assert contexto_formulario["articulo"]["cotizacion_argentina"] == "1,000000"
+    assert contexto_formulario["articulo"]["precio_unitario_sugerido_ars_argentina"] == "0,00"
     assert contexto_formulario["tipos_articulo_venta"] == ["PRODUCTO", "SERVICIO"]
     assert contexto_formulario["cantidad_tipos_articulo_venta"] == 2
     assert contexto_formulario["cantidad_monedas"] >= 1
@@ -182,6 +188,50 @@ def test_service_normaliza_precio_sugerido_formato_argentino():
 
     assert articulo["precio_unitario_sugerido_centavos"] == 123456
     assert contexto["articulo"]["precio_unitario_sugerido_argentina"] == "1.234,56"
+
+
+def test_service_requiere_cotizacion_para_moneda_no_ars():
+    """Valida contrato monetario para precio sugerido en moneda extranjera."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        with pytest.raises(ValueError, match="cotizacion es obligatoria"):
+            crear_articulo_venta_desde_formulario(
+                {
+                    "nombre": "Servicio USD sin cotizacion",
+                    "tipo": "SERVICIO",
+                    "moneda_codigo": "USD",
+                    "precio_unitario_sugerido_centavos": "5,00",
+                    "activo": "1",
+                }
+            )
+
+
+def test_service_normaliza_cotizacion_formato_argentino():
+    """Valida cotizacion separada del importe nominal sugerido."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        articulo = crear_articulo_venta_desde_formulario(
+            {
+                "nombre": "Servicio USD con cotizacion",
+                "tipo": "SERVICIO",
+                "moneda_codigo": "USD",
+                "precio_unitario_sugerido_centavos": "5,00",
+                "cotizacion_1000000": "1.250,500000",
+                "activo": "1",
+            }
+        )
+        contexto = obtener_contexto_edicion_articulo_venta(articulo["id"])
+
+    assert articulo["precio_unitario_sugerido_centavos"] == 500
+    assert articulo["cotizacion_1000000"] == 1250500000
+    assert contexto["articulo"]["cotizacion_argentina"] == "1.250,500000"
+    assert contexto["articulo"]["precio_unitario_sugerido_ars_argentina"] == "6.252,50"
 
 
 def test_service_rechaza_precio_sugerido_fuera_de_contrato_argentino():

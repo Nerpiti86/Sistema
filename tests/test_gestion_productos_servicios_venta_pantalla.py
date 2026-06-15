@@ -58,6 +58,7 @@ def test_pantalla_productos_servicios_venta_muestra_datos():
     assert b"Servicio" in response.data
     assert b"ARS" in response.data
     assert b"1,00" in response.data
+    assert b"Precio sugerido ARS" in response.data
     assert b"Visible en listado." in response.data
     assert b"Editar" in response.data
     assert b"Desactivar" in response.data
@@ -79,9 +80,14 @@ def test_formulario_nuevo_producto_servicio_venta_responde_ok():
     assert b'id="psv-tipo"' in response.data
     assert b'id="psv-moneda"' in response.data
     assert b'id="psv-precio-sugerido"' in response.data
+    assert b'id="psv-cotizacion"' in response.data
+    assert b'id="psv-precio-sugerido-ars"' in response.data
     assert b'data-money-ar="centavos"' in response.data
+    assert b'data-cotizacion-ar="1000000"' in response.data
     assert b'inputmode="decimal"' in response.data
     assert b'name="precio_unitario_sugerido_centavos"' in response.data
+    assert b'name="cotizacion_1000000"' in response.data
+    assert b'data-field="precio_unitario_sugerido_ars_centavos"' in response.data
     assert b'id="psv-cuenta-ingreso"' in response.data
     assert b'data-ns-select="normal"' in response.data
 
@@ -102,6 +108,7 @@ def test_crear_producto_servicio_venta_nuevo_desde_pantalla():
                 "tipo": "SERVICIO",
                 "moneda_codigo": "ARS",
                 "precio_unitario_sugerido_centavos": "250,00",
+                "cotizacion_1000000": "1250,500000",
                 "activo": "1",
                 "orden": "4",
                 "observaciones": "Alta desde pantalla.",
@@ -112,6 +119,7 @@ def test_crear_producto_servicio_venta_nuevo_desde_pantalla():
         articulo = db.execute(
             """
             SELECT nombre, tipo, moneda_codigo, precio_unitario_sugerido_centavos,
+                   cotizacion_1000000,
                    activo, orden, observaciones
             FROM articulos_venta
             WHERE nombre = ?
@@ -124,6 +132,7 @@ def test_crear_producto_servicio_venta_nuevo_desde_pantalla():
     assert articulo["tipo"] == "SERVICIO"
     assert articulo["moneda_codigo"] == "ARS"
     assert articulo["precio_unitario_sugerido_centavos"] == 25000
+    assert articulo["cotizacion_1000000"] == 1000000
     assert articulo["activo"] == 1
     assert articulo["orden"] == 4
     assert articulo["observaciones"] == "Alta desde pantalla."
@@ -202,6 +211,7 @@ def test_editar_producto_servicio_venta_desde_pantalla():
                 "tipo": "PRODUCTO",
                 "moneda_codigo": "USD",
                 "precio_unitario_sugerido_centavos": "5,00",
+                "cotizacion_1000000": "1250,500000",
                 "activo": "1",
                 "orden": "15",
                 "observaciones": "Editado desde pantalla.",
@@ -212,6 +222,7 @@ def test_editar_producto_servicio_venta_desde_pantalla():
         actualizado = get_db().execute(
             """
             SELECT nombre, tipo, moneda_codigo, precio_unitario_sugerido_centavos,
+                   cotizacion_1000000,
                    orden, observaciones
             FROM articulos_venta
             WHERE id = ?
@@ -226,6 +237,7 @@ def test_editar_producto_servicio_venta_desde_pantalla():
     assert actualizado["tipo"] == "PRODUCTO"
     assert actualizado["moneda_codigo"] == "USD"
     assert actualizado["precio_unitario_sugerido_centavos"] == 500
+    assert actualizado["cotizacion_1000000"] == 1250500000
     assert actualizado["orden"] == 15
     assert actualizado["observaciones"] == "Editado desde pantalla."
 
@@ -286,6 +298,37 @@ def test_template_precio_sugerido_no_usa_number_crudo():
     assert 'inputmode="decimal"' in bloque
     assert 'value="{{ articulo.precio_unitario_sugerido_argentina' in bloque
     assert 'type="number"' not in bloque
+
+
+def test_template_cotizacion_venta_usa_escala_cotizacion():
+    """Valida que cotizacion use el formatter de escala 1000000."""
+    contenido = Path(
+        "app/gestion/templates/gestion/productos_servicios_venta_form.html"
+    ).read_text(encoding="utf-8")
+
+    posicion = contenido.index('id="psv-cotizacion"')
+    bloque = contenido[posicion : contenido.index("</div>", posicion)]
+
+    assert 'data-cotizacion-ar="1000000"' in bloque
+    assert 'data-field="cotizacion_1000000"' in bloque
+    assert 'name="cotizacion_1000000"' in bloque
+    assert 'type="text"' in bloque
+    assert 'inputmode="decimal"' in bloque
+    assert 'data-money-ar="centavos"' not in bloque
+
+
+def test_template_precio_sugerido_ars_es_calculado_readonly():
+    """Valida que el equivalente ARS sea calculado y no posteado."""
+    contenido = Path(
+        "app/gestion/templates/gestion/productos_servicios_venta_form.html"
+    ).read_text(encoding="utf-8")
+
+    posicion = contenido.index('id="psv-precio-sugerido-ars"')
+    bloque = contenido[posicion : contenido.index("</div>", posicion)]
+
+    assert 'data-field="precio_unitario_sugerido_ars_centavos"' in bloque
+    assert "readonly" in bloque
+    assert "name=" not in bloque
 
 def test_productos_servicios_venta_no_menciona_compras_ni_reglas_futuras():
     """Valida que la pantalla no fije circuitos futuros."""

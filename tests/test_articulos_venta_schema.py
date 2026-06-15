@@ -53,6 +53,7 @@ def test_migracion_crea_tabla_articulos_venta():
         "tipo",
         "moneda_codigo",
         "precio_unitario_sugerido_centavos",
+        "cotizacion_1000000",
         "cuenta_ingreso_codigo",
         "activo",
         "orden",
@@ -96,6 +97,7 @@ def test_articulos_venta_permite_alta_minima_servicio():
                    tipo,
                    moneda_codigo,
                    precio_unitario_sugerido_centavos,
+                   cotizacion_1000000,
                    activo,
                    orden
             FROM articulos_venta
@@ -108,6 +110,7 @@ def test_articulos_venta_permite_alta_minima_servicio():
     assert articulo["tipo"] == "SERVICIO"
     assert articulo["moneda_codigo"] == "ARS"
     assert articulo["precio_unitario_sugerido_centavos"] == 0
+    assert articulo["cotizacion_1000000"] == 1000000
     assert articulo["activo"] == 1
     assert articulo["orden"] == 0
 
@@ -308,6 +311,78 @@ def test_articulos_venta_rechaza_precio_sugerido_negativo():
             )
 
 
+def test_articulos_venta_rechaza_cotizacion_ars_distinta_de_uno():
+    """Valida que ARS no pueda guardar una cotizacion distinta de 1."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+
+        with pytest.raises(sqlite3.IntegrityError):
+            get_db().execute(
+                """
+                INSERT INTO articulos_venta (
+                    nombre,
+                    tipo,
+                    moneda_codigo,
+                    cotizacion_1000000,
+                    creado_en
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    "Servicio ARS cotizacion invalida",
+                    "SERVICIO",
+                    "ARS",
+                    1250000000,
+                    "2026-01-01 10:00:00",
+                ),
+            )
+
+
+def test_articulos_venta_permite_cotizacion_no_ars():
+    """Valida cotizacion separada para precio sugerido en moneda no ARS."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+
+        db.execute(
+            """
+            INSERT INTO articulos_venta (
+                nombre,
+                tipo,
+                moneda_codigo,
+                precio_unitario_sugerido_centavos,
+                cotizacion_1000000,
+                creado_en
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "Servicio USD con cotizacion",
+                "SERVICIO",
+                "USD",
+                500,
+                1250500000,
+                "2026-01-01 10:00:00",
+            ),
+        )
+
+        articulo = db.execute(
+            """
+            SELECT precio_unitario_sugerido_centavos, cotizacion_1000000
+            FROM articulos_venta
+            WHERE nombre = ?
+            """,
+            ("Servicio USD con cotizacion",),
+        ).fetchone()
+
+    assert articulo["precio_unitario_sugerido_centavos"] == 500
+    assert articulo["cotizacion_1000000"] == 1250500000
+
+
 def test_articulos_venta_referencia_cuenta_ingreso_existente():
     """Valida FK opcional contra cuentas_contables.cuenta para ingreso sugerido."""
     app = create_app(TestConfig)
@@ -425,3 +500,4 @@ def test_articulos_venta_crea_indices_operativos():
     assert "ix_articulos_venta_tipo" in index_names
     assert "ix_articulos_venta_moneda" in index_names
     assert "ix_articulos_venta_cuenta_ingreso" in index_names
+    assert "ix_articulos_venta_cotizacion" in index_names

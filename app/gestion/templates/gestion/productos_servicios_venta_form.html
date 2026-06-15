@@ -92,7 +92,7 @@
                     </div>
 
                     <div class="col-12 col-lg-4">
-                        <label for="psv-precio-sugerido" class="form-label">Precio unitario sugerido</label>
+                        <label for="psv-precio-sugerido" class="form-label">Precio unitario sugerido moneda</label>
                         <input
                             id="psv-precio-sugerido"
                             data-field="precio_unitario_sugerido_centavos"
@@ -104,6 +104,34 @@
                             value="{{ articulo.precio_unitario_sugerido_argentina | default('0,00', true) }}"
                             placeholder="0,00"
                             autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <label for="psv-cotizacion" class="form-label">Cotización a ARS</label>
+                        <input
+                            id="psv-cotizacion"
+                            data-field="cotizacion_1000000"
+                            data-cotizacion-ar="1000000"
+                            name="cotizacion_1000000"
+                            type="text"
+                            inputmode="decimal"
+                            class="form-control text-end"
+                            value="{{ articulo.cotizacion_argentina | default('1,000000', true) }}"
+                            placeholder="1,000000"
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <label for="psv-precio-sugerido-ars" class="form-label">Precio unitario sugerido ARS</label>
+                        <input
+                            id="psv-precio-sugerido-ars"
+                            data-field="precio_unitario_sugerido_ars_centavos"
+                            type="text"
+                            class="form-control text-end"
+                            value="{{ articulo.precio_unitario_sugerido_ars_argentina | default('0,00', true) }}"
+                            readonly
                         >
                     </div>
 
@@ -176,4 +204,5 @@
         {% endcall %}
     </div>
 </section>
+<script src="{{ url_for('static', filename='js/productos_servicios_venta_form.js') }}"></script>
 {% endblock %}

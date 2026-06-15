@@ -162,13 +162,38 @@ def test_input_precio_sugerido_venta_declara_money_ar_centavos():
     assert 'type="number"' not in bloque
 
 
+def test_input_cotizacion_articulo_venta_declara_cotizacion_ar():
+    """Contrato: cotizacion del articulo usa escala 1000000, no centavos."""
+    contenido = Path(
+        "app/gestion/templates/gestion/productos_servicios_venta_form.html"
+    ).read_text(encoding="utf-8")
+
+    posicion = contenido.index('id="psv-cotizacion"')
+    bloque = contenido[posicion : contenido.index("</div>", posicion)]
+
+    assert 'data-cotizacion-ar="1000000"' in bloque
+    assert 'data-field="cotizacion_1000000"' in bloque
+    assert 'name="cotizacion_1000000"' in bloque
+    assert 'data-money-ar="centavos"' not in bloque
+
+
+def test_js_producto_servicio_venta_calcula_precio_sugerido_ars():
+    """Contrato: el form calcula equivalente ARS sin persistir otro campo."""
+    contenido = Path("app/static/js/productos_servicios_venta_form.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "SELECTOR_PRECIO_ARS" in contenido
+    assert "actualizarPrecioArs" in contenido
+    assert "decimalArAEnteroEscala" in contenido
+    assert "cotizacionArA1000000" in contenido
+    assert "ESCALA_COTIZACION = 1000000" in contenido
+
+
 def test_precio_sugerido_venta_no_mantiene_referencias_1000000_fuera_de_migraciones():
     """Contrato: el campo funcional de precio sugerido usa centavos."""
     campo_escala_cotizacion = "precio_unitario_sugerido_" + "1000000"
-    permitidos = {
-        Path("migrations/017_crear_articulos_venta.sql"),
-        Path("migrations/018_precio_sugerido_articulos_venta_centavos.sql"),
-    }
+    permitidos = set()
 
     referencias = []
     for ruta in Path(".").rglob("*"):

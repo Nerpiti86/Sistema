@@ -19,6 +19,9 @@ from app.shared.monedas_repository import listar_monedas_activas, validar_moneda
 
 _TIPOS_ARTICULO_VENTA = ("PRODUCTO", "SERVICIO")
 _ESCALA_IMPORTE_CENTAVOS = 2
+_ESCALA_COTIZACION = 6
+_FACTOR_COTIZACION = 10**_ESCALA_COTIZACION
+_MONEDA_CONTABLE = "ARS"
 
 
 def obtener_contexto_listado_articulos_venta() -> dict[str, Any]:
@@ -137,6 +140,20 @@ def _preparar_articulo_venta_para_pantalla(
             articulo_pantalla.get("precio_unitario_sugerido_centavos", 0)
         )
     )
+    articulo_pantalla["cotizacion_argentina"] = _formatear_cotizacion_articulo(
+        articulo_pantalla.get("cotizacion_1000000", 1000000)
+    )
+    articulo_pantalla["precio_unitario_sugerido_ars_centavos"] = (
+        _calcular_precio_sugerido_ars_centavos(
+            articulo_pantalla.get("precio_unitario_sugerido_centavos", 0),
+            articulo_pantalla.get("cotizacion_1000000", 1000000),
+        )
+    )
+    articulo_pantalla["precio_unitario_sugerido_ars_argentina"] = (
+        _formatear_precio_sugerido_centavos_a_importe_argentino(
+            articulo_pantalla["precio_unitario_sugerido_ars_centavos"]
+        )
+    )
 
     return articulo_pantalla
 
@@ -150,6 +167,16 @@ def _preparar_articulo_venta_para_formulario(
     articulo_form["precio_unitario_sugerido_argentina"] = (
         _formatear_precio_sugerido_para_formulario(
             articulo_form.get("precio_unitario_sugerido_centavos")
+        )
+    )
+    articulo_form.setdefault("cotizacion_1000000", 1000000)
+    articulo_form["cotizacion_argentina"] = _formatear_cotizacion_para_formulario(
+        articulo_form.get("cotizacion_1000000")
+    )
+    articulo_form["precio_unitario_sugerido_ars_argentina"] = (
+        _formatear_precio_sugerido_ars_para_formulario(
+            articulo_form.get("precio_unitario_sugerido_centavos"),
+            articulo_form.get("cotizacion_1000000"),
         )
     )
 
@@ -193,14 +220,78 @@ def _formatear_precio_sugerido_centavos_a_importe_argentino(valor: Any) -> str:
     )
 
 
+def _formatear_precio_sugerido_ars_para_formulario(
+    precio_centavos: Any,
+    cotizacion_1000000: Any,
+) -> str:
+    try:
+        precio_ars_centavos = _calcular_precio_sugerido_ars_centavos(
+            precio_centavos,
+            cotizacion_1000000,
+        )
+    except ValueError:
+        return ""
+
+    return _formatear_precio_sugerido_centavos_a_importe_argentino(
+        precio_ars_centavos
+    )
+
+
+def _calcular_precio_sugerido_ars_centavos(
+    precio_centavos: Any,
+    cotizacion_1000000: Any,
+) -> int:
+    try:
+        precio_validado = int(precio_centavos)
+        cotizacion_validada = int(cotizacion_1000000)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("No se pudo calcular el precio sugerido ARS.") from exc
+
+    if precio_validado < 0 or cotizacion_validada <= 0:
+        raise ValueError("No se pudo calcular el precio sugerido ARS.")
+
+    return (
+        precio_validado * cotizacion_validada + (_FACTOR_COTIZACION // 2)
+    ) // _FACTOR_COTIZACION
+
+
+def _formatear_cotizacion_para_formulario(valor: Any) -> str:
+    if isinstance(valor, str):
+        valor_texto = valor.strip()
+
+        if not valor_texto:
+            return ""
+
+        return valor_texto
+
+    return _formatear_cotizacion_articulo(valor or 1000000)
+
+
+def _formatear_cotizacion_articulo(valor: Any) -> str:
+    try:
+        valor_entero = int(valor)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("La cotizacion guardada es invalida.") from exc
+
+    if valor_entero <= 0:
+        raise ValueError("La cotizacion guardada es invalida.")
+
+    return formatear_entero_escala_a_decimal_argentino(
+        valor_entero,
+        _ESCALA_COTIZACION,
+    )
+
+
 def _normalizar_datos_articulo_venta_formulario(
     formulario: dict[str, Any],
 ) -> dict[str, Any]:
     """Normaliza campos recibidos desde formularios de productos o servicios."""
+    moneda_codigo = _obtener_valor_formulario(formulario, "moneda_codigo").upper()
+
     return {
         "nombre": _obtener_valor_formulario(formulario, "nombre"),
         "tipo": _obtener_valor_formulario(formulario, "tipo"),
-        "moneda_codigo": _obtener_valor_formulario(formulario, "moneda_codigo"),
+        "moneda_codigo": moneda_codigo,
         "precio_unitario_sugerido_centavos": (
             _normalizar_precio_sugerido_formulario_a_centavos(
                 _obtener_valor_formulario(
@@ -208,6 +299,10 @@ def _normalizar_datos_articulo_venta_formulario(
                     "precio_unitario_sugerido_centavos",
                 )
             )
+        ),
+        "cotizacion_1000000": _normalizar_cotizacion_articulo_formulario(
+            moneda_codigo,
+            _obtener_valor_formulario(formulario, "cotizacion_1000000"),
         ),
         "cuenta_ingreso_codigo": _obtener_valor_formulario(
             formulario,
@@ -239,6 +334,33 @@ def _normalizar_precio_sugerido_formulario_a_centavos(valor: Any) -> int:
         raise ValueError("El precio sugerido no puede ser negativo.")
 
     return centavos
+
+
+def _normalizar_cotizacion_articulo_formulario(moneda_codigo: str, valor: Any) -> int:
+    if moneda_codigo == _MONEDA_CONTABLE:
+        return 1000000
+
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        raise ValueError(
+            "La cotizacion es obligatoria cuando la moneda no es ARS."
+        )
+
+    try:
+        cotizacion_1000000 = normalizar_decimal_argentino_a_entero_escala(
+            valor_normalizado,
+            _ESCALA_COTIZACION,
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "La cotizacion debe respetar formato argentino 9.999,999999."
+        ) from exc
+
+    if cotizacion_1000000 <= 0:
+        raise ValueError("La cotizacion debe ser mayor a cero.")
+
+    return cotizacion_1000000
 
 
 def _validar_referencias_operativas_articulo_venta(
