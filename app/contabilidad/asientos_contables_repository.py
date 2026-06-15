@@ -130,6 +130,7 @@ def crear_asiento_contable(
 
     detalles_validados = _validar_detalles_asiento(detalles_asiento, asiento_default)
     creado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
+    confirmado_en = creado_en if estado == "CONFIRMADO" else None
 
     db = get_db()
 
@@ -150,9 +151,10 @@ def crear_asiento_contable(
                     cotizacion_fecha,
                     cotizacion_tipo,
                     cotizacion_1000000,
-                    creado_en
+                    creado_en,
+                    confirmado_en
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ejercicio_id,
@@ -168,6 +170,7 @@ def crear_asiento_contable(
                     cotizacion_tipo,
                     cotizacion_1000000,
                     creado_en,
+                    confirmado_en,
                 ),
             )
 

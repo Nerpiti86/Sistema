@@ -6,6 +6,7 @@ from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.contabilidad.asientos_contables_service import (
+    crear_asiento_contable_automatico_confirmado,
     crear_asiento_contable_borrador,
     listar_asientos_contables,
     obtener_asiento_contable,
@@ -158,6 +159,44 @@ def test_service_crea_asiento_borrador_balanceado_en_ars():
     assert asiento["moneda_destino_codigo"] == "ARS"
     assert asiento["cotizacion_1000000"] == 1000000
     assert len(asiento["detalles"]) == 2
+
+
+def test_service_crea_asiento_automatico_confirmado_con_confirmado_en():
+    """
+    Valida timestamp de confirmacion en asientos automaticos.
+
+    Un asiento que nace CONFIRMADO por otro modulo debe persistir confirmado_en
+    desde el alta, no solo cambiar el estado.
+    """
+    app = _crear_app()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _crear_ejercicio(db)
+        cuenta_debe = _crear_cuenta(db, "1.1.01.01.999")
+        cuenta_haber = _crear_cuenta(db, "4.1.01.01.999")
+
+        asiento = crear_asiento_contable_automatico_confirmado(
+            _datos_asiento_base(ejercicio_id),
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "nominal_debe_centavos": 10000,
+                    "debe_centavos": 10000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "nominal_haber_centavos": 10000,
+                    "haber_centavos": 10000,
+                },
+            ],
+        )
+
+    assert asiento["estado"] == "CONFIRMADO"
+    assert asiento["creado_en"]
+    assert asiento["confirmado_en"] == asiento["creado_en"]
+    assert asiento["anulado_en"] is None
 
 
 def test_service_rechaza_asiento_desbalanceado():
