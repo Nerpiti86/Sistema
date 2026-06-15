@@ -19,7 +19,7 @@
 
     <form id="vc-formulario" method="post" action="{{ action_url }}" class="col-12">
         <div class="row g-3">
-            <div class="col-12 col-lg-7">
+            <div id="vc-cabecera" class="col-12">
                 {% call card("Cabecera", "Comprobante") %}
                     <div id="vc-datos-principales" class="row g-3">
                         <div class="col-12">
@@ -76,10 +76,10 @@
                 {% endcall %}
             </div>
 
-            <div class="col-12 col-lg-5">
+            <div id="vc-renglon" class="col-12">
                 {% call card("Renglón", "Detalle mínimo") %}
                     <div id="vc-renglon-minimo" class="row g-3">
-                        <div class="col-12">
+                        <div class="col-12 col-lg-5">
                             <label for="vc-articulo" class="form-label">Producto o servicio</label>
                             <select id="vc-articulo" name="articulo_venta_id" class="form-select" data-ns-select="normal" required>
                                 <option value="">Seleccionar producto o servicio...</option>
@@ -91,17 +91,17 @@
                             </select>
                         </div>
 
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-3 col-lg-2">
                             <label for="vc-cantidad" class="form-label">Cantidad</label>
                             <input id="vc-cantidad" name="cantidad" type="text" inputmode="decimal" class="form-control text-end" value="{{ comprobante_form.cantidad }}" placeholder="1,000000" required>
                         </div>
 
-                        <div class="col-12 col-md-6">
+                        <div class="col-12 col-md-3 col-lg-2">
                             <label for="vc-precio-unitario" class="form-label">Precio unitario</label>
                             <input id="vc-precio-unitario" name="precio_unitario_centavos" type="text" inputmode="decimal" data-money-ar="centavos" class="form-control text-end" value="{{ comprobante_form.precio_unitario_centavos }}" placeholder="Usa precio sugerido">
                         </div>
 
-                        <div class="col-12">
+                        <div class="col-12 col-lg-3">
                             <label for="vc-descripcion-renglon" class="form-label">Descripción opcional</label>
                             <input id="vc-descripcion-renglon" name="descripcion" type="text" class="form-control" value="{{ comprobante_form.descripcion }}" placeholder="Si se deja vacío usa el nombre del producto o servicio">
                         </div>

@@ -528,3 +528,15 @@ def test_crear_borrador_comprobante_venta_desde_pantalla_rechaza_precio_invalido
     assert b"formato argentino" in response.data
     assert b'value="123456"' in response.data
 
+def test_formulario_nuevo_comprobante_venta_ubica_renglon_debajo_de_cabecera():
+    """Valida layout: el renglon se carga debajo de cabecera sin cambiar contrato funcional."""
+    contenido = Path("app/gestion/templates/gestion/ventas_comprobantes_form.html").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'id="vc-cabecera" class="col-12"' in contenido
+    assert 'id="vc-renglon" class="col-12"' in contenido
+    assert contenido.index('id="vc-cabecera"') < contenido.index('id="vc-renglon"')
+    assert 'id="vc-cabecera" class="col-12 col-lg-7"' not in contenido
+    assert 'id="vc-renglon" class="col-12 col-lg-5"' not in contenido
+
