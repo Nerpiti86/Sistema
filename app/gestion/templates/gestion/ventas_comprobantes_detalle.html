@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/cards.html" import card %}
-{% from "components/buttons.html" import secondary_link %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
 
 {% block content %}
 <section id="vc-detalle" data-table="ventas_comprobantes" data-row-id="{{ comprobante_venta.id }}" class="row g-3">
@@ -18,6 +18,7 @@
                 </p>
             </div>
             <div id="vc-detalle-acciones" class="d-flex gap-2">
+                {{ primary_link("Nuevo comprobante", url_for("gestion.ver_formulario_nuevo_comprobante_venta")) }}
                 {{ secondary_link("Volver al listado", url_for("gestion.ver_listado_comprobantes_venta")) }}
                 {% if comprobante_venta.estado == "BORRADOR" %}
                     <form method="post" action="{{ url_for('gestion.confirmar_comprobante_venta_existente', comprobante_id=comprobante_venta.id) }}">
@@ -49,7 +50,9 @@
                     <dt class="col-sm-4">Asiento</dt>
                     <dd id="vc-asiento" data-field="asiento_id" class="col-sm-8 mb-0">
                         {% if comprobante_venta.asiento_mostrar %}
-                            {{ comprobante_venta.asiento_mostrar }}
+                            <a id="vc-asiento-link" href="{{ url_for('contabilidad.ver_detalle_asiento_contable', asiento_id=comprobante_venta.asiento_id) }}">
+                                {{ comprobante_venta.asiento_mostrar }}
+                            </a>
                         {% elif comprobante_venta.asiento_id %}
                             ID {{ comprobante_venta.asiento_id }}
                         {% else %}
