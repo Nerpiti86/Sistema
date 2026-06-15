@@ -42,6 +42,12 @@
                     </dd>
                     <dt class="col-sm-4">Cliente</dt>
                     <dd id="vc-cliente" data-field="cliente_razon_social" class="col-sm-8">{{ comprobante_venta.cliente_razon_social }}</dd>
+                    {% if asociacion_comprobante_venta %}
+                        <dt class="col-sm-4">Modifica a</dt>
+                        <dd id="vc-comprobante-asociado-detalle" data-field="comprobante_asociado_id" class="col-sm-8">
+                            {{ asociacion_comprobante_venta.comprobante_asociado_numero_formateado }}
+                        </dd>
+                    {% endif %}
                     <dt class="col-sm-4">Asiento</dt>
                     <dd id="vc-asiento" data-field="asiento_id" class="col-sm-8 mb-0">
                         {% if comprobante_venta.asiento_mostrar %}

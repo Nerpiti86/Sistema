@@ -489,7 +489,7 @@
             } else if (cantidadOpcionesCliente === 0) {
                 ayuda.textContent = "No hay FC confirmadas para el cliente seleccionado.";
             } else {
-                ayuda.textContent = "Elegí la FC confirmada que modifica esta ND/NC. El guardado se habilita en el próximo paso.";
+                ayuda.textContent = "Elegí la FC confirmada que modifica esta ND/NC.";
             }
         }
 
@@ -498,33 +498,13 @@
                 submit.dataset.textoOriginal = submit.textContent;
             }
 
-            submit.disabled = requiereAsociacion;
-            submit.textContent = requiereAsociacion
-                ? "Confirmación ND/NC pendiente"
-                : submit.dataset.textoOriginal;
+            submit.disabled = false;
+            submit.textContent = submit.dataset.textoOriginal;
         }
-    };
-
-    const bloquearEnvioComprobanteModificadorPendiente = (evento) => {
-        if (!requiereComprobanteAsociado()) {
-            return false;
-        }
-
-        evento.preventDefault();
-        sincronizarSelectorComprobanteAsociado();
-
-        const { contenedor } = obtenerElementoAsociacion();
-        if (contenedor) {
-            contenedor.scrollIntoView({ block: "center" });
-        }
-
-        return true;
     };
 
     const validarArticuloAntesDeEnviar = async (evento) => {
-        if (bloquearEnvioComprobanteModificadorPendiente(evento)) {
-            return;
-        }
+        sincronizarSelectorComprobanteAsociado();
 
         const formulario = evento.target;
         const inputLookup = document.querySelector(SELECTORES.lookupArticulos);

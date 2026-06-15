@@ -569,6 +569,163 @@ def test_confirmar_comprobante_venta_desde_formulario_nuevo():
     assert b"EJ2026-0000001" in response.data
 
 
+def test_confirmar_nota_debito_desde_formulario_nuevo_guarda_asociacion_fc():
+    """Valida que ND desde pantalla guarde la FC asociada y confirme."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_ejercicio(db)
+        fc = _crear_comprobante_borrador(db)
+        fc_confirmada = confirmar_comprobante_venta(fc["id"])["comprobante"]
+
+        articulo = db.execute(
+            """
+            SELECT id
+            FROM articulos_venta
+            WHERE nombre = ?
+            ORDER BY id
+            LIMIT 1
+            """,
+            ("Servicio pantalla venta",),
+        ).fetchone()
+
+        response = client.post(
+            "/gestion/ventas/comprobantes/nuevo/",
+            data={
+                "cliente_id": str(fc_confirmada["cliente_id"]),
+                "fecha": "2026-01-16",
+                "fecha_vencimiento": "2026-02-16",
+                "tipo_comprobante": "012",
+                "comprobante_asociado_id": str(fc_confirmada["id"]),
+                "letra": "C",
+                "punto_venta": "1",
+                "numero": "99",
+                "moneda_codigo": "ARS",
+                "articulo_venta_id": str(articulo["id"]),
+                "cantidad": "1,00",
+                "unidad_medida_codigo": "7",
+                "precio_unitario_centavos": "500,00",
+                "tipo_bonificacion_codigo": "",
+                "bonificacion_valor": "0,00",
+                "observaciones": "ND asociada a FC.",
+            },
+            follow_redirects=True,
+        )
+
+        nd = db.execute(
+            """
+            SELECT id, estado, tipo_comprobante, total_centavos, asiento_id
+            FROM ventas_comprobantes
+            WHERE tipo_comprobante = 'NOTA_DEBITO'
+            LIMIT 1
+            """
+        ).fetchone()
+
+        asociacion = db.execute(
+            """
+            SELECT comprobante_id, comprobante_asociado_id, tipo_relacion
+            FROM ventas_comprobantes_asociaciones
+            WHERE comprobante_id = ?
+            """,
+            (nd["id"],),
+        ).fetchone()
+
+        movimiento = db.execute(
+            """
+            SELECT tipo_movimiento, debe_centavos, haber_centavos
+            FROM clientes_cuenta_corriente_movimientos
+            WHERE origen_tipo = 'VENTA_COMPROBANTE'
+              AND origen_id = ?
+            """,
+            (nd["id"],),
+        ).fetchone()
+
+    assert response.status_code == 200
+    assert b"Comprobante de venta confirmado correctamente." in response.data
+    assert b"ND C " in response.data
+    assert b"Modifica a" in response.data
+    assert fc_confirmada["numero_formateado"].encode() in response.data
+
+    assert nd["estado"] == "CONFIRMADO"
+    assert nd["tipo_comprobante"] == "NOTA_DEBITO"
+    assert nd["total_centavos"] == 50000
+    assert nd["asiento_id"] is not None
+
+    assert asociacion["comprobante_id"] == nd["id"]
+    assert asociacion["comprobante_asociado_id"] == fc_confirmada["id"]
+    assert asociacion["tipo_relacion"] == "MODIFICA"
+
+    assert movimiento["tipo_movimiento"] == "NOTA_DEBITO"
+    assert movimiento["debe_centavos"] == 50000
+    assert movimiento["haber_centavos"] == 0
+
+
+def test_confirmar_nota_credito_desde_formulario_rechaza_sin_fc_asociada():
+    """Valida que NC no pueda confirmarse desde pantalla sin FC asociada."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_ejercicio(db)
+        _crear_cuenta_contable(
+            db,
+            CUENTA_DEUDORES,
+            "Deudores por ventas pantalla",
+            "DEBE",
+            "PATRIMONIAL",
+            1,
+        )
+        _crear_cuenta_contable(
+            db,
+            CUENTA_INGRESO,
+            "Ingresos por servicios pantalla",
+            "HABER",
+            "RESULTADO",
+            0,
+        )
+        cliente_id = _crear_cliente(db)
+        articulo_id = _crear_articulo_venta(db)
+
+        response = client.post(
+            "/gestion/ventas/comprobantes/nuevo/",
+            data={
+                "cliente_id": str(cliente_id),
+                "fecha": "2026-01-16",
+                "fecha_vencimiento": "2026-02-16",
+                "tipo_comprobante": "013",
+                "comprobante_asociado_id": "",
+                "letra": "C",
+                "punto_venta": "1",
+                "numero": "99",
+                "moneda_codigo": "ARS",
+                "articulo_venta_id": str(articulo_id),
+                "cantidad": "1,00",
+                "unidad_medida_codigo": "7",
+                "precio_unitario_centavos": "500,00",
+                "tipo_bonificacion_codigo": "",
+                "bonificacion_valor": "0,00",
+            },
+            follow_redirects=False,
+        )
+
+        cantidad_nc = db.execute(
+            """
+            SELECT COUNT(*) AS cantidad
+            FROM ventas_comprobantes
+            WHERE tipo_comprobante = 'NOTA_CREDITO'
+            """
+        ).fetchone()["cantidad"]
+
+    assert response.status_code == 400
+    assert b"FC asociada" in response.data
+    assert cantidad_nc == 0
+
+
 def test_post_nuevo_comprobante_no_deja_borrador_si_falla_confirmacion():
     """
     Contrato: el POST real de nuevo comprobante es transaccional.

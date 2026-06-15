@@ -168,12 +168,14 @@ def obtener_contexto_detalle_comprobante_venta(
     movimiento_cuenta_corriente = (
         _obtener_movimiento_cuenta_corriente_comprobante_para_pantalla(comprobante)
     )
+    asociacion_comprobante = obtener_asociacion_comprobante_venta(comprobante["id"])
 
     return {
         "comprobante_venta": comprobante_pantalla,
         "detalles_comprobante_venta": detalles_pantalla,
         "cantidad_detalles_comprobante_venta": len(detalles_pantalla),
         "movimiento_cuenta_corriente_venta": movimiento_cuenta_corriente,
+        "asociacion_comprobante_venta": asociacion_comprobante,
     }
 
 
@@ -669,9 +671,36 @@ def crear_y_confirmar_comprobante_venta_desde_formulario(formulario: Any) -> dic
         comprobante_borrador = crear_borrador_comprobante_venta_desde_formulario(
             formulario
         )
-        return confirmar_comprobante_venta(comprobante_borrador["id"])
+        asociacion = _asociar_comprobante_modificador_desde_formulario_si_corresponde(
+            comprobante_borrador,
+            formulario,
+        )
+        resultado = confirmar_comprobante_venta(comprobante_borrador["id"])
+
+        if asociacion is not None:
+            resultado["asociacion_comprobante_venta"] = asociacion
+
+        return resultado
 
     return ejecutar_en_transaccion(_crear_y_confirmar)
+
+
+def _asociar_comprobante_modificador_desde_formulario_si_corresponde(
+    comprobante_borrador: dict[str, Any],
+    formulario: Any,
+) -> dict[str, Any] | None:
+    if comprobante_borrador["tipo_comprobante"] not in {"NOTA_DEBITO", "NOTA_CREDITO"}:
+        return None
+
+    factura_id = _validar_entero_positivo(
+        formulario.get("comprobante_asociado_id"),
+        "La FC asociada es obligatoria para ND/NC.",
+    )
+
+    return asociar_comprobante_venta_a_factura(
+        comprobante_borrador["id"],
+        factura_id,
+    )
 
 
 def confirmar_comprobante_venta(comprobante_id: Any) -> dict[str, Any]:
