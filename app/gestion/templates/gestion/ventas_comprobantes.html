@@ -52,14 +52,10 @@
                                 <tr id="vc-row-{{ comprobante.id }}" data-table="ventas_comprobantes" data-query="listar_ventas_comprobantes" data-row-id="{{ comprobante.id }}">
                                     <td data-field="fecha">{{ comprobante.fecha_argentina }}</td>
                                     <td data-field="numero_formateado">
-                                        <div class="fw-semibold">
-                                            {% if comprobante.tipo_comprobante_codigo %}
-                                                {{ comprobante.tipo_comprobante_codigo }} - {{ comprobante.tipo_comprobante_descripcion }}
-                                            {% else %}
-                                                {{ comprobante.tipo_comprobante }}
-                                            {% endif %}
-                                            {{ comprobante.numero_formateado }}
-                                        </div>
+                                        <div class="fw-semibold">{{ comprobante.numero_formateado }}</div>
+                                        {% if comprobante.tipo_comprobante_descripcion %}
+                                            <div class="text-muted small">{{ comprobante.tipo_comprobante_descripcion }}</div>
+                                        {% endif %}
                                         {% if comprobante.observaciones %}
                                             <div class="text-muted small">{{ comprobante.observaciones }}</div>
                                         {% endif %}

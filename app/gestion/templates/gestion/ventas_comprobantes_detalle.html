@@ -9,11 +9,6 @@
             <div>
                 <h1 id="vc-detalle-titulo" class="h3 mb-1">Detalle comprobante de venta</h1>
                 <p id="vc-detalle-descripcion" class="text-muted mb-0">
-                    {% if comprobante_venta.tipo_comprobante_codigo %}
-                        {{ comprobante_venta.tipo_comprobante_codigo }} - {{ comprobante_venta.tipo_comprobante_descripcion }}
-                    {% else %}
-                        {{ comprobante_venta.tipo_comprobante }}
-                    {% endif %}
                     {{ comprobante_venta.numero_formateado }} - {{ comprobante_venta.cliente_razon_social }}
                 </p>
             </div>

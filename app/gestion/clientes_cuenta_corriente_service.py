@@ -294,11 +294,11 @@ def _preparar_etiqueta_saldo_inicial(fecha_desde: str | None) -> str:
 def _mostrar_tipo_movimiento(tipo_movimiento: Any) -> str:
     codigo = str(tipo_movimiento or "").strip().upper()
     mapa = {
-        "FACTURA": "Factura",
+        "FACTURA": "FC",
         "COBRANZA": "Cobranza",
         "ANTICIPO": "Anticipo",
-        "NOTA_CREDITO": "Nota de crédito",
-        "NOTA_DEBITO": "Nota de débito",
+        "NOTA_CREDITO": "NC",
+        "NOTA_DEBITO": "ND",
         "AJUSTE": "Ajuste",
     }
     return mapa.get(codigo, codigo.replace("_", " ").title())
@@ -307,20 +307,30 @@ def _mostrar_tipo_movimiento(tipo_movimiento: Any) -> str:
 def _mostrar_detalle_movimiento(movimiento: dict[str, Any]) -> str:
     descripcion = str(movimiento.get("descripcion") or "").strip()
     tipo = str(movimiento.get("tipo_movimiento") or "").strip().upper()
+    prefijo_corto = _mostrar_tipo_movimiento(tipo)
 
     prefijos = [
         f"Venta {tipo} ",
+        f"Venta {prefijo_corto} ",
         "Venta FACTURA ",
         "Venta NOTA_CREDITO ",
         "Venta NOTA_DEBITO ",
+        "Venta ",
         "Cobranza ",
     ]
 
+    detalle = descripcion
     for prefijo in prefijos:
-        if descripcion.startswith(prefijo):
-            return descripcion[len(prefijo):].strip()
+        if detalle.startswith(prefijo):
+            detalle = detalle[len(prefijo):].strip()
+            break
 
-    return descripcion
+    if tipo in {"FACTURA", "NOTA_DEBITO", "NOTA_CREDITO"}:
+        if detalle.startswith(f"{prefijo_corto} "):
+            return detalle
+        return f"{prefijo_corto} {detalle}".strip()
+
+    return detalle
 
 
 def _mostrar_lado_saldo(saldo_centavos: int) -> str:

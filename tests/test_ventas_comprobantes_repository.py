@@ -172,7 +172,7 @@ def test_crear_venta_comprobante_inserta_cabecera_y_detalle_normalizados():
     assert comprobante["letra"] == "C"
     assert comprobante["punto_venta"] == 1
     assert comprobante["numero"] == 25
-    assert comprobante["numero_formateado"] == "C 0001-00000025"
+    assert comprobante["numero_formateado"] == "FC C 0001-00000025"
     assert comprobante["moneda_codigo"] == "ARS"
     assert comprobante["cotizacion_centavos"] == 100
     assert comprobante["total_centavos"] == 121000

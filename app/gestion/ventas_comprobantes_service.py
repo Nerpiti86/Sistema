@@ -733,10 +733,7 @@ def _obtener_ejercicio_para_confirmacion(fecha: str) -> dict[str, Any]:
 
 
 def _descripcion_confirmacion_venta(comprobante: dict[str, Any]) -> str:
-    return (
-        f"Venta {comprobante['tipo_comprobante']} "
-        f"{comprobante['numero_formateado']}"
-    )
+    return f"Venta {comprobante['numero_formateado']}"
 
 
 def _armar_detalles_asiento_confirmacion(

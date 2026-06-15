@@ -75,6 +75,11 @@ _LETRAS_COMPROBANTE_FISCALES_VALIDAS = {
 _TIPOS_COMPROBANTE_OPERATIVOS_POR_CODIGO = {
     valor: codigo for codigo, valor in _TIPOS_COMPROBANTE_FISCALES_VALIDOS.items()
 }
+_PREFIJOS_NUMERO_COMPROBANTE = {
+    "FACTURA": "FC",
+    "NOTA_DEBITO": "ND",
+    "NOTA_CREDITO": "NC",
+}
 _ESTADOS_COMPROBANTE_VALIDOS = {"BORRADOR", "CONFIRMADO", "ANULADO"}
 _PATRON_FECHA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PATRON_MONEDA = re.compile(r"^[A-Z]{3}$")
@@ -652,7 +657,14 @@ def _formatear_numero_comprobante(comprobante: dict[str, Any]) -> str:
     if comprobante["punto_venta"] <= 0 or comprobante["numero"] <= 0:
         return ""
 
-    return f"{comprobante['letra']} {comprobante['punto_venta']:04d}-{comprobante['numero']:08d}"
+    prefijo = _PREFIJOS_NUMERO_COMPROBANTE.get(
+        comprobante["tipo_comprobante"],
+        comprobante["tipo_comprobante"],
+    )
+    return (
+        f"{prefijo} {comprobante['letra']} "
+        f"{comprobante['punto_venta']:04d}-{comprobante['numero']:08d}"
+    )
 
 
 def _validar_texto_obligatorio(valor: Any, mensaje: str) -> str:
