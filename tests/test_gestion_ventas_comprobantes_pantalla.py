@@ -537,6 +537,76 @@ def test_confirmar_comprobante_venta_desde_formulario_nuevo():
     assert b"EJ2026-0000001" in response.data
 
 
+def test_post_nuevo_comprobante_no_deja_borrador_si_falla_confirmacion():
+    """
+    Contrato: el POST real de nuevo comprobante es transaccional.
+
+    Si el usuario carga datos y al confirmar falla la generacion de impactos,
+    no debe quedar una venta BORRADOR huerfana.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_ejercicio(db)
+        _crear_cuenta_contable(
+            db,
+            CUENTA_DEUDORES,
+            "Deudores por ventas pantalla",
+            "DEBE",
+            "PATRIMONIAL",
+            1,
+        )
+        _crear_cuenta_contable(
+            db,
+            CUENTA_INGRESO,
+            "Ingresos por servicios pantalla",
+            "HABER",
+            "RESULTADO",
+            0,
+        )
+        cliente_id = _crear_cliente(db, cuenta_deudores=None)
+        articulo_id = _crear_articulo_venta(db)
+
+        response = client.post(
+            "/gestion/ventas/comprobantes/nuevo/",
+            data={
+                "cliente_id": str(cliente_id),
+                "fecha": "2026-01-15",
+                "fecha_vencimiento": "2026-02-15",
+                "tipo_comprobante": "FACTURA",
+                "letra": "X",
+                "punto_venta": "99",
+                "numero": "26",
+                "moneda_codigo": "ARS",
+                "articulo_venta_id": str(articulo_id),
+                "cantidad": "1,00",
+                "unidad_medida_codigo": "7",
+                "precio_unitario_centavos": "1.500,00",
+                "observaciones": "Alta que debe fallar al confirmar.",
+            },
+            follow_redirects=True,
+        )
+
+        cantidad_comprobantes = db.execute(
+            "SELECT COUNT(*) AS cantidad FROM ventas_comprobantes"
+        ).fetchone()["cantidad"]
+        cantidad_asientos = db.execute(
+            "SELECT COUNT(*) AS cantidad FROM asientos_contables"
+        ).fetchone()["cantidad"]
+        cantidad_movimientos = db.execute(
+            "SELECT COUNT(*) AS cantidad FROM clientes_cuenta_corriente_movimientos"
+        ).fetchone()["cantidad"]
+
+    assert response.status_code == 400
+    assert b"deudores" in response.data
+    assert cantidad_comprobantes == 0
+    assert cantidad_asientos == 0
+    assert cantidad_movimientos == 0
+
+
 def test_crear_borrador_comprobante_venta_desde_pantalla_rechaza_cliente_vacio():
     """Valida re-render 400 cuando falta cliente."""
     app = create_app(TestConfig)
