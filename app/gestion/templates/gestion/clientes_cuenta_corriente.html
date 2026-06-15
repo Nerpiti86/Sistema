@@ -59,15 +59,15 @@
                 <form method="get" class="row g-2 align-items-end">
                     <div class="col-12 col-md-3">
                         <label for="cl-cc-fecha-desde" class="form-label">Desde</label>
-                        <input id="cl-cc-fecha-desde" name="fecha_desde" type="date" class="form-control" value="{{ filtros.fecha_desde }}">
+                        <input id="cl-cc-fecha-desde" name="fecha_desde" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ filtros.fecha_desde }}" placeholder="dd/mm/aaaa" autocomplete="off">
                     </div>
                     <div class="col-12 col-md-3">
                         <label for="cl-cc-fecha-hasta" class="form-label">Hasta</label>
-                        <input id="cl-cc-fecha-hasta" name="fecha_hasta" type="date" class="form-control" value="{{ filtros.fecha_hasta }}">
+                        <input id="cl-cc-fecha-hasta" name="fecha_hasta" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ filtros.fecha_hasta }}" placeholder="dd/mm/aaaa" autocomplete="off">
                     </div>
                     <div class="col-12 col-md-3">
                         <label for="cl-cc-estado" class="form-label">Estado</label>
-                        <select id="cl-cc-estado" name="estado" class="form-select">
+                        <select id="cl-cc-estado" name="estado" class="form-select" data-ns-select="normal" data-ns-select-placeholder="Todos">
                             <option value="" {% if not filtros.estado %}selected{% endif %}>Todos</option>
                             <option value="CONFIRMADO" {% if filtros.estado == "CONFIRMADO" %}selected{% endif %}>Confirmado</option>
                             <option value="BORRADOR" {% if filtros.estado == "BORRADOR" %}selected{% endif %}>Borrador</option>

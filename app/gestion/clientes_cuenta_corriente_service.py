@@ -4,6 +4,7 @@ from typing import Any
 from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
     formatear_fecha_iso_a_argentina,
+    normalizar_fecha_argentina_a_iso,
 )
 from app.gestion.clientes_cuenta_corriente_repository import (
     calcular_saldo_cliente_cuenta_corriente,
@@ -154,8 +155,8 @@ def obtener_contexto_cuenta_corriente_cliente(
         "saldo_final": _preparar_saldo_para_pantalla(saldo_final_centavos),
         "estado_filtro": estado_normalizado,
         "filtros": {
-            "fecha_desde": fecha_desde_normalizada or "",
-            "fecha_hasta": fecha_hasta_normalizada or "",
+            "fecha_desde": _formatear_fecha_iso_opcional(fecha_desde_normalizada),
+            "fecha_hasta": _formatear_fecha_iso_opcional(fecha_hasta_normalizada),
             "estado": estado_normalizado or "",
         },
         "saldo_inicial_etiqueta": _preparar_etiqueta_saldo_inicial(
@@ -383,6 +384,12 @@ def _normalizar_fecha_iso_opcional(fecha: Any, mensaje_error: str) -> str | None
 
     if not fecha_normalizada:
         return None
+
+    if "/" in fecha_normalizada:
+        try:
+            return normalizar_fecha_argentina_a_iso(fecha_normalizada)
+        except ValueError as exc:
+            raise ValueError(mensaje_error) from exc
 
     try:
         date.fromisoformat(fecha_normalizada)
