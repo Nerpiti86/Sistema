@@ -1,6 +1,10 @@
 import re
 from typing import Any
 
+from app.shared.formatos import (
+    formatear_entero_escala_a_decimal_argentino,
+    formatear_fecha_iso_a_argentina,
+)
 from app.contabilidad.asientos_contables_service import (
     crear_asiento_contable_automatico_confirmado,
 )
@@ -50,6 +54,110 @@ def obtener_comprobante_venta(comprobante_id: Any) -> dict[str, Any]:
         raise ValueError("No existe el comprobante de venta informado.")
 
     return comprobante
+
+
+def obtener_contexto_listado_comprobantes_venta() -> dict[str, Any]:
+    """
+    Devuelve contexto de pantalla para listado de comprobantes de venta.
+
+    Solo prepara datos de presentacion. No calcula cobranza ni saldo.
+    """
+    comprobantes = [
+        _preparar_comprobante_venta_para_pantalla(comprobante)
+        for comprobante in listar_comprobantes_venta()
+    ]
+
+    return {
+        "comprobantes_venta": comprobantes,
+        "cantidad_comprobantes_venta": len(comprobantes),
+    }
+
+
+def obtener_contexto_detalle_comprobante_venta(
+    comprobante_id: Any,
+) -> dict[str, Any]:
+    """
+    Devuelve contexto de pantalla para detalle de comprobante de venta.
+
+    La lectura muestra documento, renglones e impactos ya asociados.
+    """
+    comprobante = obtener_comprobante_venta(comprobante_id)
+    comprobante_pantalla = _preparar_comprobante_venta_para_pantalla(comprobante)
+    detalles_pantalla = [
+        _preparar_detalle_comprobante_venta_para_pantalla(detalle)
+        for detalle in comprobante.get("detalles", [])
+    ]
+
+    return {
+        "comprobante_venta": comprobante_pantalla,
+        "detalles_comprobante_venta": detalles_pantalla,
+        "cantidad_detalles_comprobante_venta": len(detalles_pantalla),
+    }
+
+
+def _preparar_comprobante_venta_para_pantalla(
+    comprobante: dict[str, Any],
+) -> dict[str, Any]:
+    comprobante_pantalla = dict(comprobante)
+    comprobante_pantalla["fecha_argentina"] = _formatear_fecha_iso_opcional(
+        comprobante.get("fecha")
+    )
+    comprobante_pantalla["fecha_vencimiento_argentina"] = _formatear_fecha_iso_opcional(
+        comprobante.get("fecha_vencimiento")
+    )
+    comprobante_pantalla["subtotal_argentina"] = _formatear_centavos(
+        comprobante.get("subtotal_centavos", 0)
+    )
+    comprobante_pantalla["descuento_argentina"] = _formatear_centavos(
+        comprobante.get("descuento_centavos", 0)
+    )
+    comprobante_pantalla["recargo_argentina"] = _formatear_centavos(
+        comprobante.get("recargo_centavos", 0)
+    )
+    comprobante_pantalla["iva_argentina"] = _formatear_centavos(
+        comprobante.get("iva_centavos", 0)
+    )
+    comprobante_pantalla["total_argentina"] = _formatear_centavos(
+        comprobante.get("total_centavos", 0)
+    )
+
+    return comprobante_pantalla
+
+
+def _preparar_detalle_comprobante_venta_para_pantalla(
+    detalle: dict[str, Any],
+) -> dict[str, Any]:
+    detalle_pantalla = dict(detalle)
+    detalle_pantalla["precio_unitario_argentina"] = _formatear_centavos(
+        detalle.get("precio_unitario_centavos", 0)
+    )
+    detalle_pantalla["subtotal_argentina"] = _formatear_centavos(
+        detalle.get("subtotal_centavos", 0)
+    )
+    detalle_pantalla["descuento_argentina"] = _formatear_centavos(
+        detalle.get("descuento_centavos", 0)
+    )
+    detalle_pantalla["iva_argentina"] = _formatear_centavos(
+        detalle.get("iva_centavos", 0)
+    )
+    detalle_pantalla["total_linea_argentina"] = _formatear_centavos(
+        detalle.get("total_linea_centavos", 0)
+    )
+
+    return detalle_pantalla
+
+
+def _formatear_fecha_iso_opcional(fecha: Any) -> str:
+    fecha_normalizada = str(fecha or "").strip()
+
+    if not fecha_normalizada:
+        return ""
+
+    return formatear_fecha_iso_a_argentina(fecha_normalizada)
+
+
+def _formatear_centavos(valor: Any) -> str:
+    return formatear_entero_escala_a_decimal_argentino(int(valor or 0), 2)
 
 
 def crear_borrador_comprobante_venta(

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section id="vc-listado" data-table="ventas_comprobantes" data-query="listar_ventas_comprobantes" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="vc-titulo" class="h3 mb-1">Comprobantes de venta</h1>
+                <p id="vc-descripcion" class="text-muted mb-0">
+                    Listado de documentos comerciales de venta. La cobranza y los fondos se gestionan en circuitos separados.
+                </p>
+            </div>
+            <div id="vc-acciones-listado" class="d-flex gap-2">
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="vc-resumen" data-table="ventas_comprobantes" data-query="obtener_contexto_listado_comprobantes_venta">
+            {% call card("Resumen", "Gestión") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd id="vc-cantidad" data-field="cantidad_comprobantes_venta" class="col-sm-9 mb-0">{{ cantidad_comprobantes_venta }}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="vc-contenedor-tabla" data-table="ventas_comprobantes" data-query="listar_ventas_comprobantes">
+            {% call card("Listado", "comprobantes de venta") %}
+                <div class="table-responsive">
+                    <table id="vc-tabla" data-table="ventas_comprobantes" data-query="listar_ventas_comprobantes" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="fecha">Fecha</th>
+                                <th data-field="numero_formateado">Comprobante</th>
+                                <th data-field="cliente_razon_social">Cliente</th>
+                                <th data-field="moneda_codigo">Moneda</th>
+                                <th data-field="total_centavos" class="text-end">Total</th>
+                                <th data-field="estado" class="text-center">Estado</th>
+                                <th data-field="asiento_id" class="text-end">Asiento</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vc-tbody">
+                            {% for comprobante in comprobantes_venta %}
+                                <tr id="vc-row-{{ comprobante.id }}" data-table="ventas_comprobantes" data-query="listar_ventas_comprobantes" data-row-id="{{ comprobante.id }}">
+                                    <td data-field="fecha">{{ comprobante.fecha_argentina }}</td>
+                                    <td data-field="numero_formateado">
+                                        <div class="fw-semibold">{{ comprobante.tipo_comprobante }} {{ comprobante.numero_formateado }}</div>
+                                        {% if comprobante.observaciones %}
+                                            <div class="text-muted small">{{ comprobante.observaciones }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="cliente_razon_social">{{ comprobante.cliente_razon_social }}</td>
+                                    <td data-field="moneda_codigo">{{ comprobante.moneda_codigo }}</td>
+                                    <td data-field="total_centavos" class="text-end">{{ comprobante.total_argentina }}</td>
+                                    <td data-field="estado" class="text-center">
+                                        {% if comprobante.estado == "CONFIRMADO" %}
+                                            <span class="badge text-bg-success">CONFIRMADO</span>
+                                        {% elif comprobante.estado == "ANULADO" %}
+                                            <span class="badge text-bg-secondary">ANULADO</span>
+                                        {% else %}
+                                            <span class="badge text-bg-warning">BORRADOR</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="asiento_id" class="text-end">
+                                        {% if comprobante.asiento_id %}
+                                            {{ comprobante.asiento_id }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('gestion.ver_detalle_comprobante_venta', comprobante_id=comprobante.id) }}">Ver detalle</a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="vc-row-sin-datos" data-table="ventas_comprobantes" data-query="listar_ventas_comprobantes">
+                                    <td id="vc-mensaje-sin-datos" colspan="8" class="text-center text-muted py-4">No hay comprobantes de venta cargados.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

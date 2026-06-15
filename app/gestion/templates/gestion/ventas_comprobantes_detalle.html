@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section id="vc-detalle" data-table="ventas_comprobantes" data-row-id="{{ comprobante_venta.id }}" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="vc-detalle-titulo" class="h3 mb-1">Detalle comprobante de venta</h1>
+                <p id="vc-detalle-descripcion" class="text-muted mb-0">
+                    {{ comprobante_venta.tipo_comprobante }} {{ comprobante_venta.numero_formateado }} - {{ comprobante_venta.cliente_razon_social }}
+                </p>
+            </div>
+            <div id="vc-detalle-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver al listado", url_for("gestion.ver_listado_comprobantes_venta")) }}
+                {% if comprobante_venta.estado == "BORRADOR" %}
+                    <form method="post" action="{{ url_for('gestion.confirmar_comprobante_venta_existente', comprobante_id=comprobante_venta.id) }}">
+                        <button id="vc-confirmar" type="submit" class="btn btn-sm btn-success">Confirmar</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div id="vc-detalle-cabecera">
+            {% call card("Cabecera", "Comprobante") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Estado</dt>
+                    <dd id="vc-estado" data-field="estado" class="col-sm-8">{{ comprobante_venta.estado }}</dd>
+                    <dt class="col-sm-4">Fecha</dt>
+                    <dd id="vc-fecha" data-field="fecha" class="col-sm-8">{{ comprobante_venta.fecha_argentina }}</dd>
+                    <dt class="col-sm-4">Vencimiento</dt>
+                    <dd id="vc-fecha-vencimiento" data-field="fecha_vencimiento" class="col-sm-8">
+                        {% if comprobante_venta.fecha_vencimiento_argentina %}
+                            {{ comprobante_venta.fecha_vencimiento_argentina }}
+                        {% else %}
+                            <span class="text-muted">Sin vencimiento</span>
+                        {% endif %}
+                    </dd>
+                    <dt class="col-sm-4">Cliente</dt>
+                    <dd id="vc-cliente" data-field="cliente_razon_social" class="col-sm-8">{{ comprobante_venta.cliente_razon_social }}</dd>
+                    <dt class="col-sm-4">Asiento</dt>
+                    <dd id="vc-asiento" data-field="asiento_id" class="col-sm-8 mb-0">
+                        {% if comprobante_venta.asiento_id %}
+                            {{ comprobante_venta.asiento_id }}
+                        {% else %}
+                            <span class="text-muted">Sin asiento</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div id="vc-detalle-importes">
+            {% call card("Importes", "Resumen") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Subtotal</dt>
+                    <dd id="vc-subtotal" data-field="subtotal_centavos" class="col-sm-8 text-end">{{ comprobante_venta.subtotal_argentina }}</dd>
+                    <dt class="col-sm-4">Descuento</dt>
+                    <dd id="vc-descuento" data-field="descuento_centavos" class="col-sm-8 text-end">{{ comprobante_venta.descuento_argentina }}</dd>
+                    <dt class="col-sm-4">Recargo</dt>
+                    <dd id="vc-recargo" data-field="recargo_centavos" class="col-sm-8 text-end">{{ comprobante_venta.recargo_argentina }}</dd>
+                    <dt class="col-sm-4">IVA</dt>
+                    <dd id="vc-iva" data-field="iva_centavos" class="col-sm-8 text-end">{{ comprobante_venta.iva_argentina }}</dd>
+                    <dt class="col-sm-4">Total</dt>
+                    <dd id="vc-total" data-field="total_centavos" class="col-sm-8 text-end fw-semibold mb-0">{{ comprobante_venta.total_argentina }}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="vc-detalle-renglones" data-table="ventas_comprobantes_detalle">
+            {% call card("Renglones", "Detalle") %}
+                <div class="table-responsive">
+                    <table id="vc-detalle-tabla" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="descripcion">Descripción</th>
+                                <th data-field="cuenta_ingreso_codigo">Cuenta ingreso</th>
+                                <th data-field="cantidad_1000000" class="text-end">Cantidad esc.</th>
+                                <th data-field="precio_unitario_centavos" class="text-end">Precio unitario</th>
+                                <th data-field="descuento_centavos" class="text-end">Descuento</th>
+                                <th data-field="iva_centavos" class="text-end">IVA</th>
+                                <th data-field="total_linea_centavos" class="text-end">Total línea</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vc-detalle-tbody">
+                            {% for detalle in detalles_comprobante_venta %}
+                                <tr id="vc-detalle-row-{{ detalle.id }}" data-row-id="{{ detalle.id }}">
+                                    <td data-field="descripcion">{{ detalle.descripcion }}</td>
+                                    <td data-field="cuenta_ingreso_codigo">{{ detalle.cuenta_ingreso_codigo }}</td>
+                                    <td data-field="cantidad_1000000" class="text-end">{{ detalle.cantidad_1000000 }}</td>
+                                    <td data-field="precio_unitario_centavos" class="text-end">{{ detalle.precio_unitario_argentina }}</td>
+                                    <td data-field="descuento_centavos" class="text-end">{{ detalle.descuento_argentina }}</td>
+                                    <td data-field="iva_centavos" class="text-end">{{ detalle.iva_argentina }}</td>
+                                    <td data-field="total_linea_centavos" class="text-end">{{ detalle.total_linea_argentina }}</td>
+                                </tr>
+                            {% else %}
+                                <tr id="vc-detalle-row-sin-datos">
+                                    <td colspan="7" class="text-center text-muted py-4">No hay renglones para este comprobante.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

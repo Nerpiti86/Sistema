@@ -26,6 +26,11 @@ from app.gestion.grupos_clientes_service import (
     obtener_contexto_detalle_grupo_cliente,
     obtener_contexto_listado_grupos_clientes,
 )
+from app.gestion.ventas_comprobantes_service import (
+    confirmar_comprobante_venta,
+    obtener_contexto_detalle_comprobante_venta,
+    obtener_contexto_listado_comprobantes_venta,
+)
 
 bp = Blueprint(
     "gestion",
@@ -337,6 +342,62 @@ def desactivar_grupo_cliente_existente(grupo_cliente_id):
         url_for(
             "gestion.ver_listado_grupos_clientes",
             grupo=grupo_cliente["id"],
+        )
+    )
+
+
+
+@bp.get("/ventas/comprobantes/")
+def ver_listado_comprobantes_venta():
+    """Muestra listado de comprobantes de venta."""
+    contexto = obtener_contexto_listado_comprobantes_venta()
+
+    return render_template(
+        "gestion/ventas_comprobantes.html",
+        page_title="Comprobantes de venta",
+        **contexto,
+    )
+
+
+@bp.get("/ventas/comprobantes/<int:comprobante_id>/")
+def ver_detalle_comprobante_venta(comprobante_id):
+    """Muestra detalle de un comprobante de venta."""
+    try:
+        contexto = obtener_contexto_detalle_comprobante_venta(comprobante_id)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("gestion.ver_listado_comprobantes_venta"))
+
+    comprobante = contexto["comprobante_venta"]
+
+    return render_template(
+        "gestion/ventas_comprobantes_detalle.html",
+        page_title=f"Comprobante de venta {comprobante['numero_formateado']}",
+        **contexto,
+    )
+
+
+@bp.post("/ventas/comprobantes/<int:comprobante_id>/confirmar/")
+def confirmar_comprobante_venta_existente(comprobante_id):
+    """Confirma un comprobante de venta sin mover fondos."""
+    try:
+        resultado = confirmar_comprobante_venta(comprobante_id)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(
+            url_for(
+                "gestion.ver_detalle_comprobante_venta",
+                comprobante_id=comprobante_id,
+            )
+        )
+
+    comprobante = resultado["comprobante"]
+    flash("Comprobante de venta confirmado correctamente.", "success")
+
+    return redirect(
+        url_for(
+            "gestion.ver_detalle_comprobante_venta",
+            comprobante_id=comprobante["id"],
         )
     )
 
