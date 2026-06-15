@@ -8,6 +8,7 @@ from app.shared.formatos import (
 )
 from app.contabilidad.asientos_contables_service import (
     crear_asiento_contable_automatico_confirmado,
+    obtener_asiento_contable,
 )
 from app.contabilidad.ejercicios_contables_repository import (
     obtener_ejercicio_contable_por_fecha,
@@ -149,8 +150,41 @@ def _preparar_comprobante_venta_para_pantalla(
     comprobante_pantalla["total_argentina"] = _formatear_centavos(
         comprobante.get("total_centavos", 0)
     )
+    _agregar_asiento_contable_para_pantalla(comprobante_pantalla)
 
     return comprobante_pantalla
+
+
+def _agregar_asiento_contable_para_pantalla(
+    comprobante_pantalla: dict[str, Any],
+) -> None:
+    """
+    Agrega etiqueta visual de asiento contable.
+
+    La pantalla de ventas debe mostrar el numero contable del asiento y conservar
+    el ID tecnico solo como trazabilidad.
+    """
+    asiento_id = comprobante_pantalla.get("asiento_id")
+    comprobante_pantalla["asiento_numero_mostrar"] = ""
+    comprobante_pantalla["asiento_mostrar"] = ""
+
+    if asiento_id is None:
+        return
+
+    asiento = obtener_asiento_contable(asiento_id)
+
+    if asiento is None:
+        comprobante_pantalla["asiento_mostrar"] = f"ID {asiento_id}"
+        return
+
+    numero_asiento = asiento.get("numero_asiento")
+
+    if numero_asiento is None:
+        comprobante_pantalla["asiento_mostrar"] = f"Sin numero (ID {asiento_id})"
+        return
+
+    comprobante_pantalla["asiento_numero_mostrar"] = str(numero_asiento)
+    comprobante_pantalla["asiento_mostrar"] = f"Nro. {numero_asiento} (ID {asiento_id})"
 
 
 def _preparar_detalle_comprobante_venta_para_pantalla(

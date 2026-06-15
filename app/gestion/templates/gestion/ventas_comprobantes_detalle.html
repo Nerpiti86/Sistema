@@ -48,8 +48,10 @@
                     <dd id="vc-cliente" data-field="cliente_razon_social" class="col-sm-8">{{ comprobante_venta.cliente_razon_social }}</dd>
                     <dt class="col-sm-4">Asiento</dt>
                     <dd id="vc-asiento" data-field="asiento_id" class="col-sm-8 mb-0">
-                        {% if comprobante_venta.asiento_id %}
-                            {{ comprobante_venta.asiento_id }}
+                        {% if comprobante_venta.asiento_mostrar %}
+                            {{ comprobante_venta.asiento_mostrar }}
+                        {% elif comprobante_venta.asiento_id %}
+                            ID {{ comprobante_venta.asiento_id }}
                         {% else %}
                             <span class="text-muted">Sin asiento</span>
                         {% endif %}

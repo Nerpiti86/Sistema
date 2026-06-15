@@ -297,7 +297,38 @@ def test_confirmar_venta_desde_pantalla():
     assert b"Comprobante de venta confirmado correctamente." in response.data
     assert b"CONFIRMADO" in response.data
     assert b"Sin asiento" not in response.data
+    assert b"Nro. 1" in response.data
+    assert b"(ID " in response.data
     assert b'id="vc-confirmar"' not in response.data
+
+
+def test_listado_venta_confirmada_muestra_numero_contable_de_asiento():
+    """
+    Valida que el listado de ventas muestre numero contable de asiento.
+
+    El asiento_id es trazabilidad tecnica; la pantalla principal debe mostrar el
+    numero_asiento confirmado para lectura contable.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_ejercicio(db)
+        comprobante = _crear_comprobante_borrador(db)
+
+        client.post(
+            f"/gestion/ventas/comprobantes/{comprobante['id']}/confirmar/",
+            follow_redirects=True,
+        )
+
+        response = client.get("/gestion/ventas/comprobantes/")
+
+    assert response.status_code == 200
+    assert b"CONFIRMADO" in response.data
+    assert b"Nro. 1" in response.data
+    assert b"(ID " in response.data
 
 
 def test_confirmar_venta_desde_pantalla_muestra_error_funcional():

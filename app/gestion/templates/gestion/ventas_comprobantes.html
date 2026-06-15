@@ -77,8 +77,10 @@
                                         {% endif %}
                                     </td>
                                     <td data-field="asiento_id" class="text-end">
-                                        {% if comprobante.asiento_id %}
-                                            {{ comprobante.asiento_id }}
+                                        {% if comprobante.asiento_mostrar %}
+                                            {{ comprobante.asiento_mostrar }}
+                                        {% elif comprobante.asiento_id %}
+                                            ID {{ comprobante.asiento_id }}
                                         {% else %}
                                             <span class="text-muted">-</span>
                                         {% endif %}
