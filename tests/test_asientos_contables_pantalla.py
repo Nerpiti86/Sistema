@@ -3,7 +3,10 @@ from pathlib import Path
 
 from app import create_app
 from app.config import TestConfig
-from app.contabilidad.asientos_contables_service import crear_asiento_contable_borrador
+from app.contabilidad.asientos_contables_service import (
+    crear_asiento_contable_automatico_confirmado,
+    crear_asiento_contable_borrador,
+)
 from app.db import apply_migrations, get_db
 
 
@@ -152,6 +155,56 @@ def test_pantalla_asientos_contables_muestra_asiento_con_ids_y_formato_argentino
     assert b'data-action="ver_detalle_asiento_contable"' in response.data
     html = response.data.decode("utf-8")
     assert re.search(r">\\s*100000\\s*<", html) is None
+
+
+def test_pantalla_asientos_contables_muestra_numero_confirmado_con_ejercicio():
+    """
+    Contrato: un asiento confirmado se muestra con ejercicio y numero correlativo.
+
+    El numero simple reinicia por ejercicio, por eso la pantalla debe mostrar
+    EJ2026-0000001 y no solamente 1.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _insertar_ejercicio_contable_pantalla_para_asientos(db)
+        cuenta_debe = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "1.1.01.01.997",
+        )
+        cuenta_haber = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "1.1.01.01.996",
+        )
+
+        crear_asiento_contable_automatico_confirmado(
+            {
+                "ejercicio_id": ejercicio_id,
+                "fecha": "2026-06-10",
+                "descripcion": "Asiento confirmado pantalla",
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "nominal_debe_centavos": 100000,
+                    "debe_centavos": 100000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "nominal_haber_centavos": 100000,
+                    "haber_centavos": 100000,
+                },
+            ],
+        )
+
+        response = client.get("/contabilidad/asientos-contables/")
+
+    assert response.status_code == 200
+    assert b"Asiento confirmado pantalla" in response.data
+    assert b"EJ2026-0000001" in response.data
 
 
 def test_pantalla_contabilidad_tiene_acceso_corto_a_asientos_contables():

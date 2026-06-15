@@ -297,7 +297,7 @@ def test_confirmar_venta_desde_pantalla():
     assert b"Comprobante de venta confirmado correctamente." in response.data
     assert b"CONFIRMADO" in response.data
     assert b"Sin asiento" not in response.data
-    assert b"Nro. 1" in response.data
+    assert b"EJ2026-0000001" in response.data
     assert b"(ID " in response.data
     assert b'id="vc-confirmar"' not in response.data
 
@@ -327,7 +327,7 @@ def test_listado_venta_confirmada_muestra_numero_contable_de_asiento():
 
     assert response.status_code == 200
     assert b"CONFIRMADO" in response.data
-    assert b"Nro. 1" in response.data
+    assert b"EJ2026-0000001" in response.data
     assert b"(ID " in response.data
 
 

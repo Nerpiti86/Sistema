@@ -94,6 +94,34 @@ def obtener_ejercicio_contable_por_codigo(
     return _normalizar_fila_ejercicio_contable(fila_ejercicio_contable)
 
 
+def obtener_ejercicio_contable_por_id(
+    ejercicio_contable_id: Any,
+) -> dict[str, Any] | None:
+    """Devuelve un ejercicio contable por id, o None si no existe."""
+    try:
+        ejercicio_contable_id_validado = int(ejercicio_contable_id)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("El id del ejercicio contable es obligatorio.") from exc
+
+    if ejercicio_contable_id_validado <= 0:
+        raise ValueError("El id del ejercicio contable es obligatorio.")
+
+    fila_ejercicio_contable = get_db().execute(
+        f"""
+        SELECT {_COLUMNAS_SELECT_EJERCICIOS_CONTABLES}
+        FROM ejercicios_contables
+        WHERE id = ?
+        LIMIT 1
+        """,
+        (ejercicio_contable_id_validado,),
+    ).fetchone()
+
+    if fila_ejercicio_contable is None:
+        return None
+
+    return _normalizar_fila_ejercicio_contable(fila_ejercicio_contable)
+
+
 def obtener_ejercicio_contable_por_fecha(
     fecha_operacion_iso: str,
 ) -> dict[str, Any] | None:

@@ -12,6 +12,7 @@ from app.contabilidad.cuentas_contables_repository import (
 from app.contabilidad.ejercicios_contables_repository import (
     obtener_ejercicio_contable_activo,
     obtener_ejercicio_contable_por_fecha,
+    obtener_ejercicio_contable_por_id,
 )
 from app.shared.monedas_repository import listar_monedas_activas
 from app.shared.monedas_cotizaciones_repository import (
@@ -136,6 +137,33 @@ def listar_asientos_contables(
     return listar_asientos_contables_por_ejercicio(ejercicio_id, limite)
 
 
+def formatear_numero_asiento_contable(asiento: dict[str, Any]) -> str:
+    """
+    Devuelve numero visible de asiento con referencia de ejercicio.
+
+    Contrato: el numero simple de asiento reinicia por ejercicio, por eso la
+    pantalla debe mostrar una referencia completa como EJ2026-0000001.
+    """
+    numero_asiento = asiento.get("numero_asiento")
+
+    if numero_asiento is None:
+        return "Borrador"
+
+    ejercicio = obtener_ejercicio_contable_por_id(asiento.get("ejercicio_id"))
+
+    if ejercicio is None:
+        return f"Sin ejercicio-{int(numero_asiento):07d}"
+
+    codigo_ejercicio = str(ejercicio["codigo"]).strip().upper()
+    prefijo_ejercicio = (
+        codigo_ejercicio
+        if codigo_ejercicio.startswith("EJ")
+        else f"EJ{codigo_ejercicio}"
+    )
+
+    return f"{prefijo_ejercicio}-{int(numero_asiento):07d}"
+
+
 def obtener_contexto_listado_asientos_contables(
     limite: int = 100,
 ) -> dict[str, Any]:
@@ -207,10 +235,8 @@ def _preparar_asiento_contable_para_listado(
     asiento_pantalla["fecha_argentina"] = formatear_fecha_iso_a_argentina(
         asiento["fecha"]
     )
-    asiento_pantalla["numero_asiento_mostrar"] = (
-        str(asiento["numero_asiento"])
-        if asiento["numero_asiento"] is not None
-        else "Borrador"
+    asiento_pantalla["numero_asiento_mostrar"] = formatear_numero_asiento_contable(
+        asiento
     )
     asiento_pantalla["estado_codigo"] = asiento["estado"]
     asiento_pantalla["tipo_codigo"] = asiento["tipo"]

@@ -8,6 +8,7 @@ from app.shared.formatos import (
 )
 from app.contabilidad.asientos_contables_service import (
     crear_asiento_contable_automatico_confirmado,
+    formatear_numero_asiento_contable,
     obtener_asiento_contable,
 )
 from app.contabilidad.ejercicios_contables_repository import (
@@ -183,8 +184,9 @@ def _agregar_asiento_contable_para_pantalla(
         comprobante_pantalla["asiento_mostrar"] = f"Sin numero (ID {asiento_id})"
         return
 
-    comprobante_pantalla["asiento_numero_mostrar"] = str(numero_asiento)
-    comprobante_pantalla["asiento_mostrar"] = f"Nro. {numero_asiento} (ID {asiento_id})"
+    numero_asiento_mostrar = formatear_numero_asiento_contable(asiento)
+    comprobante_pantalla["asiento_numero_mostrar"] = numero_asiento_mostrar
+    comprobante_pantalla["asiento_mostrar"] = f"{numero_asiento_mostrar} (ID {asiento_id})"
 
 
 def _preparar_detalle_comprobante_venta_para_pantalla(
