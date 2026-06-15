@@ -761,6 +761,69 @@ def test_confirmar_comprobante_venta_rechaza_cliente_sin_cuenta_deudores():
             confirmar_comprobante_venta(comprobante["id"])
 
 
+def test_confirmar_comprobante_venta_rollback_si_falla_confirmacion_comercial(monkeypatch):
+    """
+    Contrato: confirmar venta es una operacion transaccional unica.
+
+    Si falla despues de crear asiento y cuenta corriente, no debe quedar asiento,
+    movimiento ni comprobante confirmado a medias.
+    """
+    import app.gestion.ventas_comprobantes_service as ventas_service
+
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.996",
+            "Ingresos por servicios rollback",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=26),
+            [_detalle(articulo_id)],
+        )
+        db.commit()
+
+        def fallar_confirmacion_comercial(*_args, **_kwargs):
+            raise ValueError("fallo controlado al confirmar venta")
+
+        monkeypatch.setattr(
+            ventas_service,
+            "marcar_venta_comprobante_confirmado",
+            fallar_confirmacion_comercial,
+        )
+
+        with pytest.raises(ValueError, match="fallo controlado"):
+            ventas_service.confirmar_comprobante_venta(comprobante["id"])
+
+        comprobante_actual = obtener_comprobante_venta(comprobante["id"])
+        cantidad_asientos = db.execute(
+            "SELECT COUNT(*) AS cantidad FROM asientos_contables"
+        ).fetchone()["cantidad"]
+        cantidad_movimientos = db.execute(
+            """
+            SELECT COUNT(*) AS cantidad
+            FROM clientes_cuenta_corriente_movimientos
+            WHERE origen_tipo = 'VENTA_COMPROBANTE'
+              AND origen_id = ?
+            """,
+            (comprobante["id"],),
+        ).fetchone()["cantidad"]
+
+    assert comprobante_actual["estado"] == "BORRADOR"
+    assert comprobante_actual["asiento_id"] is None
+    assert cantidad_asientos == 0
+    assert cantidad_movimientos == 0
+
+
 def test_confirmar_comprobante_venta_rechaza_confirmar_dos_veces():
     """No permite confirmar nuevamente un comprobante ya confirmado."""
     app = create_app(TestConfig)

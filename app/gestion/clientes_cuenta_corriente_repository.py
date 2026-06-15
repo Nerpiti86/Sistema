@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from app.db import get_db
+from app.shared.transacciones_repository import contexto_escritura
 
 _COLUMNAS_SELECT_CLIENTES_CTACTE_MOVIMIENTOS = """
     clientes_cuenta_corriente_movimientos.id,
@@ -63,7 +64,7 @@ def crear_movimiento_cliente_cuenta_corriente(
     db = get_db()
 
     try:
-        with db:
+        with contexto_escritura(db):
             cursor = db.execute(
                 """
                 INSERT INTO clientes_cuenta_corriente_movimientos (

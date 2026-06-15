@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from app.db import get_db
+from app.shared.transacciones_repository import contexto_escritura
 from app.shared.monedas_repository import validar_moneda_activa
 
 _COLUMNAS_SELECT_ASIENTOS_CONTABLES = """
@@ -135,7 +136,7 @@ def crear_asiento_contable(
     db = get_db()
 
     try:
-        with db:
+        with contexto_escritura(db):
             numero_asiento = _resolver_numero_asiento_para_insert(
                 db,
                 ejercicio_id,

@@ -1,6 +1,7 @@
 import re
 from typing import Any
 
+from app.shared.transacciones_repository import ejecutar_en_transaccion
 from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
     formatear_fecha_iso_a_argentina,
@@ -535,46 +536,53 @@ def confirmar_comprobante_venta(comprobante_id: Any) -> dict[str, Any]:
 
     Genera asiento contable, genera movimiento confirmado de cuenta corriente y
     luego marca el comprobante comercial como CONFIRMADO. No mueve fondos.
+
+    La confirmacion es transaccional: si falla una parte, no queda impacto
+    parcial en ventas, cuenta corriente ni contabilidad.
     """
-    comprobante = obtener_comprobante_venta(comprobante_id)
-    _validar_comprobante_confirmable(comprobante)
 
-    cliente = _obtener_cliente_activo(comprobante["cliente_id"])
-    cuenta_deudores_codigo = _obtener_cuenta_deudores_cliente(cliente)
-    ejercicio = _obtener_ejercicio_para_confirmacion(comprobante["fecha"])
-    descripcion = _descripcion_confirmacion_venta(comprobante)
+    def _confirmar_en_transaccion() -> dict[str, Any]:
+        comprobante = obtener_comprobante_venta(comprobante_id)
+        _validar_comprobante_confirmable(comprobante)
 
-    asiento = crear_asiento_contable_automatico_confirmado(
-        {
-            "ejercicio_id": ejercicio["id"],
-            "fecha": comprobante["fecha"],
-            "descripcion": descripcion,
-            "tipo": "AJUSTE",
-            "cotizacion_tipo": "CIERRE",
-        },
-        _armar_detalles_asiento_confirmacion(
+        cliente = _obtener_cliente_activo(comprobante["cliente_id"])
+        cuenta_deudores_codigo = _obtener_cuenta_deudores_cliente(cliente)
+        ejercicio = _obtener_ejercicio_para_confirmacion(comprobante["fecha"])
+        descripcion = _descripcion_confirmacion_venta(comprobante)
+
+        asiento = crear_asiento_contable_automatico_confirmado(
+            {
+                "ejercicio_id": ejercicio["id"],
+                "fecha": comprobante["fecha"],
+                "descripcion": descripcion,
+                "tipo": "AJUSTE",
+                "cotizacion_tipo": "CIERRE",
+            },
+            _armar_detalles_asiento_confirmacion(
+                comprobante,
+                cuenta_deudores_codigo,
+                descripcion,
+            ),
+        )
+
+        movimiento_cuenta_corriente = _crear_movimiento_cuenta_corriente_confirmacion(
             comprobante,
-            cuenta_deudores_codigo,
+            asiento["id"],
             descripcion,
-        ),
-    )
+        )
 
-    movimiento_cuenta_corriente = _crear_movimiento_cuenta_corriente_confirmacion(
-        comprobante,
-        asiento["id"],
-        descripcion,
-    )
+        comprobante_confirmado = marcar_venta_comprobante_confirmado(
+            comprobante["id"],
+            asiento["id"],
+        )
 
-    comprobante_confirmado = marcar_venta_comprobante_confirmado(
-        comprobante["id"],
-        asiento["id"],
-    )
+        return {
+            "comprobante": comprobante_confirmado,
+            "asiento": asiento,
+            "movimiento_cuenta_corriente": movimiento_cuenta_corriente,
+        }
 
-    return {
-        "comprobante": comprobante_confirmado,
-        "asiento": asiento,
-        "movimiento_cuenta_corriente": movimiento_cuenta_corriente,
-    }
+    return ejecutar_en_transaccion(_confirmar_en_transaccion)
 
 
 def _validar_comprobante_confirmable(comprobante: dict[str, Any]) -> None:

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from app.db import get_db
+from app.shared.transacciones_repository import contexto_escritura
 
 _COLUMNAS_SELECT_VENTAS_COMPROBANTES = """
     ventas_comprobantes.id,
@@ -236,7 +237,7 @@ def crear_venta_comprobante(
     db = get_db()
 
     try:
-        with db:
+        with contexto_escritura(db):
             cursor = db.execute(
                 """
                 INSERT INTO ventas_comprobantes (
@@ -375,7 +376,7 @@ def marcar_venta_comprobante_confirmado(
     db = get_db()
 
     try:
-        with db:
+        with contexto_escritura(db):
             cursor = db.execute(
                 """
                 UPDATE ventas_comprobantes
