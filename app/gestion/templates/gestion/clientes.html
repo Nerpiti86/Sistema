@@ -78,6 +78,7 @@
                                     <td data-field="orden" class="text-end">{{ cliente.orden }}</td>
                                     <td class="text-end">
                                         <div class="d-inline-flex gap-2">
+                                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('gestion.ver_cuenta_corriente_cliente', cliente_id=cliente.id) }}">Cuenta corriente</a>
                                             <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('gestion.ver_formulario_editar_cliente', cliente_id=cliente.id) }}">Editar</a>
                                             {% if cliente.esta_activo %}
                                                 <form method="post" action="{{ url_for('gestion.desactivar_cliente_existente', cliente_id=cliente.id) }}">

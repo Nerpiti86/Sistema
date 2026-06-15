@@ -19,6 +19,9 @@ from app.gestion.clientes_service import (
     obtener_contexto_formulario_cliente,
     obtener_contexto_listado_clientes,
 )
+from app.gestion.clientes_cuenta_corriente_service import (
+    obtener_contexto_cuenta_corriente_cliente,
+)
 from app.gestion.grupos_clientes_service import (
     activar_grupo_cliente,
     actualizar_grupo_cliente_desde_formulario,
@@ -163,6 +166,25 @@ def actualizar_cliente_existente(cliente_id):
 
     flash("Cliente actualizado correctamente.", "success")
     return redirect(url_for("gestion.ver_listado_clientes", cliente=cliente["id"]))
+
+
+@bp.get("/clientes/<int:cliente_id>/cuenta-corriente/")
+def ver_cuenta_corriente_cliente(cliente_id):
+    """Muestra cuenta corriente de un cliente."""
+    try:
+        contexto = obtener_contexto_cuenta_corriente_cliente(cliente_id)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("gestion.ver_listado_clientes"))
+
+    cliente = contexto["cliente"]
+
+    return render_template(
+        "gestion/clientes_cuenta_corriente.html",
+        page_title=f"Cuenta corriente {cliente['razon_social']}",
+        **contexto,
+    )
+
 
 
 @bp.post("/clientes/<int:cliente_id>/activar/")

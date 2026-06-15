@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section id="cl-cc" data-table="clientes_cuenta_corriente_movimientos" data-row-id="{{ cliente.id }}" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="cl-cc-titulo" class="h3 mb-1">Cuenta corriente de cliente</h1>
+                <p id="cl-cc-descripcion" class="text-muted mb-0">
+                    {{ cliente.razon_social }}
+                    {% if cliente.nombre_fantasia %}
+                        - {{ cliente.nombre_fantasia }}
+                    {% endif %}
+                </p>
+            </div>
+            <div id="cl-cc-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver a clientes", url_for("gestion.ver_listado_clientes")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div id="cl-cc-resumen-cliente">
+            {% call card("Cliente", "Gestión") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Razón social</dt>
+                    <dd id="cl-cc-cliente-razon-social" data-field="razon_social" class="col-sm-7">{{ cliente.razon_social }}</dd>
+                    <dt class="col-sm-5">Grupo</dt>
+                    <dd id="cl-cc-cliente-grupo" data-field="grupo_cliente_nombre" class="col-sm-7">{{ cliente.grupo_cliente_nombre }}</dd>
+                    <dt class="col-sm-5">Estado</dt>
+                    <dd id="cl-cc-cliente-activo" data-field="activo" class="col-sm-7 mb-0">{% if cliente.esta_activo %}Activo{% else %}Inactivo{% endif %}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-8">
+        <div id="cl-cc-resumen-saldo">
+            {% call card("Saldo", "Lectura confirmada") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Total debe</dt>
+                    <dd id="cl-cc-total-debe" data-field="total_debe_centavos" class="col-sm-9 text-end">{{ lectura_saldo.total_debe_argentina }}</dd>
+                    <dt class="col-sm-3">Total haber</dt>
+                    <dd id="cl-cc-total-haber" data-field="total_haber_centavos" class="col-sm-9 text-end">{{ lectura_saldo.total_haber_argentina }}</dd>
+                    <dt class="col-sm-3">Saldo</dt>
+                    <dd id="cl-cc-saldo" data-field="saldo_centavos" class="col-sm-9 text-end fw-semibold mb-0">
+                        {{ lectura_saldo.saldo_lado }} {{ lectura_saldo.saldo_argentina }}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="cl-cc-movimientos" data-query="listar_movimientos_cliente_cuenta_corriente">
+            {% call card("Movimientos", "Cuenta corriente") %}
+                <div class="table-responsive">
+                    <table id="cl-cc-tabla" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="fecha">Fecha</th>
+                                <th data-field="tipo_movimiento">Tipo</th>
+                                <th data-field="descripcion">Descripción</th>
+                                <th data-field="estado" class="text-center">Estado</th>
+                                <th data-field="origen_tipo">Origen</th>
+                                <th data-field="asiento_id" class="text-end">Asiento</th>
+                                <th data-field="debe_centavos" class="text-end">Debe</th>
+                                <th data-field="haber_centavos" class="text-end">Haber</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cl-cc-tbody">
+                            {% for movimiento in movimientos %}
+                                <tr id="cl-cc-row-{{ movimiento.id }}" data-row-id="{{ movimiento.id }}">
+                                    <td data-field="fecha">{{ movimiento.fecha_argentina }}</td>
+                                    <td data-field="tipo_movimiento">{{ movimiento.tipo_movimiento }}</td>
+                                    <td data-field="descripcion">{{ movimiento.descripcion }}</td>
+                                    <td data-field="estado" class="text-center">{{ movimiento.estado }}</td>
+                                    <td data-field="origen_tipo">
+                                        {% if movimiento.origen_tipo %}
+                                            {{ movimiento.origen_tipo }} #{{ movimiento.origen_id }}
+                                        {% else %}
+                                            <span class="text-muted">Manual</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="asiento_id" class="text-end">
+                                        {% if movimiento.asiento_id %}
+                                            {{ movimiento.asiento_id }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="debe_centavos" class="text-end">{{ movimiento.debe_argentina }}</td>
+                                    <td data-field="haber_centavos" class="text-end">{{ movimiento.haber_argentina }}</td>
+                                </tr>
+                            {% else %}
+                                <tr id="cl-cc-row-sin-datos">
+                                    <td colspan="8" class="text-center text-muted py-4">No hay movimientos de cuenta corriente para este cliente.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

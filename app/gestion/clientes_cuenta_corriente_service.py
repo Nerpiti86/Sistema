@@ -1,5 +1,9 @@
 from typing import Any
 
+from app.shared.formatos import (
+    formatear_entero_escala_a_decimal_argentino,
+    formatear_fecha_iso_a_argentina,
+)
 from app.gestion.clientes_cuenta_corriente_repository import (
     calcular_saldo_cliente_cuenta_corriente,
     crear_movimiento_cliente_cuenta_corriente,
@@ -100,18 +104,73 @@ def obtener_contexto_cuenta_corriente_cliente(
         cliente_id_normalizado,
         estado=estado_normalizado,
     )
+    movimientos_pantalla = [
+        _preparar_movimiento_cliente_cuenta_corriente_para_pantalla(movimiento)
+        for movimiento in movimientos
+    ]
     lectura_saldo = calcular_lectura_saldo_cliente(
         cliente_id_normalizado,
         solo_confirmados=True,
     )
+    lectura_saldo_pantalla = _preparar_lectura_saldo_cliente_para_pantalla(
+        lectura_saldo
+    )
 
     return {
         "cliente": cliente,
-        "movimientos": movimientos,
-        "cantidad_movimientos": len(movimientos),
-        "lectura_saldo": lectura_saldo,
+        "movimientos": movimientos_pantalla,
+        "cantidad_movimientos": len(movimientos_pantalla),
+        "lectura_saldo": lectura_saldo_pantalla,
         "estado_filtro": estado_normalizado,
     }
+
+
+def _preparar_movimiento_cliente_cuenta_corriente_para_pantalla(
+    movimiento: dict[str, Any],
+) -> dict[str, Any]:
+    movimiento_pantalla = dict(movimiento)
+    movimiento_pantalla["fecha_argentina"] = _formatear_fecha_iso_opcional(
+        movimiento.get("fecha")
+    )
+    movimiento_pantalla["debe_argentina"] = _formatear_centavos(
+        movimiento.get("debe_centavos", 0)
+    )
+    movimiento_pantalla["haber_argentina"] = _formatear_centavos(
+        movimiento.get("haber_centavos", 0)
+    )
+    movimiento_pantalla["importe_argentina"] = _formatear_centavos(
+        movimiento.get("importe_centavos", 0)
+    )
+    return movimiento_pantalla
+
+
+def _preparar_lectura_saldo_cliente_para_pantalla(
+    lectura_saldo: dict[str, int],
+) -> dict[str, Any]:
+    lectura_pantalla: dict[str, Any] = dict(lectura_saldo)
+    saldo_centavos = int(lectura_saldo.get("saldo_centavos", 0))
+    lectura_pantalla["total_debe_argentina"] = _formatear_centavos(
+        lectura_saldo.get("total_debe_centavos", 0)
+    )
+    lectura_pantalla["total_haber_argentina"] = _formatear_centavos(
+        lectura_saldo.get("total_haber_centavos", 0)
+    )
+    lectura_pantalla["saldo_argentina"] = _formatear_centavos(abs(saldo_centavos))
+    lectura_pantalla["saldo_lado"] = "DEUDOR" if saldo_centavos >= 0 else "ACREEDOR"
+    return lectura_pantalla
+
+
+def _formatear_centavos(valor: Any) -> str:
+    return formatear_entero_escala_a_decimal_argentino(int(valor or 0), 2)
+
+
+def _formatear_fecha_iso_opcional(fecha: Any) -> str:
+    fecha_normalizada = str(fecha or "").strip()
+
+    if not fecha_normalizada:
+        return ""
+
+    return formatear_fecha_iso_a_argentina(fecha_normalizada)
 
 
 def obtener_movimiento_cliente_cuenta_corriente(
