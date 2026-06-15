@@ -29,7 +29,6 @@ from app.gestion.grupos_clientes_service import (
 )
 from app.gestion.ventas_comprobantes_service import (
     confirmar_comprobante_venta,
-    crear_borrador_comprobante_venta_desde_formulario,
     crear_y_confirmar_comprobante_venta_desde_formulario,
     obtener_contexto_detalle_comprobante_venta,
     obtener_contexto_formulario_comprobante_venta,
@@ -380,7 +379,7 @@ def ver_formulario_nuevo_comprobante_venta():
 
 @bp.post("/ventas/comprobantes/nuevo/")
 def crear_comprobante_venta_nuevo():
-    """Crea un comprobante de venta BORRADOR desde formulario."""
+    """Crea y confirma un comprobante de venta desde formulario."""
     try:
         resultado_confirmacion = crear_y_confirmar_comprobante_venta_desde_formulario(request.form)
         comprobante = resultado_confirmacion["comprobante"]

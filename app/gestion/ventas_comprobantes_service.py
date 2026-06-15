@@ -250,9 +250,9 @@ def obtener_contexto_formulario_comprobante_venta(
     comprobante_form: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
-    Devuelve contexto para alta minima de comprobante de venta.
+    Devuelve contexto para el formulario de nuevo comprobante de venta.
 
-    En esta etapa se carga un comprobante BORRADOR con un solo renglon.
+    El usuario carga los datos y al confirmar se genera venta, asiento y cuenta corriente.
     """
     formulario = _preparar_comprobante_venta_formulario(comprobante_form or {})
     tipo_comprobante, tipo_comprobante_codigo = _resolver_tipo_comprobante_venta(

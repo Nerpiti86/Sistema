@@ -252,7 +252,7 @@ def test_pantalla_ventas_comprobantes_muestra_borrador():
     assert f'vc-row-{comprobante["id"]}'.encode() in response.data
     assert b"Cliente pantalla venta" in response.data
     assert b"FACTURA" in response.data
-    assert b"CONFIRMADO" in response.data
+    assert b"BORRADOR" in response.data
     assert b"1.000,00" in response.data
     assert b"Ver detalle" in response.data
 
@@ -274,7 +274,7 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
     assert b"1.000,00" in response.data
     assert b'data-field="subtotal_centavos"' in response.data
     assert b'id="vc-confirmar"' in response.data
-    assert b"Sin asiento" not in response.data
+    assert b"Sin asiento" in response.data
 
 
 def test_confirmar_venta_desde_pantalla():
@@ -480,16 +480,18 @@ def test_confirmar_comprobante_venta_desde_formulario_nuevo():
         ).fetchone()
 
     assert response.status_code == 200
-    assert b"Comprobante de venta confirmado en BORRADOR." in response.data
+    assert b"Comprobante de venta confirmado correctamente." in response.data
     assert b"Servicio pantalla venta" in response.data
     assert b"Monto" in response.data
     assert b"100,00" in response.data
     assert b"1.500,00" in response.data
     assert b"CONFIRMADO" in response.data
-    assert comprobante["estado"] == "BORRADOR"
+    assert comprobante["estado"] == "CONFIRMADO"
     assert comprobante["descuento_centavos"] == 10000
     assert comprobante["total_centavos"] == 140000
-    assert comprobante["asiento_id"] is None
+    assert comprobante["asiento_id"] is not None
+    assert b"Sin asiento" not in response.data
+    assert b"EJ2026-0000001" in response.data
 
 
 def test_crear_borrador_comprobante_venta_desde_pantalla_rechaza_cliente_vacio():
