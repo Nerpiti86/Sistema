@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
 from app.gestion.articulos_venta_service import (
     activar_articulo_venta,
@@ -8,6 +8,7 @@ from app.gestion.articulos_venta_service import (
     obtener_contexto_edicion_articulo_venta,
     obtener_contexto_formulario_articulo_venta,
     obtener_contexto_listado_articulos_venta,
+    obtener_lookup_articulos_venta_activos,
 )
 from app.gestion.clientes_service import (
     activar_cliente,
@@ -509,6 +510,33 @@ def crear_producto_servicio_venta_nuevo():
             articulo=articulo["id"],
         )
     )
+
+
+@bp.get("/productos-servicios-venta/buscar/")
+def buscar_productos_servicios_venta_json():
+    """Devuelve productos o servicios activos para lookup de comprobantes."""
+    termino_busqueda = request.args.get("q", "")
+    limite = request.args.get("limite", 10)
+
+    try:
+        lookup_articulos = obtener_lookup_articulos_venta_activos(
+            termino_busqueda,
+            limite,
+        )
+    except ValueError as exc:
+        return (
+            jsonify(
+                {
+                    "q": str(termino_busqueda or "").strip(),
+                    "cantidad": 0,
+                    "resultados": [],
+                    "mensaje": str(exc),
+                }
+            ),
+            400,
+        )
+
+    return jsonify(lookup_articulos)
 
 
 @bp.get("/productos-servicios-venta/<int:articulo_venta_id>/editar/")

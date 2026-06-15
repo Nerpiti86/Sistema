@@ -1,0 +1,68 @@
+.vc-renglon-tabla {
+    min-width: 1060px;
+    table-layout: fixed;
+}
+
+.vc-renglon-tabla thead th {
+    font-size: var(--ns-font-size-form-dense);
+}
+
+.vc-renglon-tabla td,
+.vc-renglon-tabla th {
+    vertical-align: middle;
+}
+
+.vc-total-comprobante {
+    width: min(100%, 16rem);
+}
+
+.vc-renglon-badge {
+    --vc-renglon-badge-bg: #f8f9fa;
+    --vc-renglon-badge-border: #adb5bd;
+    --vc-renglon-badge-color: #343a40;
+
+    min-width: 3.25rem;
+    font-family: var(--ns-font-family-mono);
+    font-size: var(--ns-font-size-form-dense);
+    font-weight: var(--ns-font-weight-bold);
+    line-height: 1;
+    letter-spacing: 0.03em;
+    color: var(--vc-renglon-badge-color);
+    background-color: var(--vc-renglon-badge-bg);
+    border: 1px solid var(--vc-renglon-badge-border);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+    user-select: none;
+}
+
+.vc-renglon-badge:hover,
+.vc-renglon-badge:focus {
+    color: var(--vc-renglon-badge-color);
+    background-color: var(--vc-renglon-badge-bg);
+    border-color: var(--vc-renglon-badge-border);
+    filter: brightness(0.98);
+}
+
+.vc-renglon-badge--unidad {
+    --vc-renglon-badge-bg: #e0f2fe;
+    --vc-renglon-badge-border: #0284c7;
+    --vc-renglon-badge-color: #075985;
+}
+
+.vc-renglon-badge--sin {
+    --vc-renglon-badge-bg: #f8f9fa;
+    --vc-renglon-badge-border: #6c757d;
+    --vc-renglon-badge-color: #343a40;
+}
+
+.vc-renglon-badge--porcentaje {
+    --vc-renglon-badge-bg: #f3e8ff;
+    --vc-renglon-badge-border: #9333ea;
+    --vc-renglon-badge-color: #6b21a8;
+}
+
+.vc-renglon-badge--monto {
+    --vc-renglon-badge-bg: #dcfce7;
+    --vc-renglon-badge-border: #16a34a;
+    --vc-renglon-badge-color: #166534;
+}

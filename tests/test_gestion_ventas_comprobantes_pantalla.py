@@ -272,6 +272,7 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
     assert b"Cliente pantalla venta" in response.data
     assert b"Servicio pantalla venta" in response.data
     assert b"1.000,00" in response.data
+    assert b'data-field="subtotal_centavos"' in response.data
     assert b'id="vc-confirmar"' in response.data
     assert b"Sin asiento" in response.data
 
@@ -356,10 +357,21 @@ def test_formulario_nuevo_comprobante_venta_responde_ok():
     assert b'id="vc-cliente"' in response.data
     assert b'id="vc-articulo"' in response.data
     assert b'id="vc-cantidad"' in response.data
+    assert b'id="vc-unidad-medida"' in response.data
     assert b'id="vc-precio-unitario"' in response.data
+    assert b'id="vc-tipo-bonificacion"' in response.data
+    assert b'id="vc-bonificacion-valor"' in response.data
+    assert b'id="vc-importe-bonificacion"' not in response.data
+    assert b'id="vc-subtotal-linea"' in response.data
+    assert b'id="vc-total-comprobante"' in response.data
+    assert b'id="vc-punto-venta"' in response.data
+    assert b'id="vc-numero"' in response.data
+    assert b'value="1"' in response.data
     assert b'name="tipo_comprobante"' in response.data
+    assert b'id="vc-letra"' in response.data
+    assert b'readonly' in response.data
     assert b"Cliente pantalla venta" in response.data
-    assert b"Servicio pantalla venta" in response.data
+    assert b'data-lookup="ventas-articulos-activos"' in response.data
     assert b"Crear BORRADOR" in response.data
 
 
@@ -412,13 +424,15 @@ def test_crear_borrador_comprobante_venta_desde_pantalla():
                 "fecha_vencimiento": "2026-02-15",
                 "tipo_comprobante": "FACTURA",
                 "letra": "X",
-                "punto_venta": "1",
+                "punto_venta": "99",
                 "numero": "26",
                 "moneda_codigo": "ARS",
                 "articulo_venta_id": str(articulo_id),
-                "cantidad": "1,000000",
+                "cantidad": "1,00",
+                "unidad_medida_codigo": "7",
                 "precio_unitario_centavos": "1.500,00",
-                "descripcion": "Consulta desde pantalla",
+                "tipo_bonificacion_codigo": "2",
+                "bonificacion_valor": "100,00",
                 "observaciones": "Alta minima.",
             },
             follow_redirects=True,
@@ -426,20 +440,23 @@ def test_crear_borrador_comprobante_venta_desde_pantalla():
 
         comprobante = db.execute(
             """
-            SELECT estado, total_centavos, asiento_id
+            SELECT estado, descuento_centavos, total_centavos, asiento_id
             FROM ventas_comprobantes
             WHERE numero = ?
             """,
-            (26,),
+            (1,),
         ).fetchone()
 
     assert response.status_code == 200
     assert b"Comprobante de venta creado en BORRADOR." in response.data
-    assert b"Consulta desde pantalla" in response.data
+    assert b"Servicio pantalla venta" in response.data
+    assert b"Monto" in response.data
+    assert b"100,00" in response.data
     assert b"1.500,00" in response.data
     assert b"BORRADOR" in response.data
     assert comprobante["estado"] == "BORRADOR"
-    assert comprobante["total_centavos"] == 150000
+    assert comprobante["descuento_centavos"] == 10000
+    assert comprobante["total_centavos"] == 140000
     assert comprobante["asiento_id"] is None
 
 
@@ -472,7 +489,7 @@ def test_crear_borrador_comprobante_venta_desde_pantalla_rechaza_cliente_vacio()
                 "numero": "27",
                 "moneda_codigo": "ARS",
                 "articulo_venta_id": str(articulo_id),
-                "cantidad": "1,000000",
+                "cantidad": "1,00",
             },
         )
 
@@ -519,7 +536,7 @@ def test_crear_borrador_comprobante_venta_desde_pantalla_rechaza_precio_invalido
                 "numero": "28",
                 "moneda_codigo": "ARS",
                 "articulo_venta_id": str(articulo_id),
-                "cantidad": "1,000000",
+                "cantidad": "1,00",
                 "precio_unitario_centavos": "123456",
             },
         )
@@ -536,7 +553,159 @@ def test_formulario_nuevo_comprobante_venta_ubica_renglon_debajo_de_cabecera():
 
     assert 'id="vc-cabecera" class="col-12"' in contenido
     assert 'id="vc-renglon" class="col-12"' in contenido
+    assert 'id="vc-renglon-scroll" class="table-responsive"' in contenido
+    assert 'id="vc-punto-venta" name="punto_venta" type="number" min="1" step="1" class="form-control text-end" value="{{ comprobante_form.punto_venta }}" readonly required' in contenido
+    assert 'id="vc-numero" name="numero" type="number" min="1" step="1" class="form-control text-end" value="{{ comprobante_form.numero }}" readonly required' in contenido
+    assert 'id="vc-renglon-tabla"' in contenido
+    assert 'class="table table-sm table-hover align-middle mb-2 vc-renglon-tabla"' in contenido
+    assert 'id="vc-renglon-minimo" data-role="venta-renglones"' in contenido
+    assert 'data-role="venta-renglon"' in contenido
+    assert "<thead>" in contenido
+    assert 'id="vc-articulo"' in contenido
+    assert 'data-lookup="ventas-articulos-activos"' in contenido
+    assert 'data-lookup-url="{{ url_for(\'gestion.buscar_productos_servicios_venta_json\') }}"' in contenido
+    assert 'data-lookup-hidden="vc-articulo-id"' in contenido
+    assert 'id="vc-articulo-id"' in contenido
+    assert 'name="articulo_venta_id"' in contenido
+    assert 'id="vc-articulo-opciones"' in contenido
+    assert 'data-field="articulo_venta_lookup_opciones"' in contenido
+    assert 'name="articulo_venta_id" class="form-select form-select-sm"' not in contenido
+    assert 'id="vc-subtotal-linea"' in contenido
+    assert 'id="vc-total-comprobante"' in contenido
+    assert "Total comprobante" in contenido
+    assert 'id="vc-unidad-medida" name="unidad_medida_codigo" class="visually-hidden"' in contenido
+    assert 'id="vc-unidad-medida-badge"' in contenido
+    assert 'data-badge="{{ unidad_badge }}"' in contenido
+    assert 'id="vc-tipo-bonificacion" name="tipo_bonificacion_codigo" class="visually-hidden"' in contenido
+    assert 'id="vc-tipo-bonificacion-badge"' in contenido
+    assert 'value="" data-badge="Sin"' in contenido
+    assert 'id="vc-importe-bonificacion"' not in contenido
+    assert 'id="vc-descripcion-renglon"' not in contenido
+    assert "Descripción opcional" not in contenido
+    assert "ventas_comprobantes_form.css" in contenido
+    assert "ventas_comprobantes_form.js" in contenido
     assert contenido.index('id="vc-cabecera"') < contenido.index('id="vc-renglon"')
     assert 'id="vc-cabecera" class="col-12 col-lg-7"' not in contenido
     assert 'id="vc-renglon" class="col-12 col-lg-5"' not in contenido
+
+
+def test_css_formulario_ventas_comprobantes_mantiene_renglon_en_linea():
+    """Valida contrato CSS para que el renglon use tabla horizontal compacta."""
+    contenido = Path("app/static/css/ventas_comprobantes_form.css").read_text(
+        encoding="utf-8"
+    )
+
+    assert ".vc-renglon-tabla" in contenido
+    assert "table-layout: fixed" in contenido
+    assert "min-width: 1060px" in contenido
+    assert ".vc-renglon-badge" in contenido
+    assert ".vc-renglon-badge--unidad" in contenido
+    assert ".vc-renglon-badge--porcentaje" in contenido
+    assert ".vc-renglon-badge--monto" in contenido
+    assert ".vc-total-comprobante" in contenido
+    assert ".vc-renglon-descripcion" not in contenido
+
+
+def test_js_formulario_ventas_comprobantes_calcula_subtotal_linea():
+    """Valida contrato JS de subtotal de renglon y bonificacion calculada."""
+    contenido = Path("app/static/js/ventas_comprobantes_form.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "SELECTORES" in contenido
+    assert "vc-subtotal-linea" in contenido
+    assert "vc-total-comprobante" in contenido
+    assert "calcularBonificacionCentavos" in contenido
+    assert "actualizarSubtotalLinea" in contenido
+    assert "ventas-articulos-activos" in contenido
+    assert "cargarOpcionesLookupArticulos" in contenido
+    assert "sincronizarArticuloSeleccionado" in contenido
+    assert "ciclarBadge" in contenido
+    assert "sincronizarBadge" in contenido
+    assert "decimalArAEnteroEscala" in contenido
+
+
+def test_formulario_nuevo_comprobante_venta_autonumera_pv_1():
+    """Valida que alta de pantalla muestre PV 1 y proximo numero readonly."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_cuenta_contable(
+            db,
+            CUENTA_DEUDORES,
+            "Deudores por ventas pantalla",
+            "DEBE",
+            "PATRIMONIAL",
+            1,
+        )
+        _crear_cuenta_contable(
+            db,
+            CUENTA_INGRESO,
+            "Ingresos por servicios pantalla",
+            "HABER",
+            "RESULTADO",
+            0,
+        )
+        cliente_id = _crear_cliente(db)
+        articulo_id = _crear_articulo_venta(db)
+
+        crear_borrador_comprobante_venta(
+            {
+                "cliente_id": cliente_id,
+                "fecha": "2026-01-15",
+                "tipo_comprobante": "FACTURA",
+                "letra": "X",
+                "punto_venta": "1",
+                "numero": "1",
+                "moneda_codigo": "ARS",
+                "cotizacion_centavos": "100",
+            },
+            [
+                {
+                    "articulo_venta_id": articulo_id,
+                    "cantidad_1000000": "1000000",
+                    "iva_centavos": "0",
+                }
+            ],
+        )
+
+        response = client.get("/gestion/ventas/comprobantes/nuevo/")
+
+    assert response.status_code == 200
+    assert b'id="vc-punto-venta"' in response.data
+    assert b'value="1"' in response.data
+    assert b'id="vc-numero"' in response.data
+    assert b'value="2"' in response.data
+
+
+def test_lookup_productos_servicios_venta_devuelve_json():
+    """Valida endpoint JSON de lookup para renglones de comprobantes."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_cuenta_contable(
+            db,
+            CUENTA_INGRESO,
+            "Ingresos por servicios pantalla",
+            "HABER",
+            "RESULTADO",
+            0,
+        )
+        _crear_articulo_venta(db)
+
+        response = client.get(
+            "/gestion/productos-servicios-venta/buscar/?q=Servicio&limite=10"
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["cantidad"] == 1
+    assert payload["resultados"][0]["label"] == "Servicio pantalla venta - ARS"
+    assert payload["resultados"][0]["valor"]
 

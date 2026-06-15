@@ -17,6 +17,7 @@
     <link href="{{ url_for('static', filename='css/nerisoft_alerts.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/fecha_argentina_datepicker.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/nerisoft_select.css') }}" rel="stylesheet">
+    {% block page_css %}{% endblock %}
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
     <link rel="shortcut icon" href="{{ url_for('favicon') }}">
 </head>

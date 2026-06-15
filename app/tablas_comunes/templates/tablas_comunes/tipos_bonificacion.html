@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
+
+{% block content %}
+<section id="tbon-listado" data-table="tipos_bonificacion" data-query="listar_tipos_bonificacion" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="tbon-titulo" class="h3 mb-1">Tipos de bonificación</h1>
+                <p id="tbon-descripcion" class="text-muted mb-0">
+                    Catálogo fiscal para clasificar descuentos por porcentaje o monto.
+                </p>
+            </div>
+            <div id="tbon-acciones-listado" class="d-flex gap-2">
+                {{ primary_link("Nuevo tipo", url_for("tablas_comunes_fiscales.ver_formulario_nuevo_tipo_bonificacion")) }}
+                {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="tbon-resumen" data-table="tipos_bonificacion" data-query="obtener_contexto_listado_tipos_bonificacion">
+            {% call card("Resumen", "Tablas comunes") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Cantidad</dt>
+                    <dd id="tbon-cantidad" data-field="cantidad_tipos_bonificacion" class="col-sm-9">{{ cantidad_tipos_bonificacion }}</dd>
+                    <dt class="col-sm-3">Activos</dt>
+                    <dd id="tbon-cantidad-activos" data-field="cantidad_tipos_bonificacion_activos" class="col-sm-9 mb-0">{{ cantidad_tipos_bonificacion_activos }}</dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="tbon-contenedor-tabla" data-table="tipos_bonificacion" data-query="listar_tipos_bonificacion">
+            {% call card("Listado", "tipos de bonificación") %}
+                <div class="table-responsive">
+                    <table id="tbon-tabla" data-table="tipos_bonificacion" data-query="listar_tipos_bonificacion" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="codigo">Código</th>
+                                <th data-field="descripcion">Descripción</th>
+                                <th data-field="activo" class="text-center">Activo</th>
+                                <th data-field="orden" class="text-end">Orden</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbon-tbody">
+                            {% for tipo in tipos_bonificacion %}
+                                <tr id="tbon-row-{{ tipo.codigo }}" data-table="tipos_bonificacion" data-query="listar_tipos_bonificacion" data-row-codigo="{{ tipo.codigo }}">
+                                    <td data-field="codigo" class="fw-semibold">{{ tipo.codigo }}</td>
+                                    <td data-field="descripcion">{{ tipo.descripcion }}</td>
+                                    <td data-field="activo" class="text-center">{% if tipo.esta_activo %}Si{% else %}No{% endif %}</td>
+                                    <td data-field="orden" class="text-end">{{ tipo.orden }}</td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('tablas_comunes_fiscales.ver_formulario_editar_tipo_bonificacion', codigo_tipo_bonificacion=tipo.codigo) }}">Editar</a>
+                                            {% if tipo.esta_activo %}
+                                                <form method="post" action="{{ url_for('tablas_comunes_fiscales.desactivar_tipo_bonificacion_existente', codigo_tipo_bonificacion=tipo.codigo) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning">Desactivar</button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('tablas_comunes_fiscales.activar_tipo_bonificacion_existente', codigo_tipo_bonificacion=tipo.codigo) }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Activar</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="tbon-row-sin-datos" data-table="tipos_bonificacion" data-query="listar_tipos_bonificacion">
+                                    <td id="tbon-mensaje-sin-datos" colspan="5" class="text-center text-muted py-4">No hay tipos de bonificación cargados.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

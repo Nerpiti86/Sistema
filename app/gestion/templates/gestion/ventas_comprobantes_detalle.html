@@ -9,7 +9,12 @@
             <div>
                 <h1 id="vc-detalle-titulo" class="h3 mb-1">Detalle comprobante de venta</h1>
                 <p id="vc-detalle-descripcion" class="text-muted mb-0">
-                    {{ comprobante_venta.tipo_comprobante }} {{ comprobante_venta.numero_formateado }} - {{ comprobante_venta.cliente_razon_social }}
+                    {% if comprobante_venta.tipo_comprobante_codigo %}
+                        {{ comprobante_venta.tipo_comprobante_codigo }} - {{ comprobante_venta.tipo_comprobante_descripcion }}
+                    {% else %}
+                        {{ comprobante_venta.tipo_comprobante }}
+                    {% endif %}
+                    {{ comprobante_venta.numero_formateado }} - {{ comprobante_venta.cliente_razon_social }}
                 </p>
             </div>
             <div id="vc-detalle-acciones" class="d-flex gap-2">
@@ -83,8 +88,12 @@
                                 <th data-field="descripcion">Descripción</th>
                                 <th data-field="cuenta_ingreso_codigo">Cuenta ingreso</th>
                                 <th data-field="cantidad_1000000" class="text-end">Cantidad esc.</th>
+                                <th data-field="unidad_medida_codigo">U. medida</th>
                                 <th data-field="precio_unitario_centavos" class="text-end">Precio unitario</th>
-                                <th data-field="descuento_centavos" class="text-end">Descuento</th>
+                                <th data-field="tipo_bonificacion_codigo">Bonificación</th>
+                                <th data-field="bonificacion_valor_10000" class="text-end">Valor bonif.</th>
+                                <th data-field="descuento_centavos" class="text-end">Importe bonif.</th>
+                                <th data-field="subtotal_centavos" class="text-end">Subtotal</th>
                                 <th data-field="iva_centavos" class="text-end">IVA</th>
                                 <th data-field="total_linea_centavos" class="text-end">Total línea</th>
                             </tr>
@@ -95,14 +104,30 @@
                                     <td data-field="descripcion">{{ detalle.descripcion }}</td>
                                     <td data-field="cuenta_ingreso_codigo">{{ detalle.cuenta_ingreso_codigo }}</td>
                                     <td data-field="cantidad_1000000" class="text-end">{{ detalle.cantidad_1000000 }}</td>
+                                    <td data-field="unidad_medida_codigo">
+                                        {% if detalle.unidad_medida_descripcion %}
+                                            {{ detalle.unidad_medida_descripcion }}
+                                        {% else %}
+                                            {{ detalle.unidad_medida_codigo }}
+                                        {% endif %}
+                                    </td>
                                     <td data-field="precio_unitario_centavos" class="text-end">{{ detalle.precio_unitario_argentina }}</td>
+                                    <td data-field="tipo_bonificacion_codigo">
+                                        {% if detalle.tipo_bonificacion_descripcion %}
+                                            {{ detalle.tipo_bonificacion_descripcion }}
+                                        {% else %}
+                                            <span class="text-muted">Sin bonificación</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="bonificacion_valor_10000" class="text-end">{{ detalle.bonificacion_valor_argentina }}</td>
                                     <td data-field="descuento_centavos" class="text-end">{{ detalle.descuento_argentina }}</td>
+                                    <td data-field="subtotal_centavos" class="text-end">{{ detalle.subtotal_argentina }}</td>
                                     <td data-field="iva_centavos" class="text-end">{{ detalle.iva_argentina }}</td>
                                     <td data-field="total_linea_centavos" class="text-end">{{ detalle.total_linea_argentina }}</td>
                                 </tr>
                             {% else %}
                                 <tr id="vc-detalle-row-sin-datos">
-                                    <td colspan="7" class="text-center text-muted py-4">No hay renglones para este comprobante.</td>
+                                    <td colspan="11" class="text-center text-muted py-4">No hay renglones para este comprobante.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

@@ -169,10 +169,10 @@ def test_crear_venta_comprobante_inserta_cabecera_y_detalle_normalizados():
     assert comprobante["fecha"] == "2026-01-15"
     assert comprobante["fecha_vencimiento"] == "2026-02-15"
     assert comprobante["tipo_comprobante"] == "FACTURA"
-    assert comprobante["letra"] == "X"
+    assert comprobante["letra"] == "C"
     assert comprobante["punto_venta"] == 1
     assert comprobante["numero"] == 25
-    assert comprobante["numero_formateado"] == "X 0001-00000025"
+    assert comprobante["numero_formateado"] == "C 0001-00000025"
     assert comprobante["moneda_codigo"] == "ARS"
     assert comprobante["cotizacion_centavos"] == 100
     assert comprobante["total_centavos"] == 121000
@@ -181,6 +181,10 @@ def test_crear_venta_comprobante_inserta_cabecera_y_detalle_normalizados():
     assert comprobante["cantidad_detalles"] == 1
     assert comprobante["detalles"][0]["descripcion"] == "Sesion de psicologia"
     assert comprobante["detalles"][0]["articulo_venta_id"] == articulo_id
+    assert comprobante["detalles"][0]["unidad_medida_codigo"] == "7"
+    assert comprobante["detalles"][0]["unidad_medida_descripcion"] == "unidades"
+    assert comprobante["detalles"][0]["tipo_bonificacion_codigo"] is None
+    assert comprobante["detalles"][0]["bonificacion_valor_10000"] == 0
     assert comprobante["detalles"][0]["cuenta_ingreso_codigo"] == cuenta_ingreso
     assert comprobante["detalles"][0]["total_linea_centavos"] == 121000
 

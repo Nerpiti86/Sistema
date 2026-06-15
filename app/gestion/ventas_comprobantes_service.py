@@ -30,17 +30,40 @@ from app.gestion.ventas_comprobantes_repository import (
     listar_ventas_comprobantes,
     marcar_venta_comprobante_confirmado,
     obtener_venta_comprobante_por_id,
+    obtener_proximo_numero_venta_comprobante,
+)
+from app.shared.catalogos_fiscales_repository import (
+    listar_catalogo_fiscal_activo,
+    validar_item_catalogo_fiscal_activo,
 )
 
 _TIPOS_COMPROBANTE_VALIDOS = {"FACTURA", "NOTA_DEBITO", "NOTA_CREDITO"}
 _TIPOS_COMPROBANTE_DEBE_CLIENTE = {"FACTURA", "NOTA_DEBITO"}
+_TIPOS_COMPROBANTE_FISCALES_VENTA = {
+    "011": "FACTURA",
+    "012": "NOTA_DEBITO",
+    "013": "NOTA_CREDITO",
+}
+_LETRAS_COMPROBANTE_FISCALES_VENTA = {
+    "011": "C",
+    "012": "C",
+    "013": "C",
+}
+_TIPOS_COMPROBANTE_CODIGO_POR_OPERATIVO = {
+    valor: codigo for codigo, valor in _TIPOS_COMPROBANTE_FISCALES_VENTA.items()
+}
 _TIPO_ORIGEN_VENTA_COMPROBANTE = "VENTA_COMPROBANTE"
 _MONEDA_CONTABLE = "ARS"
 _ESCALA_COTIZACION_CONTABLE = 1_000_000
 _PATRON_FECHA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PATRON_MONEDA = re.compile(r"^[A-Z]{3}$")
 _ESCALA_CANTIDAD = 1_000_000
-_TIPOS_COMPROBANTE_FORM = ("FACTURA", "NOTA_DEBITO", "NOTA_CREDITO")
+_ESCALA_PORCENTAJE = 10_000
+_ESCALA_PORCENTAJE_CALCULO = 100 * _ESCALA_PORCENTAJE
+_UNIDAD_MEDIDA_DEFAULT = "7"
+_PUNTO_VENTA_DEFAULT = 1
+_TIPO_BONIFICACION_PORCENTAJE = "1"
+_TIPO_BONIFICACION_MONTO = "2"
 
 
 def listar_comprobantes_venta() -> list[dict[str, Any]]:
@@ -137,6 +160,9 @@ def _preparar_detalle_comprobante_venta_para_pantalla(
     detalle_pantalla["precio_unitario_argentina"] = _formatear_centavos(
         detalle.get("precio_unitario_centavos", 0)
     )
+    detalle_pantalla["bonificacion_valor_argentina"] = _formatear_bonificacion_valor(
+        detalle
+    )
     detalle_pantalla["subtotal_argentina"] = _formatear_centavos(
         detalle.get("subtotal_centavos", 0)
     )
@@ -166,6 +192,23 @@ def _formatear_centavos(valor: Any) -> str:
     return formatear_entero_escala_a_decimal_argentino(int(valor or 0), 2)
 
 
+def _formatear_bonificacion_valor(detalle: dict[str, Any]) -> str:
+    tipo_bonificacion_codigo = _normalizar_texto_opcional(
+        detalle.get("tipo_bonificacion_codigo")
+    )
+
+    if tipo_bonificacion_codigo is None:
+        return ""
+
+    if tipo_bonificacion_codigo == _TIPO_BONIFICACION_PORCENTAJE:
+        return formatear_entero_escala_a_decimal_argentino(
+            int(detalle.get("bonificacion_valor_10000", 0)),
+            4,
+        )
+
+    return _formatear_centavos(detalle.get("descuento_centavos", 0))
+
+
 def obtener_contexto_formulario_comprobante_venta(
     comprobante_form: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -175,18 +218,42 @@ def obtener_contexto_formulario_comprobante_venta(
     En esta etapa se carga un comprobante BORRADOR con un solo renglon.
     """
     formulario = _preparar_comprobante_venta_formulario(comprobante_form or {})
+    tipo_comprobante, tipo_comprobante_codigo = _resolver_tipo_comprobante_venta(
+        formulario.get("tipo_comprobante")
+    )
+    formulario["tipo_comprobante"] = tipo_comprobante_codigo
+    formulario["letra"] = _resolver_letra_comprobante_venta(tipo_comprobante_codigo)
+    formulario["punto_venta"] = str(_PUNTO_VENTA_DEFAULT)
+    formulario["numero"] = str(
+        obtener_proximo_numero_venta_comprobante(
+            tipo_comprobante,
+            formulario["letra"],
+            _PUNTO_VENTA_DEFAULT,
+        )
+    )
     clientes = listar_clientes_activos()
     articulos_venta = [
         articulo for articulo in listar_articulos_venta() if articulo["esta_activo"]
     ]
+    tipos_comprobante_venta = [
+        tipo
+        for tipo in listar_catalogo_fiscal_activo("tipos_comprobante")
+        if tipo["codigo"] in _TIPOS_COMPROBANTE_FISCALES_VENTA
+    ]
+    unidades_medida = listar_catalogo_fiscal_activo("unidades_medida")
+    tipos_bonificacion = listar_catalogo_fiscal_activo("tipos_bonificacion")
 
     return {
         "comprobante_form": formulario,
         "clientes": clientes,
         "articulos_venta": articulos_venta,
-        "tipos_comprobante_venta": list(_TIPOS_COMPROBANTE_FORM),
+        "tipos_comprobante_venta": tipos_comprobante_venta,
+        "unidades_medida": unidades_medida,
+        "tipos_bonificacion": tipos_bonificacion,
         "cantidad_clientes": len(clientes),
         "cantidad_articulos_venta": len(articulos_venta),
+        "cantidad_unidades_medida": len(unidades_medida),
+        "cantidad_tipos_bonificacion": len(tipos_bonificacion),
     }
 
 
@@ -211,14 +278,17 @@ def _preparar_comprobante_venta_formulario(
     formulario = dict(comprobante_form)
     formulario.setdefault("fecha", "")
     formulario.setdefault("fecha_vencimiento", "")
-    formulario.setdefault("tipo_comprobante", "FACTURA")
-    formulario.setdefault("letra", "X")
-    formulario.setdefault("punto_venta", "0")
-    formulario.setdefault("numero", "0")
+    formulario.setdefault("tipo_comprobante", "011")
+    formulario.setdefault("letra", "C")
+    formulario.setdefault("punto_venta", str(_PUNTO_VENTA_DEFAULT))
+    formulario.setdefault("numero", "")
     formulario.setdefault("moneda_codigo", _MONEDA_CONTABLE)
     formulario.setdefault("cotizacion_centavos", "100")
-    formulario.setdefault("cantidad", "1,000000")
+    formulario.setdefault("cantidad", "1,00")
+    formulario.setdefault("unidad_medida_codigo", _UNIDAD_MEDIDA_DEFAULT)
     formulario.setdefault("precio_unitario_centavos", "")
+    formulario.setdefault("tipo_bonificacion_codigo", "")
+    formulario.setdefault("bonificacion_valor", "")
     formulario.setdefault("descripcion", "")
     formulario.setdefault("observaciones", "")
 
@@ -228,10 +298,8 @@ def _preparar_comprobante_venta_formulario(
 def _normalizar_formulario_borrador_comprobante_venta(
     formulario: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    tipo_comprobante = _validar_opcion(
-        formulario.get("tipo_comprobante"),
-        _TIPOS_COMPROBANTE_VALIDOS,
-        "El tipo de comprobante es invalido.",
+    tipo_comprobante, tipo_comprobante_codigo = _resolver_tipo_comprobante_venta(
+        formulario.get("tipo_comprobante")
     )
     moneda_codigo = _validar_codigo_moneda(
         formulario.get("moneda_codigo", _MONEDA_CONTABLE),
@@ -255,17 +323,13 @@ def _normalizar_formulario_borrador_comprobante_venta(
             "La fecha de vencimiento debe tener formato YYYY-MM-DD.",
         ),
         "tipo_comprobante": tipo_comprobante,
-        "letra": _validar_texto_obligatorio(
-            formulario.get("letra", "X"),
-            "La letra del comprobante es obligatoria.",
-        ).upper(),
-        "punto_venta": _validar_entero_no_negativo(
-            formulario.get("punto_venta", 0),
-            "El punto de venta debe ser un entero no negativo.",
-        ),
-        "numero": _validar_entero_no_negativo(
-            formulario.get("numero", 0),
-            "El numero del comprobante debe ser un entero no negativo.",
+        "tipo_comprobante_codigo": tipo_comprobante_codigo,
+        "letra": _resolver_letra_comprobante_venta(tipo_comprobante_codigo),
+        "punto_venta": _PUNTO_VENTA_DEFAULT,
+        "numero": obtener_proximo_numero_venta_comprobante(
+            tipo_comprobante,
+            _resolver_letra_comprobante_venta(tipo_comprobante_codigo),
+            _PUNTO_VENTA_DEFAULT,
         ),
         "moneda_codigo": moneda_codigo,
         "cotizacion_centavos": _validar_entero_positivo(
@@ -283,6 +347,9 @@ def _normalizar_formulario_borrador_comprobante_venta(
         "cantidad_1000000": _normalizar_cantidad_formulario_a_1000000(
             formulario.get("cantidad")
         ),
+        "unidad_medida_codigo": _normalizar_unidad_medida_codigo(
+            formulario.get("unidad_medida_codigo", _UNIDAD_MEDIDA_DEFAULT)
+        ),
         "iva_centavos": 0,
         "orden": 1,
     }
@@ -297,6 +364,16 @@ def _normalizar_formulario_borrador_comprobante_venta(
     if precio_unitario_centavos is not None:
         detalle["precio_unitario_centavos"] = precio_unitario_centavos
 
+    tipo_bonificacion_codigo = _normalizar_tipo_bonificacion_codigo_opcional(
+        formulario.get("tipo_bonificacion_codigo")
+    )
+    if tipo_bonificacion_codigo is not None:
+        detalle["tipo_bonificacion_codigo"] = tipo_bonificacion_codigo
+        detalle["bonificacion_valor_10000"] = _normalizar_bonificacion_valor_formulario(
+            tipo_bonificacion_codigo,
+            formulario.get("bonificacion_valor"),
+        )
+
     return datos_comprobante, detalle
 
 
@@ -307,15 +384,16 @@ def _normalizar_cantidad_formulario_a_1000000(valor: Any) -> int:
         raise ValueError("La cantidad del renglon es obligatoria.")
 
     try:
-        cantidad_1000000 = normalizar_decimal_argentino_a_entero_escala(
+        cantidad_100 = normalizar_decimal_argentino_a_entero_escala(
             valor_normalizado,
-            6,
+            2,
         )
     except ValueError as exc:
         raise ValueError(
-            "La cantidad debe respetar formato argentino 9.999,999999."
+            "La cantidad debe respetar formato argentino 9.999,99."
         ) from exc
 
+    cantidad_1000000 = cantidad_100 * 10_000
     if cantidad_1000000 <= 0:
         raise ValueError("La cantidad del renglon debe ser positiva.")
 
@@ -344,6 +422,36 @@ def _normalizar_precio_unitario_formulario(valor: Any) -> int | None:
     return precio_unitario_centavos
 
 
+def _normalizar_bonificacion_valor_formulario(
+    tipo_bonificacion_codigo: str,
+    valor: Any,
+) -> int:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return 0
+
+    if tipo_bonificacion_codigo == _TIPO_BONIFICACION_PORCENTAJE:
+        escala = 4
+        mensaje = "El porcentaje de bonificacion debe respetar formato argentino 99,9999."
+    else:
+        escala = 2
+        mensaje = "El importe de bonificacion debe respetar formato argentino 9.999,99."
+
+    try:
+        valor_entero = normalizar_decimal_argentino_a_entero_escala(
+            valor_normalizado,
+            escala,
+        )
+    except ValueError as exc:
+        raise ValueError(mensaje) from exc
+
+    if valor_entero < 0:
+        raise ValueError("La bonificacion del renglon no puede ser negativa.")
+
+    return valor_entero
+
+
 def crear_borrador_comprobante_venta(
     datos_comprobante: dict[str, Any],
     detalles: list[dict[str, Any]],
@@ -366,6 +474,7 @@ def crear_borrador_comprobante_venta(
         "fecha": datos_base["fecha"],
         "fecha_vencimiento": datos_base["fecha_vencimiento"],
         "tipo_comprobante": datos_base["tipo_comprobante"],
+        "tipo_comprobante_codigo": datos_base["tipo_comprobante_codigo"],
         "letra": datos_base["letra"],
         "punto_venta": datos_base["punto_venta"],
         "numero": datos_base["numero"],
@@ -611,10 +720,9 @@ def _normalizar_datos_base_comprobante(
     if estado_informado and estado_informado.upper() != "BORRADOR":
         raise ValueError("El service solo puede crear comprobantes en BORRADOR.")
 
-    tipo_comprobante = _validar_opcion(
-        datos_comprobante.get("tipo_comprobante"),
-        _TIPOS_COMPROBANTE_VALIDOS,
-        "El tipo de comprobante es invalido.",
+    tipo_comprobante, tipo_comprobante_codigo = _resolver_tipo_comprobante_venta(
+        datos_comprobante.get("tipo_comprobante_codigo")
+        or datos_comprobante.get("tipo_comprobante")
     )
 
     return {
@@ -631,10 +739,8 @@ def _normalizar_datos_base_comprobante(
             "La fecha de vencimiento debe tener formato YYYY-MM-DD.",
         ),
         "tipo_comprobante": tipo_comprobante,
-        "letra": _validar_texto_obligatorio(
-            datos_comprobante.get("letra", "X"),
-            "La letra del comprobante es obligatoria.",
-        ).upper(),
+        "tipo_comprobante_codigo": tipo_comprobante_codigo,
+        "letra": _resolver_letra_comprobante_venta(tipo_comprobante_codigo),
         "punto_venta": _validar_entero_no_negativo(
             datos_comprobante.get("punto_venta", 0),
             "El punto de venta debe ser un entero no negativo.",
@@ -722,6 +828,9 @@ def _normalizar_detalle_comprobante(
         detalle.get("cantidad_1000000", _ESCALA_CANTIDAD),
         f"La cantidad del renglon {indice} debe ser positiva.",
     )
+    unidad_medida_codigo = _normalizar_unidad_medida_codigo(
+        detalle.get("unidad_medida_codigo", _UNIDAD_MEDIDA_DEFAULT)
+    )
     precio_unitario_centavos = _validar_entero_no_negativo(
         detalle.get(
             "precio_unitario_centavos",
@@ -729,9 +838,12 @@ def _normalizar_detalle_comprobante(
         ),
         f"El precio unitario del renglon {indice} debe ser no negativo.",
     )
-    descuento_centavos = _validar_entero_no_negativo(
-        detalle.get("descuento_centavos", 0),
-        f"El descuento del renglon {indice} debe ser no negativo.",
+    tipo_bonificacion_codigo = _normalizar_tipo_bonificacion_codigo_opcional(
+        detalle.get("tipo_bonificacion_codigo")
+    )
+    bonificacion_valor_10000 = _validar_entero_no_negativo(
+        detalle.get("bonificacion_valor_10000", 0),
+        f"El valor de bonificacion del renglon {indice} debe ser no negativo.",
     )
     iva_centavos = _validar_entero_no_negativo(
         detalle.get("iva_centavos", 0),
@@ -753,6 +865,12 @@ def _normalizar_detalle_comprobante(
         precio_unitario_centavos,
         cantidad_1000000,
     )
+    descuento_centavos = _calcular_importe_bonificacion_linea(
+        subtotal_centavos,
+        tipo_bonificacion_codigo,
+        bonificacion_valor_10000,
+        detalle.get("descuento_centavos", 0),
+    )
 
     if descuento_centavos > subtotal_centavos:
         raise ValueError(f"El descuento del renglon {indice} supera el subtotal.")
@@ -763,7 +881,10 @@ def _normalizar_detalle_comprobante(
         "articulo_venta_id": articulo["id"],
         "descripcion": descripcion,
         "cantidad_1000000": cantidad_1000000,
+        "unidad_medida_codigo": unidad_medida_codigo,
         "precio_unitario_centavos": precio_unitario_centavos,
+        "tipo_bonificacion_codigo": tipo_bonificacion_codigo,
+        "bonificacion_valor_10000": bonificacion_valor_10000,
         "descuento_centavos": descuento_centavos,
         "subtotal_centavos": subtotal_centavos,
         "iva_centavos": iva_centavos,
@@ -813,6 +934,27 @@ def _calcular_subtotal_linea(
     numerador = precio_unitario_centavos * cantidad_1000000
 
     return (numerador + (_ESCALA_CANTIDAD // 2)) // _ESCALA_CANTIDAD
+
+
+def _calcular_importe_bonificacion_linea(
+    subtotal_centavos: int,
+    tipo_bonificacion_codigo: str | None,
+    bonificacion_valor_10000: int,
+    descuento_legacy: Any,
+) -> int:
+    if tipo_bonificacion_codigo is None:
+        return _validar_entero_no_negativo(
+            descuento_legacy,
+            "El descuento del renglon debe ser no negativo.",
+        )
+
+    if tipo_bonificacion_codigo == _TIPO_BONIFICACION_PORCENTAJE:
+        return (
+            subtotal_centavos * bonificacion_valor_10000
+            + (_ESCALA_PORCENTAJE_CALCULO // 2)
+        ) // _ESCALA_PORCENTAJE_CALCULO
+
+    return bonificacion_valor_10000
 
 
 def _validar_texto_obligatorio(valor: Any, mensaje: str) -> str:
@@ -870,6 +1012,57 @@ def _validar_opcion(valor: Any, opciones_validas: set[str], mensaje: str) -> str
         raise ValueError(mensaje)
 
     return valor_normalizado
+
+
+def _normalizar_unidad_medida_codigo(valor: Any) -> str:
+    codigo = _validar_codigo_catalogo(valor, "La unidad de medida del renglon es obligatoria.")
+    validar_item_catalogo_fiscal_activo("unidades_medida", codigo)
+    return codigo
+
+
+def _normalizar_tipo_bonificacion_codigo_opcional(valor: Any) -> str | None:
+    codigo = _normalizar_texto_opcional(valor)
+
+    if codigo is None:
+        return None
+
+    codigo = _validar_codigo_catalogo(codigo, "El tipo de bonificacion del renglon es invalido.")
+    validar_item_catalogo_fiscal_activo("tipos_bonificacion", codigo)
+    return codigo
+
+
+def _validar_codigo_catalogo(valor: Any, mensaje: str) -> str:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado or len(valor_normalizado) > 3 or not valor_normalizado.isdigit():
+        raise ValueError(mensaje)
+
+    return valor_normalizado
+
+
+def _resolver_tipo_comprobante_venta(valor: Any) -> tuple[str, str]:
+    valor_normalizado = str(valor or "").strip().upper()
+
+    if valor_normalizado in _TIPOS_COMPROBANTE_FISCALES_VENTA:
+        return (
+            _TIPOS_COMPROBANTE_FISCALES_VENTA[valor_normalizado],
+            valor_normalizado,
+        )
+
+    if valor_normalizado in _TIPOS_COMPROBANTE_VALIDOS:
+        return (
+            valor_normalizado,
+            _TIPOS_COMPROBANTE_CODIGO_POR_OPERATIVO[valor_normalizado],
+        )
+
+    raise ValueError("El tipo de comprobante es invalido.")
+
+
+def _resolver_letra_comprobante_venta(tipo_comprobante_codigo: str) -> str:
+    try:
+        return _LETRAS_COMPROBANTE_FISCALES_VENTA[tipo_comprobante_codigo]
+    except KeyError as exc:
+        raise ValueError("No existe letra fiscal definida para el tipo de comprobante.") from exc
 
 
 def _validar_codigo_moneda(valor: Any, mensaje: str) -> str:

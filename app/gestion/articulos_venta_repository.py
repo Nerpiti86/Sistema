@@ -73,6 +73,45 @@ def listar_articulos_venta_activos() -> list[dict[str, Any]]:
     ]
 
 
+def buscar_articulos_venta_activos(
+    termino_busqueda: Any,
+    limite: Any = 10,
+) -> list[dict[str, Any]]:
+    """Busca productos o servicios activos para lookup de comprobantes de venta."""
+    termino_normalizado = str(termino_busqueda or "").strip()
+    limite_validado = _validar_limite_lookup_articulos_venta(limite)
+
+    if not termino_normalizado:
+        return []
+
+    patron_busqueda = f"%{termino_normalizado}%"
+    filas_articulos = get_db().execute(
+        f"""
+        SELECT {_COLUMNAS_SELECT_ARTICULOS_VENTA}
+        FROM articulos_venta
+        JOIN monedas
+          ON monedas.codigo = articulos_venta.moneda_codigo
+        LEFT JOIN cuentas_contables
+          ON cuentas_contables.cuenta = articulos_venta.cuenta_ingreso_codigo
+        WHERE articulos_venta.activo = 1
+          AND (
+                articulos_venta.nombre LIKE ?
+             OR articulos_venta.tipo LIKE ?
+             OR articulos_venta.moneda_codigo LIKE ?
+          )
+        ORDER BY articulos_venta.orden,
+                 articulos_venta.nombre
+        LIMIT ?
+        """,
+        (patron_busqueda, patron_busqueda, patron_busqueda, limite_validado),
+    ).fetchall()
+
+    return [
+        _normalizar_fila_articulo_venta(fila_articulo)
+        for fila_articulo in filas_articulos
+    ]
+
+
 def obtener_articulo_venta_por_id(articulo_venta_id: Any) -> dict[str, Any] | None:
     """Devuelve un producto o servicio vendible por id, o None si no existe."""
     articulo_venta_id_validado = _validar_id_articulo_venta(articulo_venta_id)
@@ -309,6 +348,18 @@ def _validar_id_articulo_venta(articulo_venta_id: Any) -> int:
         raise ValueError("El id del producto o servicio debe ser positivo.")
 
     return articulo_venta_id_validado
+
+
+def _validar_limite_lookup_articulos_venta(limite: Any) -> int:
+    try:
+        limite_validado = int(str(limite or "10").strip())
+    except ValueError as exc:
+        raise ValueError("El limite de busqueda debe ser numerico.") from exc
+
+    if limite_validado <= 0 or limite_validado > 50:
+        raise ValueError("El limite de busqueda debe estar entre 1 y 50.")
+
+    return limite_validado
 
 
 def _validar_tipo_articulo_venta(tipo: Any) -> str:

@@ -11,6 +11,7 @@ _COLUMNAS_SELECT_VENTAS_COMPROBANTES = """
     ventas_comprobantes.fecha,
     ventas_comprobantes.fecha_vencimiento,
     ventas_comprobantes.tipo_comprobante,
+    ventas_comprobantes.tipo_comprobante_codigo,
     ventas_comprobantes.letra,
     ventas_comprobantes.punto_venta,
     ventas_comprobantes.numero,
@@ -30,6 +31,7 @@ _COLUMNAS_SELECT_VENTAS_COMPROBANTES = """
     ventas_comprobantes.anulado_en,
     clientes.razon_social AS cliente_razon_social,
     clientes.nombre_fantasia AS cliente_nombre_fantasia,
+    tipos_comprobante.descripcion AS tipo_comprobante_descripcion,
     monedas.nombre AS moneda_nombre,
     monedas.simbolo AS moneda_simbolo,
     monedas.decimales AS moneda_decimales
@@ -41,7 +43,10 @@ _COLUMNAS_SELECT_VENTAS_DETALLE = """
     ventas_comprobantes_detalle.articulo_venta_id,
     ventas_comprobantes_detalle.descripcion,
     ventas_comprobantes_detalle.cantidad_1000000,
+    ventas_comprobantes_detalle.unidad_medida_codigo,
     ventas_comprobantes_detalle.precio_unitario_centavos,
+    ventas_comprobantes_detalle.tipo_bonificacion_codigo,
+    ventas_comprobantes_detalle.bonificacion_valor_10000,
     ventas_comprobantes_detalle.descuento_centavos,
     ventas_comprobantes_detalle.subtotal_centavos,
     ventas_comprobantes_detalle.iva_centavos,
@@ -50,10 +55,25 @@ _COLUMNAS_SELECT_VENTAS_DETALLE = """
     ventas_comprobantes_detalle.orden,
     ventas_comprobantes_detalle.observaciones,
     articulos_venta.nombre AS articulo_venta_nombre,
+    unidades_medida.descripcion AS unidad_medida_descripcion,
+    tipos_bonificacion.descripcion AS tipo_bonificacion_descripcion,
     cuentas_contables.descripcion AS cuenta_ingreso_descripcion
 """
 
 _TIPOS_COMPROBANTE_VALIDOS = {"FACTURA", "NOTA_DEBITO", "NOTA_CREDITO"}
+_TIPOS_COMPROBANTE_FISCALES_VALIDOS = {
+    "011": "FACTURA",
+    "012": "NOTA_DEBITO",
+    "013": "NOTA_CREDITO",
+}
+_LETRAS_COMPROBANTE_FISCALES_VALIDAS = {
+    "011": "C",
+    "012": "C",
+    "013": "C",
+}
+_TIPOS_COMPROBANTE_OPERATIVOS_POR_CODIGO = {
+    valor: codigo for codigo, valor in _TIPOS_COMPROBANTE_FISCALES_VALIDOS.items()
+}
 _ESTADOS_COMPROBANTE_VALIDOS = {"BORRADOR", "CONFIRMADO", "ANULADO"}
 _PATRON_FECHA_ISO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PATRON_MONEDA = re.compile(r"^[A-Z]{3}$")
@@ -72,6 +92,8 @@ def listar_ventas_comprobantes() -> list[dict[str, Any]]:
         FROM ventas_comprobantes
         JOIN clientes
           ON clientes.id = ventas_comprobantes.cliente_id
+        LEFT JOIN tipos_comprobante
+          ON tipos_comprobante.codigo = ventas_comprobantes.tipo_comprobante_codigo
         JOIN monedas
           ON monedas.codigo = ventas_comprobantes.moneda_codigo
         ORDER BY ventas_comprobantes.fecha DESC,
@@ -83,6 +105,47 @@ def listar_ventas_comprobantes() -> list[dict[str, Any]]:
         _normalizar_fila_comprobante(fila_comprobante)
         for fila_comprobante in filas_comprobantes
     ]
+
+
+def obtener_proximo_numero_venta_comprobante(
+    tipo_comprobante: Any,
+    letra: Any,
+    punto_venta: Any,
+) -> int:
+    """Devuelve proximo numero disponible para tipo/letra/punto de venta."""
+    tipo_normalizado = str(tipo_comprobante or "").strip().upper()
+    if tipo_normalizado in _TIPOS_COMPROBANTE_FISCALES_VALIDOS:
+        tipo_comprobante_validado = _TIPOS_COMPROBANTE_FISCALES_VALIDOS[
+            tipo_normalizado
+        ]
+    else:
+        tipo_comprobante_validado = _validar_opcion(
+            tipo_normalizado,
+            _TIPOS_COMPROBANTE_VALIDOS,
+            "El tipo de comprobante es invalido.",
+        )
+    letra_validada = _validar_texto_obligatorio(
+        letra,
+        "La letra del comprobante es obligatoria.",
+    ).upper()
+    punto_venta_validado = _validar_entero_positivo(
+        punto_venta,
+        "El punto de venta debe ser positivo.",
+    )
+
+    fila = get_db().execute(
+        """
+        SELECT COALESCE(MAX(numero), 0) + 1 AS proximo_numero
+        FROM ventas_comprobantes
+        WHERE tipo_comprobante = ?
+          AND letra = ?
+          AND punto_venta = ?
+          AND numero > 0
+        """,
+        (tipo_comprobante_validado, letra_validada, punto_venta_validado),
+    ).fetchone()
+
+    return int(fila["proximo_numero"])
 
 
 def obtener_venta_comprobante_por_id(
@@ -101,6 +164,8 @@ def obtener_venta_comprobante_por_id(
         FROM ventas_comprobantes
         JOIN clientes
           ON clientes.id = ventas_comprobantes.cliente_id
+        LEFT JOIN tipos_comprobante
+          ON tipos_comprobante.codigo = ventas_comprobantes.tipo_comprobante_codigo
         JOIN monedas
           ON monedas.codigo = ventas_comprobantes.moneda_codigo
         WHERE ventas_comprobantes.id = ?
@@ -138,6 +203,10 @@ def listar_ventas_comprobantes_detalle(
         FROM ventas_comprobantes_detalle
         JOIN articulos_venta
           ON articulos_venta.id = ventas_comprobantes_detalle.articulo_venta_id
+        LEFT JOIN unidades_medida
+          ON unidades_medida.codigo = ventas_comprobantes_detalle.unidad_medida_codigo
+        LEFT JOIN tipos_bonificacion
+          ON tipos_bonificacion.codigo = ventas_comprobantes_detalle.tipo_bonificacion_codigo
         JOIN cuentas_contables
           ON cuentas_contables.cuenta = ventas_comprobantes_detalle.cuenta_ingreso_codigo
         WHERE ventas_comprobantes_detalle.comprobante_id = ?
@@ -175,6 +244,7 @@ def crear_venta_comprobante(
                     fecha,
                     fecha_vencimiento,
                     tipo_comprobante,
+                    tipo_comprobante_codigo,
                     letra,
                     punto_venta,
                     numero,
@@ -190,13 +260,14 @@ def crear_venta_comprobante(
                     observaciones,
                     creado_en
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     datos_validados["cliente_id"],
                     datos_validados["fecha"],
                     datos_validados["fecha_vencimiento"],
                     datos_validados["tipo_comprobante"],
+                    datos_validados["tipo_comprobante_codigo"],
                     datos_validados["letra"],
                     datos_validados["punto_venta"],
                     datos_validados["numero"],
@@ -223,7 +294,10 @@ def crear_venta_comprobante(
                         articulo_venta_id,
                         descripcion,
                         cantidad_1000000,
+                        unidad_medida_codigo,
                         precio_unitario_centavos,
+                        tipo_bonificacion_codigo,
+                        bonificacion_valor_10000,
                         descuento_centavos,
                         subtotal_centavos,
                         iva_centavos,
@@ -232,14 +306,17 @@ def crear_venta_comprobante(
                         orden,
                         observaciones
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         comprobante_id,
                         detalle["articulo_venta_id"],
                         detalle["descripcion"],
                         detalle["cantidad_1000000"],
+                        detalle["unidad_medida_codigo"],
                         detalle["precio_unitario_centavos"],
+                        detalle["tipo_bonificacion_codigo"],
+                        detalle["bonificacion_valor_10000"],
                         detalle["descuento_centavos"],
                         detalle["subtotal_centavos"],
                         detalle["iva_centavos"],
@@ -377,6 +454,7 @@ def _normalizar_fila_detalle(fila_detalle) -> dict[str, Any]:
         "articulo_venta_id",
         "cantidad_1000000",
         "precio_unitario_centavos",
+        "bonificacion_valor_10000",
         "descuento_centavos",
         "subtotal_centavos",
         "iva_centavos",
@@ -406,10 +484,11 @@ def _validar_datos_comprobante(datos_comprobante: dict[str, Any]) -> dict[str, A
         _TIPOS_COMPROBANTE_VALIDOS,
         "El tipo de comprobante es invalido.",
     )
-    letra = _validar_texto_obligatorio(
-        datos_comprobante.get("letra", "X"),
-        "La letra del comprobante es obligatoria.",
-    ).upper()
+    tipo_comprobante_codigo = _validar_tipo_comprobante_codigo(
+        datos_comprobante.get("tipo_comprobante_codigo"),
+        tipo_comprobante,
+    )
+    letra = _resolver_letra_comprobante(tipo_comprobante_codigo)
     punto_venta = _validar_entero_no_negativo(
         datos_comprobante.get("punto_venta", 0),
         "El punto de venta debe ser un entero no negativo.",
@@ -466,6 +545,7 @@ def _validar_datos_comprobante(datos_comprobante: dict[str, Any]) -> dict[str, A
         "fecha": fecha,
         "fecha_vencimiento": fecha_vencimiento,
         "tipo_comprobante": tipo_comprobante,
+        "tipo_comprobante_codigo": tipo_comprobante_codigo,
         "letra": letra,
         "punto_venta": punto_venta,
         "numero": numero,
@@ -502,9 +582,21 @@ def _validar_detalle(detalle: dict[str, Any], indice: int) -> dict[str, Any]:
         detalle.get("cantidad_1000000", 1000000),
         f"La cantidad del renglon {indice} debe ser positiva.",
     )
+    unidad_medida_codigo = _validar_codigo_catalogo_opcional(
+        detalle.get("unidad_medida_codigo", "7"),
+        f"La unidad de medida del renglon {indice} es obligatoria.",
+    )
     precio_unitario_centavos = _validar_entero_no_negativo(
         detalle.get("precio_unitario_centavos", 0),
         f"El precio unitario del renglon {indice} debe ser no negativo.",
+    )
+    tipo_bonificacion_codigo = _validar_codigo_catalogo_opcional(
+        detalle.get("tipo_bonificacion_codigo"),
+        f"El tipo de bonificacion del renglon {indice} es invalido.",
+    )
+    bonificacion_valor_10000 = _validar_entero_no_negativo(
+        detalle.get("bonificacion_valor_10000", 0),
+        f"El valor de bonificacion del renglon {indice} debe ser no negativo.",
     )
     descuento_centavos = _validar_entero_no_negativo(
         detalle.get("descuento_centavos", 0),
@@ -541,7 +633,10 @@ def _validar_detalle(detalle: dict[str, Any], indice: int) -> dict[str, Any]:
         "articulo_venta_id": articulo_venta_id,
         "descripcion": descripcion,
         "cantidad_1000000": cantidad_1000000,
+        "unidad_medida_codigo": unidad_medida_codigo,
         "precio_unitario_centavos": precio_unitario_centavos,
+        "tipo_bonificacion_codigo": tipo_bonificacion_codigo,
+        "bonificacion_valor_10000": bonificacion_valor_10000,
         "descuento_centavos": descuento_centavos,
         "subtotal_centavos": subtotal_centavos,
         "iva_centavos": iva_centavos,
@@ -626,6 +721,40 @@ def _validar_opcion(valor: Any, opciones_validas: set[str], mensaje: str) -> str
         raise ValueError(mensaje)
 
     return valor_normalizado
+
+
+def _validar_codigo_catalogo_opcional(valor: Any, mensaje: str) -> str | None:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return None
+
+    if len(valor_normalizado) > 3 or not valor_normalizado.isdigit():
+        raise ValueError(mensaje)
+
+    return valor_normalizado
+
+
+def _validar_tipo_comprobante_codigo(valor: Any, tipo_operativo: str) -> str:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return _TIPOS_COMPROBANTE_OPERATIVOS_POR_CODIGO[tipo_operativo]
+
+    if valor_normalizado not in _TIPOS_COMPROBANTE_FISCALES_VALIDOS:
+        raise ValueError("El codigo fiscal de tipo de comprobante es invalido.")
+
+    if _TIPOS_COMPROBANTE_FISCALES_VALIDOS[valor_normalizado] != tipo_operativo:
+        raise ValueError("El codigo fiscal no coincide con el tipo de comprobante.")
+
+    return valor_normalizado
+
+
+def _resolver_letra_comprobante(tipo_comprobante_codigo: str) -> str:
+    try:
+        return _LETRAS_COMPROBANTE_FISCALES_VALIDAS[tipo_comprobante_codigo]
+    except KeyError as exc:
+        raise ValueError("No existe letra fiscal definida para el tipo de comprobante.") from exc
 
 
 def _validar_codigo_moneda(valor: Any, mensaje: str) -> str:

@@ -96,6 +96,7 @@ def _crear_comprobante_venta(db, cliente_id: int) -> int:
             fecha,
             fecha_vencimiento,
             tipo_comprobante,
+            tipo_comprobante_codigo,
             letra,
             punto_venta,
             numero,
@@ -109,13 +110,14 @@ def _crear_comprobante_venta(db, cliente_id: int) -> int:
             estado,
             creado_en
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             cliente_id,
             "2026-01-15",
             "2026-02-15",
             "FACTURA",
+            "011",
             "X",
             1,
             25,
@@ -154,6 +156,7 @@ def test_migracion_crea_tablas_ventas_comprobantes_y_detalle():
         "fecha",
         "fecha_vencimiento",
         "tipo_comprobante",
+        "tipo_comprobante_codigo",
         "letra",
         "punto_venta",
         "numero",
@@ -179,7 +182,10 @@ def test_migracion_crea_tablas_ventas_comprobantes_y_detalle():
         "articulo_venta_id",
         "descripcion",
         "cantidad_1000000",
+        "unidad_medida_codigo",
         "precio_unitario_centavos",
+        "tipo_bonificacion_codigo",
+        "bonificacion_valor_10000",
         "descuento_centavos",
         "subtotal_centavos",
         "iva_centavos",
@@ -210,7 +216,7 @@ def test_ventas_comprobantes_permite_factura_borrador_con_total_consistente():
 
         comprobante = db.execute(
             """
-            SELECT tipo_comprobante, total_centavos, estado
+            SELECT tipo_comprobante, tipo_comprobante_codigo, total_centavos, estado
             FROM ventas_comprobantes
             WHERE id = ?
             """,
@@ -218,6 +224,7 @@ def test_ventas_comprobantes_permite_factura_borrador_con_total_consistente():
         ).fetchone()
 
     assert comprobante["tipo_comprobante"] == "FACTURA"
+    assert comprobante["tipo_comprobante_codigo"] == "011"
     assert comprobante["total_centavos"] == 121000
     assert comprobante["estado"] == "BORRADOR"
 

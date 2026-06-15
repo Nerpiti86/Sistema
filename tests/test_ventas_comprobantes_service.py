@@ -256,7 +256,7 @@ def test_crear_borrador_comprobante_venta_copia_datos_del_articulo():
     assert comprobante["asiento_id"] is None
     assert comprobante["cliente_id"] == cliente_id
     assert comprobante["tipo_comprobante"] == "FACTURA"
-    assert comprobante["letra"] == "X"
+    assert comprobante["letra"] == "C"
     assert comprobante["moneda_codigo"] == "ARS"
     assert comprobante["subtotal_centavos"] == 100000
     assert comprobante["descuento_centavos"] == 0
@@ -373,6 +373,82 @@ def test_crear_borrador_comprobante_venta_suma_descuentos_de_linea_y_global():
     assert comprobante["recargo_centavos"] == 2000
     assert comprobante["iva_centavos"] == 0
     assert comprobante["total_centavos"] == 87000
+
+
+def test_crear_borrador_comprobante_venta_calcula_bonificacion_por_monto():
+    """El service guarda tipo e importe de bonificacion por monto en el renglon."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id),
+            [
+                {
+                    **_detalle(articulo_id),
+                    "tipo_bonificacion_codigo": "2",
+                    "bonificacion_valor_10000": "15000",
+                }
+            ],
+        )
+
+    detalle = comprobante["detalles"][0]
+    assert detalle["unidad_medida_codigo"] == "7"
+    assert detalle["tipo_bonificacion_codigo"] == "2"
+    assert detalle["bonificacion_valor_10000"] == 15000
+    assert detalle["descuento_centavos"] == 15000
+    assert detalle["subtotal_centavos"] == 100000
+    assert detalle["total_linea_centavos"] == 85000
+    assert comprobante["descuento_centavos"] == 15000
+    assert comprobante["total_centavos"] == 85000
+
+
+def test_crear_borrador_comprobante_venta_calcula_bonificacion_por_porcentaje():
+    """El service calcula importe de bonificacion desde porcentaje informado."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.997",
+            "Ingresos por servicios test",
+        )
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id),
+            [
+                {
+                    **_detalle(articulo_id),
+                    "unidad_medida_codigo": "14",
+                    "tipo_bonificacion_codigo": "1",
+                    "bonificacion_valor_10000": "100000",
+                }
+            ],
+        )
+
+    detalle = comprobante["detalles"][0]
+    assert detalle["unidad_medida_codigo"] == "14"
+    assert detalle["unidad_medida_descripcion"] == "gramos"
+    assert detalle["tipo_bonificacion_codigo"] == "1"
+    assert detalle["bonificacion_valor_10000"] == 100000
+    assert detalle["descuento_centavos"] == 10000
+    assert detalle["subtotal_centavos"] == 100000
+    assert detalle["total_linea_centavos"] == 90000
+    assert comprobante["descuento_centavos"] == 10000
+    assert comprobante["total_centavos"] == 90000
 
 
 def test_crear_borrador_comprobante_venta_rechaza_iva_hasta_contrato_fiscal():

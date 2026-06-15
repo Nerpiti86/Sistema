@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% from "components/cards.html" import card %}
 
+{% block page_css %}
+    <link href="{{ url_for('static', filename='css/ventas_comprobantes_form.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <section id="vc-form" data-table="ventas_comprobantes" data-form="alta-borrador" class="row g-3">
     <div class="col-12">
@@ -48,24 +52,24 @@
                             <label for="vc-tipo-comprobante" class="form-label">Tipo</label>
                             <select id="vc-tipo-comprobante" name="tipo_comprobante" class="form-select" required>
                                 {% for tipo in tipos_comprobante_venta %}
-                                    <option value="{{ tipo }}" {% if comprobante_form.tipo_comprobante == tipo %}selected{% endif %}>{{ tipo }}</option>
+                                    <option value="{{ tipo.codigo }}" {% if comprobante_form.tipo_comprobante == tipo.codigo %}selected{% endif %}>{{ tipo.codigo }} - {{ tipo.descripcion }}</option>
                                 {% endfor %}
                             </select>
                         </div>
 
                         <div class="col-12 col-md-3">
                             <label for="vc-letra" class="form-label">Letra</label>
-                            <input id="vc-letra" name="letra" type="text" class="form-control" value="{{ comprobante_form.letra }}" maxlength="10" required>
+                            <input id="vc-letra" name="letra" type="text" class="form-control" value="{{ comprobante_form.letra }}" maxlength="10" readonly>
                         </div>
 
                         <div class="col-12 col-md-3">
                             <label for="vc-punto-venta" class="form-label">Punto venta</label>
-                            <input id="vc-punto-venta" name="punto_venta" type="number" min="0" step="1" class="form-control text-end" value="{{ comprobante_form.punto_venta }}" required>
+                            <input id="vc-punto-venta" name="punto_venta" type="number" min="1" step="1" class="form-control text-end" value="{{ comprobante_form.punto_venta }}" readonly required>
                         </div>
 
                         <div class="col-12 col-md-3">
                             <label for="vc-numero" class="form-label">Número</label>
-                            <input id="vc-numero" name="numero" type="number" min="0" step="1" class="form-control text-end" value="{{ comprobante_form.numero }}" required>
+                            <input id="vc-numero" name="numero" type="number" min="1" step="1" class="form-control text-end" value="{{ comprobante_form.numero }}" readonly required>
                         </div>
 
                         <div class="col-12 col-md-3">
@@ -78,32 +82,135 @@
 
             <div id="vc-renglon" class="col-12">
                 {% call card("Renglón", "Detalle mínimo") %}
-                    <div id="vc-renglon-minimo" class="row g-3">
-                        <div class="col-12 col-lg-5">
-                            <label for="vc-articulo" class="form-label">Producto o servicio</label>
-                            <select id="vc-articulo" name="articulo_venta_id" class="form-select" data-ns-select="normal" required>
-                                <option value="">Seleccionar producto o servicio...</option>
-                                {% for articulo in articulos_venta %}
-                                    <option value="{{ articulo.id }}" {% if comprobante_form.articulo_venta_id|string == articulo.id|string %}selected{% endif %}>
-                                        {{ articulo.nombre }} - {{ articulo.moneda_codigo }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-3 col-lg-2">
-                            <label for="vc-cantidad" class="form-label">Cantidad</label>
-                            <input id="vc-cantidad" name="cantidad" type="text" inputmode="decimal" class="form-control text-end" value="{{ comprobante_form.cantidad }}" placeholder="1,000000" required>
-                        </div>
-
-                        <div class="col-12 col-md-3 col-lg-2">
-                            <label for="vc-precio-unitario" class="form-label">Precio unitario</label>
-                            <input id="vc-precio-unitario" name="precio_unitario_centavos" type="text" inputmode="decimal" data-money-ar="centavos" class="form-control text-end" value="{{ comprobante_form.precio_unitario_centavos }}" placeholder="Usa precio sugerido">
-                        </div>
-
-                        <div class="col-12 col-lg-3">
-                            <label for="vc-descripcion-renglon" class="form-label">Descripción opcional</label>
-                            <input id="vc-descripcion-renglon" name="descripcion" type="text" class="form-control" value="{{ comprobante_form.descripcion }}" placeholder="Si se deja vacío usa el nombre del producto o servicio">
+                    <div id="vc-renglon-scroll" class="table-responsive">
+                        <table
+                            id="vc-renglon-tabla"
+                            data-table="ventas_comprobantes_detalle"
+                            class="table table-sm table-hover align-middle mb-2 vc-renglon-tabla"
+                        >
+                            <colgroup>
+                                <col id="vc-renglon-col-producto" style="width: 31%;">
+                                <col id="vc-renglon-col-cantidad" style="width: 9%;">
+                                <col id="vc-renglon-col-unidad" style="width: 7%;">
+                                <col id="vc-renglon-col-precio" style="width: 14%;">
+                                <col id="vc-renglon-col-tipo-bonif" style="width: 8%;">
+                                <col id="vc-renglon-col-importe-bonif" style="width: 14%;">
+                                <col id="vc-renglon-col-subtotal" style="width: 17%;">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th data-field="articulo_venta_id" class="text-nowrap">Producto o servicio</th>
+                                    <th data-field="cantidad_1000000" class="text-end text-nowrap">Cantidad</th>
+                                    <th data-field="unidad_medida_codigo" class="text-center text-nowrap">U. medida</th>
+                                    <th data-field="precio_unitario_centavos" class="text-end text-nowrap">Precio unitario</th>
+                                    <th data-field="tipo_bonificacion_codigo" class="text-center text-nowrap">Tipo bonif.</th>
+                                    <th data-field="bonificacion_valor_10000" class="text-end text-nowrap">Importe bonif.</th>
+                                    <th data-field="subtotal_centavos" class="text-end text-nowrap">Subtotal línea</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vc-renglon-minimo" data-role="venta-renglones">
+                                <tr id="vc-renglon-row-0" data-role="venta-renglon" data-row-index="0">
+                                    <td data-field="articulo_venta_id">
+                                        <input
+                                            id="vc-articulo"
+                                            data-field="articulo_venta_id"
+                                            data-lookup="ventas-articulos-activos"
+                                            data-lookup-url="{{ url_for('gestion.buscar_productos_servicios_venta_json') }}"
+                                            data-lookup-limite="10"
+                                            data-lookup-hidden="vc-articulo-id"
+                                            type="text"
+                                            list="vc-articulo-opciones"
+                                            value=""
+                                            class="form-control form-control-sm"
+                                            placeholder="Producto o servicio"
+                                            aria-label="Producto o servicio del renglon 1"
+                                            autocomplete="off"
+                                            required
+                                        >
+                                        <input
+                                            id="vc-articulo-id"
+                                            type="hidden"
+                                            name="articulo_venta_id"
+                                            value="{{ comprobante_form.articulo_venta_id }}"
+                                            required
+                                        >
+                                        <datalist
+                                            id="vc-articulo-opciones"
+                                            data-table="articulos_venta"
+                                            data-field="articulo_venta_lookup_opciones"
+                                        ></datalist>
+                                    </td>
+                                    <td data-field="cantidad_1000000">
+                                        <input id="vc-cantidad" name="cantidad" type="text" inputmode="decimal" class="form-control form-control-sm text-end" value="{{ comprobante_form.cantidad }}" placeholder="1,00" required>
+                                    </td>
+                                    <td data-field="unidad_medida_codigo" class="text-center">
+                                        {% set unidad_badges = {"1": "KG", "2": "M", "3": "M2", "4": "M3", "5": "L", "7": "UN", "14": "G", "47": "ML"} %}
+                                        {% set unidad_actual = namespace(badge=comprobante_form.unidad_medida_codigo|string, titulo="Unidad de medida") %}
+                                        <select id="vc-unidad-medida" name="unidad_medida_codigo" class="visually-hidden" aria-label="Unidad de medida del renglon 1" aria-hidden="true" tabindex="-1" required>
+                                            {% for unidad in unidades_medida %}
+                                                {% set unidad_badge = unidad_badges.get(unidad.codigo|string, unidad.codigo) %}
+                                                {% if comprobante_form.unidad_medida_codigo|string == unidad.codigo|string %}
+                                                    {% set unidad_actual.badge = unidad_badge %}
+                                                    {% set unidad_actual.titulo = unidad.descripcion_select %}
+                                                {% endif %}
+                                                <option value="{{ unidad.codigo }}" data-badge="{{ unidad_badge }}" {% if comprobante_form.unidad_medida_codigo|string == unidad.codigo|string %}selected{% endif %}>
+                                                    {{ unidad.descripcion_select }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <button
+                                            id="vc-unidad-medida-badge"
+                                            data-role="vc-badge-ciclico"
+                                            data-target-select="vc-unidad-medida"
+                                            data-badge-kind="unidad"
+                                            type="button"
+                                            class="btn btn-sm badge rounded-pill vc-renglon-badge vc-renglon-badge--unidad px-2 py-1"
+                                            aria-label="{{ unidad_actual.titulo }} del renglon 1. Click para cambiar unidad de medida"
+                                            title="{{ unidad_actual.titulo }}"
+                                        >
+                                            {{ unidad_actual.badge }}
+                                        </button>
+                                    </td>
+                                    <td data-field="precio_unitario_centavos">
+                                        <input id="vc-precio-unitario" name="precio_unitario_centavos" type="text" inputmode="decimal" data-money-ar="centavos" class="form-control form-control-sm text-end" value="{{ comprobante_form.precio_unitario_centavos }}" placeholder="Precio">
+                                    </td>
+                                    <td data-field="tipo_bonificacion_codigo" class="text-center">
+                                        <select id="vc-tipo-bonificacion" name="tipo_bonificacion_codigo" class="visually-hidden" aria-label="Tipo de bonificacion del renglon 1" aria-hidden="true" tabindex="-1">
+                                            <option value="" data-badge="Sin">Sin bonif.</option>
+                                            {% for tipo_bonificacion in tipos_bonificacion %}
+                                                {% set bonif_badge = "%" if tipo_bonificacion.codigo|string == "1" else "$" if tipo_bonificacion.codigo|string == "2" else tipo_bonificacion.codigo %}
+                                                <option value="{{ tipo_bonificacion.codigo }}" data-badge="{{ bonif_badge }}" {% if comprobante_form.tipo_bonificacion_codigo|string == tipo_bonificacion.codigo|string %}selected{% endif %}>
+                                                    {{ tipo_bonificacion.descripcion_select }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <button
+                                            id="vc-tipo-bonificacion-badge"
+                                            data-role="vc-badge-ciclico"
+                                            data-target-select="vc-tipo-bonificacion"
+                                            data-badge-kind="bonificacion"
+                                            type="button"
+                                            class="btn btn-sm badge rounded-pill vc-renglon-badge vc-renglon-badge--sin px-2 py-1"
+                                            aria-label="Sin bonificacion del renglon 1. Click para cambiar tipo de bonificacion"
+                                            title="Sin bonificacion"
+                                        >
+                                            Sin
+                                        </button>
+                                    </td>
+                                    <td data-field="bonificacion_valor_10000">
+                                        <input id="vc-bonificacion-valor" name="bonificacion_valor" type="text" inputmode="decimal" class="form-control form-control-sm text-end" value="{{ comprobante_form.bonificacion_valor }}" placeholder="0,00">
+                                    </td>
+                                    <td data-field="subtotal_centavos">
+                                        <input id="vc-subtotal-linea" type="text" class="form-control form-control-sm text-end" value="" readonly>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="vc-total-comprobante-contenedor" class="d-flex justify-content-end mt-2">
+                        <div class="vc-total-comprobante">
+                            <label for="vc-total-comprobante" class="form-label mb-1">Total comprobante</label>
+                            <input id="vc-total-comprobante" type="text" class="form-control form-control-sm text-end fw-semibold" value="" readonly>
                         </div>
                     </div>
                 {% endcall %}
@@ -125,4 +232,5 @@
         </div>
     </form>
 </section>
+<script src="{{ url_for('static', filename='js/ventas_comprobantes_form.js') }}"></script>
 {% endblock %}

@@ -14,6 +14,18 @@ _CATALOGOS = {
         "tabla": "tipos_documento",
         "nombre_error": "tipo de documento",
     },
+    "unidades_medida": {
+        "tabla": "unidades_medida",
+        "nombre_error": "unidad de medida",
+    },
+    "tipos_bonificacion": {
+        "tabla": "tipos_bonificacion",
+        "nombre_error": "tipo de bonificacion",
+    },
+    "tipos_comprobante": {
+        "tabla": "tipos_comprobante",
+        "nombre_error": "tipo de comprobante",
+    },
 }
 
 

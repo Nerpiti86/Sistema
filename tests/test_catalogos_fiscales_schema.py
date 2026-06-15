@@ -17,6 +17,15 @@ def test_catalogos_fiscales_schema_y_seed_inicial():
         tipos = db.execute(
             "SELECT codigo, descripcion FROM tipos_documento ORDER BY CAST(codigo AS INTEGER)"
         ).fetchall()
+        unidades = db.execute(
+            "SELECT codigo, descripcion FROM unidades_medida ORDER BY orden"
+        ).fetchall()
+        bonificaciones = db.execute(
+            "SELECT codigo, descripcion FROM tipos_bonificacion ORDER BY orden"
+        ).fetchall()
+        comprobantes = db.execute(
+            "SELECT codigo, descripcion FROM tipos_comprobante ORDER BY orden"
+        ).fetchall()
 
     assert len(condiciones) == 9
     assert ("5", "Consumidor Final") in [
@@ -31,4 +40,28 @@ def test_catalogos_fiscales_schema_y_seed_inicial():
     ]
     assert ("96", "DNI") in [
         (fila["codigo"], fila["descripcion"]) for fila in tipos
+    ]
+    assert len(unidades) == 8
+    assert ("1", "kilogramos") in [
+        (fila["codigo"], fila["descripcion"]) for fila in unidades
+    ]
+    assert ("7", "unidades") in [
+        (fila["codigo"], fila["descripcion"]) for fila in unidades
+    ]
+    assert ("47", "mililitros") in [
+        (fila["codigo"], fila["descripcion"]) for fila in unidades
+    ]
+    assert [(fila["codigo"], fila["descripcion"]) for fila in bonificaciones] == [
+        ("1", "Porcentaje"),
+        ("2", "Monto"),
+    ]
+    assert len(comprobantes) == 97
+    assert ("001", "FACTURA A") in [
+        (fila["codigo"], fila["descripcion"]) for fila in comprobantes
+    ]
+    assert ("201", "FACTURA DE CRÉDITO ELECTRÓNICA MiPyMEs (FCE) A") in [
+        (fila["codigo"], fila["descripcion"]) for fila in comprobantes
+    ]
+    assert ("998", "Remito Electrónico para Azúcar, Alcohol y Subproductos -Exportación-") in [
+        (fila["codigo"], fila["descripcion"]) for fila in comprobantes
     ]

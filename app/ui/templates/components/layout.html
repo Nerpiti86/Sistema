@@ -65,6 +65,33 @@
     "tablas_comunes_fiscales.activar_tipo_documento_existente",
     "tablas_comunes_fiscales.desactivar_tipo_documento_existente",
 ] %}
+{% set es_unidades_medida = endpoint_actual in [
+    "tablas_comunes_fiscales.ver_listado_unidades_medida",
+    "tablas_comunes_fiscales.ver_formulario_nueva_unidad_medida",
+    "tablas_comunes_fiscales.crear_unidad_medida_nueva",
+    "tablas_comunes_fiscales.ver_formulario_editar_unidad_medida",
+    "tablas_comunes_fiscales.actualizar_unidad_medida_existente",
+    "tablas_comunes_fiscales.activar_unidad_medida_existente",
+    "tablas_comunes_fiscales.desactivar_unidad_medida_existente",
+] %}
+{% set es_tipos_bonificacion = endpoint_actual in [
+    "tablas_comunes_fiscales.ver_listado_tipos_bonificacion",
+    "tablas_comunes_fiscales.ver_formulario_nuevo_tipo_bonificacion",
+    "tablas_comunes_fiscales.crear_tipo_bonificacion_nuevo",
+    "tablas_comunes_fiscales.ver_formulario_editar_tipo_bonificacion",
+    "tablas_comunes_fiscales.actualizar_tipo_bonificacion_existente",
+    "tablas_comunes_fiscales.activar_tipo_bonificacion_existente",
+    "tablas_comunes_fiscales.desactivar_tipo_bonificacion_existente",
+] %}
+{% set es_tipos_comprobante = endpoint_actual in [
+    "tablas_comunes_fiscales.ver_listado_tipos_comprobante",
+    "tablas_comunes_fiscales.ver_formulario_nuevo_tipo_comprobante",
+    "tablas_comunes_fiscales.crear_tipo_comprobante_nuevo",
+    "tablas_comunes_fiscales.ver_formulario_editar_tipo_comprobante",
+    "tablas_comunes_fiscales.actualizar_tipo_comprobante_existente",
+    "tablas_comunes_fiscales.activar_tipo_comprobante_existente",
+    "tablas_comunes_fiscales.desactivar_tipo_comprobante_existente",
+] %}
 {% set es_gestion = endpoint_actual.startswith("gestion.") %}
 {% set es_grupos_clientes = endpoint_actual in [
     "gestion.ver_listado_grupos_clientes",
@@ -269,7 +296,7 @@
                             </section>
 
                             <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-fiscal">
-                                <h2 id="ns-nav-tablas-fiscal" class="ns-mega-section-title {% if es_condiciones_iva or es_tipos_documento %}active{% endif %}">
+                                <h2 id="ns-nav-tablas-fiscal" class="ns-mega-section-title {% if es_condiciones_iva or es_tipos_documento or es_unidades_medida or es_tipos_bonificacion or es_tipos_comprobante %}active{% endif %}">
                                     Fiscal
                                 </h2>
 
@@ -297,6 +324,45 @@
                                 >
                                     <span class="ns-mega-link-title">Tipos de documento</span>
                                     <span class="ns-mega-link-text">CUIT, DNI, pasaporte y otros documentos.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-unidades-medida"
+                                    class="ns-mega-link {% if es_unidades_medida %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes_fiscales.ver_listado_unidades_medida') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes_fiscales.ver_listado_unidades_medida"
+                                >
+                                    <span class="ns-mega-link-title">Unidades de medida</span>
+                                    <span class="ns-mega-link-text">Códigos fiscales para cantidades facturadas.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-tipos-bonificacion"
+                                    class="ns-mega-link {% if es_tipos_bonificacion %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes_fiscales.ver_listado_tipos_bonificacion') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes_fiscales.ver_listado_tipos_bonificacion"
+                                >
+                                    <span class="ns-mega-link-title">Tipos de bonificación</span>
+                                    <span class="ns-mega-link-text">Descuentos por porcentaje o monto.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-tipos-comprobante"
+                                    class="ns-mega-link {% if es_tipos_comprobante %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes_fiscales.ver_listado_tipos_comprobante') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes_fiscales.ver_listado_tipos_comprobante"
+                                >
+                                    <span class="ns-mega-link-title">Tipos de comprobantes</span>
+                                    <span class="ns-mega-link-text">Códigos fiscales de comprobantes.</span>
                                 </a>
                             </section>
                         </div>

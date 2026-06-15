@@ -6,6 +6,7 @@ from app.contabilidad.cuentas_contables_repository import (
 )
 from app.gestion.articulos_venta_repository import (
     actualizar_articulo_venta_por_id,
+    buscar_articulos_venta_activos,
     cambiar_estado_articulo_venta,
     crear_articulo_venta,
     listar_articulos_venta,
@@ -84,6 +85,40 @@ def obtener_contexto_edicion_articulo_venta(articulo_venta_id: Any) -> dict[str,
         raise ValueError("No existe el producto o servicio informado.")
 
     return obtener_contexto_formulario_articulo_venta(articulo)
+
+
+def obtener_lookup_articulos_venta_activos(
+    termino_busqueda: Any,
+    limite: Any = 10,
+) -> dict[str, Any]:
+    """Devuelve productos o servicios activos listos para autocomplete."""
+    termino_normalizado = str(termino_busqueda or "").strip()
+    articulos = buscar_articulos_venta_activos(termino_normalizado, limite)
+    resultados = [
+        _preparar_articulo_venta_para_lookup(articulo)
+        for articulo in articulos
+    ]
+
+    return {
+        "q": termino_normalizado,
+        "cantidad": len(resultados),
+        "resultados": resultados,
+    }
+
+
+def _preparar_articulo_venta_para_lookup(articulo: dict[str, Any]) -> dict[str, Any]:
+    """Prepara producto o servicio para autocomplete de ventas."""
+    return {
+        "id": articulo["id"],
+        "nombre": articulo["nombre"],
+        "tipo": articulo["tipo"],
+        "moneda_codigo": articulo["moneda_codigo"],
+        "label": f"{articulo['nombre']} - {articulo['moneda_codigo']}",
+        "valor": str(articulo["id"]),
+        "precio_unitario_sugerido_centavos": articulo[
+            "precio_unitario_sugerido_centavos"
+        ],
+    }
 
 
 def crear_articulo_venta_desde_formulario(

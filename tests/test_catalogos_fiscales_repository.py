@@ -20,10 +20,22 @@ def test_catalogos_fiscales_repository_lista_semillas():
         apply_migrations()
         condiciones = listar_catalogo_fiscal("condiciones_iva")
         tipos = listar_catalogo_fiscal("tipos_documento")
+        unidades = listar_catalogo_fiscal("unidades_medida")
+        bonificaciones = listar_catalogo_fiscal("tipos_bonificacion")
+        comprobantes = listar_catalogo_fiscal("tipos_comprobante")
 
     assert condiciones[0]["codigo"] == "1"
     assert any(item["descripcion"] == "Consumidor Final" for item in condiciones)
     assert any(item["codigo"] == "80" and item["descripcion"] == "CUIT" for item in tipos)
+    assert any(item["codigo"] == "7" and item["descripcion"] == "unidades" for item in unidades)
+    assert any(
+        item["codigo"] == "1" and item["descripcion"] == "Porcentaje"
+        for item in bonificaciones
+    )
+    assert any(
+        item["codigo"] == "001" and item["descripcion"] == "FACTURA A"
+        for item in comprobantes
+    )
 
 
 def test_catalogos_fiscales_repository_abm_basico():
