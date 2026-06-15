@@ -81,6 +81,49 @@
     </div>
 
     <div class="col-12">
+        <div id="vc-detalle-cuenta-corriente" data-table="clientes_cuenta_corriente_movimientos">
+            {% call card("Cuenta corriente", "Impacto") %}
+                {% if movimiento_cuenta_corriente_venta %}
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Movimiento</dt>
+                        <dd id="vc-cuenta-corriente-movimiento" data-field="movimiento_cuenta_corriente_id" class="col-sm-9">
+                            ID {{ movimiento_cuenta_corriente_venta.id }}
+                        </dd>
+                        <dt class="col-sm-3">Estado</dt>
+                        <dd id="vc-cuenta-corriente-estado" data-field="estado" class="col-sm-9">
+                            {{ movimiento_cuenta_corriente_venta.estado }}
+                        </dd>
+                        <dt class="col-sm-3">Fecha</dt>
+                        <dd id="vc-cuenta-corriente-fecha" data-field="fecha" class="col-sm-9">
+                            {{ movimiento_cuenta_corriente_venta.fecha_argentina }}
+                        </dd>
+                        <dt class="col-sm-3">Tipo</dt>
+                        <dd id="vc-cuenta-corriente-tipo" data-field="tipo_movimiento" class="col-sm-9">
+                            {{ movimiento_cuenta_corriente_venta.tipo_movimiento }}
+                        </dd>
+                        <dt class="col-sm-3">Lado</dt>
+                        <dd id="vc-cuenta-corriente-lado" data-field="lado" class="col-sm-9">
+                            {{ movimiento_cuenta_corriente_venta.lado }}
+                        </dd>
+                        <dt class="col-sm-3">Importe</dt>
+                        <dd id="vc-cuenta-corriente-importe" data-field="importe_centavos" class="col-sm-9 text-end fw-semibold">
+                            {{ movimiento_cuenta_corriente_venta.importe_argentina }}
+                        </dd>
+                        <dt class="col-sm-3">Origen</dt>
+                        <dd id="vc-cuenta-corriente-origen" data-field="origen" class="col-sm-9 mb-0">
+                            {{ movimiento_cuenta_corriente_venta.origen_tipo }} #{{ movimiento_cuenta_corriente_venta.origen_id }}
+                        </dd>
+                    </dl>
+                {% else %}
+                    <p id="vc-cuenta-corriente-sin-movimiento" class="text-muted mb-0">
+                        Sin movimiento de cuenta corriente asociado.
+                    </p>
+                {% endif %}
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
         <div id="vc-detalle-renglones" data-table="ventas_comprobantes_detalle">
             {% call card("Renglones", "Detalle") %}
                 <div class="table-responsive">

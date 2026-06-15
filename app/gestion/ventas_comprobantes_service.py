@@ -27,6 +27,7 @@ from app.gestion.clientes_repository import (
 from app.gestion.clientes_cuenta_corriente_service import (
     crear_movimiento_debe_cliente,
     crear_movimiento_haber_cliente,
+    obtener_contexto_cuenta_corriente_cliente,
 )
 from app.gestion.ventas_comprobantes_repository import (
     crear_venta_comprobante,
@@ -120,11 +121,48 @@ def obtener_contexto_detalle_comprobante_venta(
         for detalle in comprobante.get("detalles", [])
     ]
 
+    movimiento_cuenta_corriente = (
+        _obtener_movimiento_cuenta_corriente_comprobante_para_pantalla(comprobante)
+    )
+
     return {
         "comprobante_venta": comprobante_pantalla,
         "detalles_comprobante_venta": detalles_pantalla,
         "cantidad_detalles_comprobante_venta": len(detalles_pantalla),
+        "movimiento_cuenta_corriente_venta": movimiento_cuenta_corriente,
     }
+
+
+def _obtener_movimiento_cuenta_corriente_comprobante_para_pantalla(
+    comprobante: dict[str, Any],
+) -> dict[str, Any] | None:
+    contexto_cuenta_corriente = obtener_contexto_cuenta_corriente_cliente(
+        comprobante["cliente_id"]
+    )
+
+    for movimiento in contexto_cuenta_corriente["movimientos"]:
+        if movimiento.get("origen_tipo") != _TIPO_ORIGEN_VENTA_COMPROBANTE:
+            continue
+
+        if int(movimiento.get("origen_id") or 0) != int(comprobante["id"]):
+            continue
+
+        movimiento_pantalla = dict(movimiento)
+        movimiento_pantalla["fecha_argentina"] = _formatear_fecha_iso_opcional(
+            movimiento.get("fecha")
+        )
+        movimiento_pantalla["debe_argentina"] = _formatear_centavos(
+            movimiento.get("debe_centavos", 0)
+        )
+        movimiento_pantalla["haber_argentina"] = _formatear_centavos(
+            movimiento.get("haber_centavos", 0)
+        )
+        movimiento_pantalla["importe_argentina"] = _formatear_centavos(
+            movimiento.get("importe_centavos", 0)
+        )
+        return movimiento_pantalla
+
+    return None
 
 
 def _preparar_comprobante_venta_para_pantalla(
