@@ -44,7 +44,7 @@
                     <dd id="cl-cc-total-debe" data-field="total_debe_centavos" class="col-sm-9 text-end">{{ lectura_saldo.total_debe_argentina }}</dd>
                     <dt class="col-sm-3">Total haber</dt>
                     <dd id="cl-cc-total-haber" data-field="total_haber_centavos" class="col-sm-9 text-end">{{ lectura_saldo.total_haber_argentina }}</dd>
-                    <dt class="col-sm-3">Saldo</dt>
+                    <dt class="col-sm-3">Saldo actual</dt>
                     <dd id="cl-cc-saldo" data-field="saldo_centavos" class="col-sm-9 text-end fw-semibold mb-0">
                         {{ lectura_saldo.saldo_lado }} {{ lectura_saldo.saldo_argentina }}
                     </dd>
@@ -54,51 +54,89 @@
     </div>
 
     <div class="col-12">
-        <div id="cl-cc-movimientos" data-query="listar_movimientos_cliente_cuenta_corriente">
-            {% call card("Movimientos", "Cuenta corriente") %}
+        <div id="cl-cc-filtros">
+            {% call card("Filtros", "Cuenta corriente") %}
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-12 col-md-3">
+                        <label for="cl-cc-fecha-desde" class="form-label">Desde</label>
+                        <input id="cl-cc-fecha-desde" name="fecha_desde" type="date" class="form-control" value="{{ filtros.fecha_desde }}">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label for="cl-cc-fecha-hasta" class="form-label">Hasta</label>
+                        <input id="cl-cc-fecha-hasta" name="fecha_hasta" type="date" class="form-control" value="{{ filtros.fecha_hasta }}">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label for="cl-cc-estado" class="form-label">Estado</label>
+                        <select id="cl-cc-estado" name="estado" class="form-select">
+                            <option value="" {% if not filtros.estado %}selected{% endif %}>Todos</option>
+                            <option value="CONFIRMADO" {% if filtros.estado == "CONFIRMADO" %}selected{% endif %}>Confirmado</option>
+                            <option value="BORRADOR" {% if filtros.estado == "BORRADOR" %}selected{% endif %}>Borrador</option>
+                            <option value="ANULADO" {% if filtros.estado == "ANULADO" %}selected{% endif %}>Anulado</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3 text-end">
+                        <button id="cl-cc-aplicar-filtros" type="submit" class="btn btn-primary ns-btn-primary">Aplicar filtros</button>
+                        <a id="cl-cc-limpiar-filtros" href="{{ url_for('gestion.ver_cuenta_corriente_cliente', cliente_id=cliente.id) }}" class="btn btn-secondary ns-btn-secondary">Limpiar</a>
+                    </div>
+                </form>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="cl-cc-mayor" data-query="listar_movimientos_cliente_cuenta_corriente">
+            {% call card("Cuenta corriente", "Mayor") %}
                 <div class="table-responsive">
                     <table id="cl-cc-tabla" class="table table-sm align-middle mb-0">
                         <thead>
                             <tr>
                                 <th data-field="fecha">Fecha</th>
-                                <th data-field="tipo_movimiento">Tipo</th>
-                                <th data-field="descripcion">Descripción</th>
-                                <th data-field="estado" class="text-center">Estado</th>
-                                <th data-field="origen_tipo">Origen</th>
-                                <th data-field="asiento_id" class="text-end">Asiento</th>
+                                <th data-field="tipo_movimiento">Movimiento</th>
+                                <th data-field="detalle">Detalle</th>
                                 <th data-field="debe_centavos" class="text-end">Debe</th>
                                 <th data-field="haber_centavos" class="text-end">Haber</th>
+                                <th data-field="saldo_centavos" class="text-end">Saldo</th>
+                                <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="cl-cc-tbody">
+                            <tr id="cl-cc-saldo-inicial" class="table-light">
+                                <td colspan="5" class="fw-semibold">{{ saldo_inicial_etiqueta }}</td>
+                                <td data-field="saldo_inicial_centavos" class="text-end fw-semibold">
+                                    {{ saldo_inicial.saldo_argentina }}
+                                </td>
+                                <td></td>
+                            </tr>
                             {% for movimiento in movimientos %}
                                 <tr id="cl-cc-row-{{ movimiento.id }}" data-row-id="{{ movimiento.id }}">
                                     <td data-field="fecha">{{ movimiento.fecha_argentina }}</td>
-                                    <td data-field="tipo_movimiento">{{ movimiento.tipo_movimiento }}</td>
-                                    <td data-field="descripcion">{{ movimiento.descripcion }}</td>
-                                    <td data-field="estado" class="text-center">{{ movimiento.estado }}</td>
-                                    <td data-field="origen_tipo">
-                                        {% if movimiento.origen_tipo %}
-                                            {{ movimiento.origen_tipo }} #{{ movimiento.origen_id }}
-                                        {% else %}
-                                            <span class="text-muted">Manual</span>
-                                        {% endif %}
-                                    </td>
-                                    <td data-field="asiento_id" class="text-end">
-                                        {% if movimiento.asiento_id %}
-                                            {{ movimiento.asiento_id }}
-                                        {% else %}
-                                            <span class="text-muted">-</span>
-                                        {% endif %}
-                                    </td>
+                                    <td data-field="tipo_movimiento">{{ movimiento.movimiento_mostrar }}</td>
+                                    <td data-field="detalle">{{ movimiento.detalle_mostrar }}</td>
                                     <td data-field="debe_centavos" class="text-end">{{ movimiento.debe_argentina }}</td>
                                     <td data-field="haber_centavos" class="text-end">{{ movimiento.haber_argentina }}</td>
+                                    <td data-field="saldo_centavos" class="text-end fw-semibold">{{ movimiento.saldo_argentina }}</td>
+                                    <td class="text-end">
+                                        {% if movimiento.accion_tipo == "COMPROBANTE_VENTA" %}
+                                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('gestion.ver_detalle_comprobante_venta', comprobante_id=movimiento.accion_id) }}">Ver comprobante</a>
+                                        {% elif movimiento.accion_tipo == "ASIENTO" %}
+                                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('contabilidad.ver_detalle_asiento_contable', asiento_id=movimiento.accion_id) }}">Ver asiento</a>
+                                        {% else %}
+                                            <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                             {% else %}
                                 <tr id="cl-cc-row-sin-datos">
-                                    <td colspan="8" class="text-center text-muted py-4">No hay movimientos de cuenta corriente para este cliente.</td>
+                                    <td colspan="7" class="text-center text-muted py-4">No hay movimientos de cuenta corriente para este cliente.</td>
                                 </tr>
                             {% endfor %}
+                            <tr id="cl-cc-saldo-final" class="table-light">
+                                <td colspan="5" class="fw-semibold">Saldo final</td>
+                                <td data-field="saldo_final_centavos" class="text-end fw-semibold">
+                                    {{ saldo_final.saldo_argentina }}
+                                </td>
+                                <td></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>

@@ -172,7 +172,12 @@ def actualizar_cliente_existente(cliente_id):
 def ver_cuenta_corriente_cliente(cliente_id):
     """Muestra cuenta corriente de un cliente."""
     try:
-        contexto = obtener_contexto_cuenta_corriente_cliente(cliente_id)
+        contexto = obtener_contexto_cuenta_corriente_cliente(
+            cliente_id,
+            estado=request.args.get("estado"),
+            fecha_desde=request.args.get("fecha_desde"),
+            fecha_hasta=request.args.get("fecha_hasta"),
+        )
     except ValueError as exc:
         flash(str(exc), "danger")
         return redirect(url_for("gestion.ver_listado_clientes"))

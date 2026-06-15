@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Any
 
 from app.shared.formatos import (
@@ -80,6 +81,8 @@ def crear_movimiento_haber_cliente(
 def obtener_contexto_cuenta_corriente_cliente(
     cliente_id: Any,
     estado: Any = None,
+    fecha_desde: Any = None,
+    fecha_hasta: Any = None,
 ) -> dict[str, Any]:
     """
     Devuelve contexto funcional de cuenta corriente de un cliente.
@@ -93,54 +96,163 @@ def obtener_contexto_cuenta_corriente_cliente(
         raise ValueError("No existe el cliente informado.")
 
     estado_normalizado = None
-    if estado is not None:
+    if estado is not None and str(estado).strip():
         estado_normalizado = _validar_opcion(
             estado,
             _ESTADOS_MOVIMIENTO_VALIDOS,
             "El estado del movimiento es invalido.",
         )
 
-    movimientos = listar_movimientos_cliente_cuenta_corriente(
+    fecha_desde_normalizada = _normalizar_fecha_iso_opcional(
+        fecha_desde,
+        "La fecha desde debe tener formato YYYY-MM-DD.",
+    )
+    fecha_hasta_normalizada = _normalizar_fecha_iso_opcional(
+        fecha_hasta,
+        "La fecha hasta debe tener formato YYYY-MM-DD.",
+    )
+
+    if (
+        fecha_desde_normalizada
+        and fecha_hasta_normalizada
+        and fecha_desde_normalizada > fecha_hasta_normalizada
+    ):
+        raise ValueError("La fecha desde no puede ser posterior a la fecha hasta.")
+
+    movimientos_todos = listar_movimientos_cliente_cuenta_corriente(
         cliente_id_normalizado,
         estado=estado_normalizado,
     )
-    movimientos_pantalla = [
-        _preparar_movimiento_cliente_cuenta_corriente_para_pantalla(movimiento)
-        for movimiento in movimientos
-    ]
+
+    saldo_inicial_centavos = _calcular_saldo_inicial_centavos(
+        movimientos_todos,
+        fecha_desde_normalizada,
+    )
+    movimientos_rango = _filtrar_movimientos_por_rango(
+        movimientos_todos,
+        fecha_desde_normalizada,
+        fecha_hasta_normalizada,
+    )
+    movimientos_pantalla, saldo_final_centavos = (
+        _preparar_movimientos_cliente_cuenta_corriente_con_saldo(
+            movimientos_rango,
+            saldo_inicial_centavos,
+        )
+    )
+
     lectura_saldo = calcular_lectura_saldo_cliente(
         cliente_id_normalizado,
         solo_confirmados=True,
-    )
-    lectura_saldo_pantalla = _preparar_lectura_saldo_cliente_para_pantalla(
-        lectura_saldo
     )
 
     return {
         "cliente": cliente,
         "movimientos": movimientos_pantalla,
         "cantidad_movimientos": len(movimientos_pantalla),
-        "lectura_saldo": lectura_saldo_pantalla,
+        "lectura_saldo": _preparar_lectura_saldo_cliente_para_pantalla(lectura_saldo),
+        "saldo_inicial": _preparar_saldo_para_pantalla(saldo_inicial_centavos),
+        "saldo_final": _preparar_saldo_para_pantalla(saldo_final_centavos),
         "estado_filtro": estado_normalizado,
+        "filtros": {
+            "fecha_desde": fecha_desde_normalizada or "",
+            "fecha_hasta": fecha_hasta_normalizada or "",
+            "estado": estado_normalizado or "",
+        },
+        "saldo_inicial_etiqueta": _preparar_etiqueta_saldo_inicial(
+            fecha_desde_normalizada
+        ),
     }
+
+
+def _calcular_saldo_inicial_centavos(
+    movimientos: list[dict[str, Any]],
+    fecha_desde: str | None,
+) -> int:
+    if not fecha_desde:
+        return 0
+
+    saldo = 0
+    for movimiento in movimientos:
+        if str(movimiento.get("fecha") or "") >= fecha_desde:
+            continue
+        saldo += _importe_saldo_movimiento(movimiento)
+
+    return saldo
+
+
+def _filtrar_movimientos_por_rango(
+    movimientos: list[dict[str, Any]],
+    fecha_desde: str | None,
+    fecha_hasta: str | None,
+) -> list[dict[str, Any]]:
+    movimientos_filtrados = []
+
+    for movimiento in movimientos:
+        fecha_movimiento = str(movimiento.get("fecha") or "")
+
+        if fecha_desde and fecha_movimiento < fecha_desde:
+            continue
+
+        if fecha_hasta and fecha_movimiento > fecha_hasta:
+            continue
+
+        movimientos_filtrados.append(movimiento)
+
+    return movimientos_filtrados
+
+
+def _preparar_movimientos_cliente_cuenta_corriente_con_saldo(
+    movimientos: list[dict[str, Any]],
+    saldo_inicial_centavos: int,
+) -> tuple[list[dict[str, Any]], int]:
+    saldo_actual = int(saldo_inicial_centavos)
+    movimientos_pantalla = []
+
+    for movimiento in movimientos:
+        saldo_actual += _importe_saldo_movimiento(movimiento)
+        movimientos_pantalla.append(
+            _preparar_movimiento_cliente_cuenta_corriente_para_pantalla(
+                movimiento,
+                saldo_actual,
+            )
+        )
+
+    return movimientos_pantalla, saldo_actual
+
+
+def _importe_saldo_movimiento(movimiento: dict[str, Any]) -> int:
+    if str(movimiento.get("estado") or "").upper() != "CONFIRMADO":
+        return 0
+
+    return int(movimiento.get("debe_centavos") or 0) - int(
+        movimiento.get("haber_centavos") or 0
+    )
 
 
 def _preparar_movimiento_cliente_cuenta_corriente_para_pantalla(
     movimiento: dict[str, Any],
+    saldo_centavos: int,
 ) -> dict[str, Any]:
     movimiento_pantalla = dict(movimiento)
     movimiento_pantalla["fecha_argentina"] = _formatear_fecha_iso_opcional(
         movimiento.get("fecha")
     )
+    movimiento_pantalla["movimiento_mostrar"] = _mostrar_tipo_movimiento(
+        movimiento.get("tipo_movimiento")
+    )
+    movimiento_pantalla["detalle_mostrar"] = _mostrar_detalle_movimiento(movimiento)
     movimiento_pantalla["debe_argentina"] = _formatear_centavos(
         movimiento.get("debe_centavos", 0)
     )
     movimiento_pantalla["haber_argentina"] = _formatear_centavos(
         movimiento.get("haber_centavos", 0)
     )
-    movimiento_pantalla["importe_argentina"] = _formatear_centavos(
-        movimiento.get("importe_centavos", 0)
-    )
+    movimiento_pantalla["saldo_centavos"] = saldo_centavos
+    movimiento_pantalla["saldo_argentina"] = _formatear_centavos(abs(saldo_centavos))
+    movimiento_pantalla["saldo_lado"] = _mostrar_lado_saldo(saldo_centavos)
+    movimiento_pantalla["accion_tipo"] = _obtener_accion_tipo_movimiento(movimiento)
+    movimiento_pantalla["accion_id"] = _obtener_accion_id_movimiento(movimiento)
+    movimiento_pantalla["accion_texto"] = _obtener_accion_texto_movimiento(movimiento)
     return movimiento_pantalla
 
 
@@ -156,8 +268,101 @@ def _preparar_lectura_saldo_cliente_para_pantalla(
         lectura_saldo.get("total_haber_centavos", 0)
     )
     lectura_pantalla["saldo_argentina"] = _formatear_centavos(abs(saldo_centavos))
-    lectura_pantalla["saldo_lado"] = "DEUDOR" if saldo_centavos >= 0 else "ACREEDOR"
+    lectura_pantalla["saldo_lado"] = _mostrar_lado_saldo(saldo_centavos)
     return lectura_pantalla
+
+
+def _preparar_saldo_para_pantalla(saldo_centavos: int) -> dict[str, Any]:
+    return {
+        "saldo_centavos": saldo_centavos,
+        "saldo_argentina": _formatear_centavos(abs(saldo_centavos)),
+        "saldo_lado": _mostrar_lado_saldo(saldo_centavos),
+    }
+
+
+def _preparar_etiqueta_saldo_inicial(fecha_desde: str | None) -> str:
+    if not fecha_desde:
+        return "Saldo inicial"
+
+    return (
+        "Saldo inicial acumulado antes del "
+        f"{formatear_fecha_iso_a_argentina(fecha_desde)}"
+    )
+
+
+def _mostrar_tipo_movimiento(tipo_movimiento: Any) -> str:
+    codigo = str(tipo_movimiento or "").strip().upper()
+    mapa = {
+        "FACTURA": "Factura",
+        "COBRANZA": "Cobranza",
+        "ANTICIPO": "Anticipo",
+        "NOTA_CREDITO": "Nota de crédito",
+        "NOTA_DEBITO": "Nota de débito",
+        "AJUSTE": "Ajuste",
+    }
+    return mapa.get(codigo, codigo.replace("_", " ").title())
+
+
+def _mostrar_detalle_movimiento(movimiento: dict[str, Any]) -> str:
+    descripcion = str(movimiento.get("descripcion") or "").strip()
+    tipo = str(movimiento.get("tipo_movimiento") or "").strip().upper()
+
+    prefijos = [
+        f"Venta {tipo} ",
+        "Venta FACTURA ",
+        "Venta NOTA_CREDITO ",
+        "Venta NOTA_DEBITO ",
+        "Cobranza ",
+    ]
+
+    for prefijo in prefijos:
+        if descripcion.startswith(prefijo):
+            return descripcion[len(prefijo):].strip()
+
+    return descripcion
+
+
+def _mostrar_lado_saldo(saldo_centavos: int) -> str:
+    if int(saldo_centavos) < 0:
+        return "ACREEDOR"
+
+    return "DEUDOR"
+
+
+def _obtener_accion_tipo_movimiento(movimiento: dict[str, Any]) -> str:
+    origen_tipo = str(movimiento.get("origen_tipo") or "").strip().upper()
+
+    if origen_tipo == "VENTA_COMPROBANTE" and movimiento.get("origen_id"):
+        return "COMPROBANTE_VENTA"
+
+    if movimiento.get("asiento_id"):
+        return "ASIENTO"
+
+    return ""
+
+
+def _obtener_accion_id_movimiento(movimiento: dict[str, Any]) -> int | None:
+    accion_tipo = _obtener_accion_tipo_movimiento(movimiento)
+
+    if accion_tipo == "COMPROBANTE_VENTA":
+        return int(movimiento["origen_id"])
+
+    if accion_tipo == "ASIENTO":
+        return int(movimiento["asiento_id"])
+
+    return None
+
+
+def _obtener_accion_texto_movimiento(movimiento: dict[str, Any]) -> str:
+    accion_tipo = _obtener_accion_tipo_movimiento(movimiento)
+
+    if accion_tipo == "COMPROBANTE_VENTA":
+        return "Ver comprobante"
+
+    if accion_tipo == "ASIENTO":
+        return "Ver asiento"
+
+    return ""
 
 
 def _formatear_centavos(valor: Any) -> str:
@@ -171,6 +376,20 @@ def _formatear_fecha_iso_opcional(fecha: Any) -> str:
         return ""
 
     return formatear_fecha_iso_a_argentina(fecha_normalizada)
+
+
+def _normalizar_fecha_iso_opcional(fecha: Any, mensaje_error: str) -> str | None:
+    fecha_normalizada = str(fecha or "").strip()
+
+    if not fecha_normalizada:
+        return None
+
+    try:
+        date.fromisoformat(fecha_normalizada)
+    except ValueError as exc:
+        raise ValueError(mensaje_error) from exc
+
+    return fecha_normalizada
 
 
 def obtener_movimiento_cliente_cuenta_corriente(
