@@ -562,3 +562,209 @@ def test_ventas_comprobantes_detalle_rechaza_cuenta_ingreso_inexistente():
                     "4.1.01.01.998",
                 ),
             )
+
+
+def test_ventas_comprobantes_asociaciones_schema():
+    """
+    Contrato: ND/NC deben poder quedar vinculadas a la FC que modifican.
+
+    La tabla permite persistir la relacion comercial antes de resolver UI,
+    service e integracion fiscal.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        columnas = db.execute(
+            "PRAGMA table_info(ventas_comprobantes_asociaciones)"
+        ).fetchall()
+        indices = db.execute(
+            "PRAGMA index_list(ventas_comprobantes_asociaciones)"
+        ).fetchall()
+
+    columnas_tabla = {columna["name"] for columna in columnas}
+    indices_tabla = {indice["name"] for indice in indices}
+
+    assert {
+        "id",
+        "comprobante_id",
+        "comprobante_asociado_id",
+        "tipo_relacion",
+        "creado_en",
+    }.issubset(columnas_tabla)
+    assert "ux_ventas_comprobantes_asoc_comprobante" in indices_tabla
+    assert "ux_ventas_comprobantes_asoc_par" in indices_tabla
+    assert "ix_ventas_comprobantes_asoc_asociado" in indices_tabla
+
+
+def test_ventas_comprobantes_asociaciones_permite_vincular_nd_a_fc():
+    """
+    Contrato estructural: una ND/NC puede apuntar al comprobante que modifica.
+
+    La regla de negocio especifica de tipos se valida en service; la migracion
+    solo crea integridad referencial entre comprobantes existentes.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+
+        fc_id = _crear_comprobante_venta(db, cliente_id)
+
+        cursor = db.execute(
+            """
+            INSERT INTO ventas_comprobantes (
+                cliente_id,
+                fecha,
+                fecha_vencimiento,
+                tipo_comprobante,
+                tipo_comprobante_codigo,
+                letra,
+                punto_venta,
+                numero,
+                moneda_codigo,
+                cotizacion_centavos,
+                subtotal_centavos,
+                descuento_centavos,
+                recargo_centavos,
+                iva_centavos,
+                total_centavos,
+                estado,
+                creado_en
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                cliente_id,
+                "2026-01-16",
+                "2026-02-16",
+                "NOTA_DEBITO",
+                "012",
+                "C",
+                1,
+                1,
+                "ARS",
+                100,
+                10000,
+                0,
+                0,
+                0,
+                10000,
+                "BORRADOR",
+                "2026-01-16 10:00:00",
+            ),
+        )
+        nd_id = int(cursor.lastrowid)
+
+        db.execute(
+            """
+            INSERT INTO ventas_comprobantes_asociaciones (
+                comprobante_id,
+                comprobante_asociado_id,
+                tipo_relacion,
+                creado_en
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (nd_id, fc_id, "MODIFICA", "2026-01-16 10:05:00"),
+        )
+
+        asociacion = db.execute(
+            """
+            SELECT comprobante_id, comprobante_asociado_id, tipo_relacion
+            FROM ventas_comprobantes_asociaciones
+            WHERE comprobante_id = ?
+            """,
+            (nd_id,),
+        ).fetchone()
+
+    assert asociacion["comprobante_id"] == nd_id
+    assert asociacion["comprobante_asociado_id"] == fc_id
+    assert asociacion["tipo_relacion"] == "MODIFICA"
+
+
+def test_ventas_comprobantes_asociaciones_rechaza_doble_asociacion_misma_nd():
+    """
+    Contrato inicial: cada ND/NC modifica una sola FC en esta etapa.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+
+        fc_id = _crear_comprobante_venta(db, cliente_id)
+
+        cursor = db.execute(
+            """
+            INSERT INTO ventas_comprobantes (
+                cliente_id,
+                fecha,
+                tipo_comprobante,
+                tipo_comprobante_codigo,
+                letra,
+                punto_venta,
+                numero,
+                moneda_codigo,
+                cotizacion_centavos,
+                subtotal_centavos,
+                descuento_centavos,
+                recargo_centavos,
+                iva_centavos,
+                total_centavos,
+                estado,
+                creado_en
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                cliente_id,
+                "2026-01-16",
+                "NOTA_CREDITO",
+                "013",
+                "C",
+                1,
+                1,
+                "ARS",
+                100,
+                10000,
+                0,
+                0,
+                0,
+                10000,
+                "BORRADOR",
+                "2026-01-16 10:00:00",
+            ),
+        )
+        nc_id = int(cursor.lastrowid)
+
+        db.execute(
+            """
+            INSERT INTO ventas_comprobantes_asociaciones (
+                comprobante_id,
+                comprobante_asociado_id,
+                tipo_relacion,
+                creado_en
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (nc_id, fc_id, "MODIFICA", "2026-01-16 10:05:00"),
+        )
+
+        with pytest.raises(sqlite3.IntegrityError):
+            db.execute(
+                """
+                INSERT INTO ventas_comprobantes_asociaciones (
+                    comprobante_id,
+                    comprobante_asociado_id,
+                    tipo_relacion,
+                    creado_en
+                )
+                VALUES (?, ?, ?, ?)
+                """,
+                (nc_id, fc_id, "MODIFICA", "2026-01-16 10:06:00"),
+            )
