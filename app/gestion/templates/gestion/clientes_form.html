@@ -158,6 +158,20 @@
                             Conexión contable
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button
+                            id="cl-tab-observaciones"
+                            class="nav-link"
+                            data-bs-toggle="tab"
+                            data-bs-target="#cl-panel-observaciones"
+                            type="button"
+                            role="tab"
+                            aria-controls="cl-panel-observaciones"
+                            aria-selected="false"
+                        >
+                            Observaciones
+                        </button>
+                    </li>
                 </ul>
 
                 <div id="cl-tabs-contenido" class="tab-content">
@@ -332,7 +346,17 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                        </div>
+                    </div>
 
+                    <div
+                        id="cl-panel-observaciones"
+                        class="tab-pane fade"
+                        role="tabpanel"
+                        aria-labelledby="cl-tab-observaciones"
+                        tabindex="0"
+                    >
+                        <div class="row g-3">
                             <div class="col-12">
                                 <label for="cl-observaciones" class="form-label">Observaciones</label>
                                 <textarea id="cl-observaciones" data-field="observaciones" name="observaciones" class="form-control" rows="3">{{ cliente.observaciones | default('', true) }}</textarea>

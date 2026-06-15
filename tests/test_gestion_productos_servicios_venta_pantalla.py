@@ -92,6 +92,60 @@ def test_formulario_nuevo_producto_servicio_venta_responde_ok():
     assert b'data-ns-select="normal"' in response.data
 
 
+def test_formulario_producto_servicio_venta_usa_tabs_de_housekeeping():
+    """Valida estructura visual del formulario de productos o servicios."""
+    contenido = Path(
+        "app/gestion/templates/gestion/productos_servicios_venta_form.html"
+    ).read_text(encoding="utf-8")
+
+    assert 'id="psv-datos-principales"' in contenido
+    assert 'id="psv-tabs-panel"' in contenido
+    assert 'id="psv-tab-precios"' in contenido
+    assert 'id="psv-panel-precios"' in contenido
+    assert 'id="psv-tab-contable"' in contenido
+    assert 'id="psv-panel-contable"' in contenido
+    assert 'id="psv-tab-observaciones"' in contenido
+    assert 'id="psv-panel-observaciones"' in contenido
+    assert "Precios" in contenido
+    assert "Conexión contable" in contenido
+    assert "Observaciones" in contenido
+
+
+def test_formulario_producto_servicio_venta_campos_en_secciones_esperadas():
+    """Valida que cada campo quede en la seccion pedida."""
+    contenido = Path(
+        "app/gestion/templates/gestion/productos_servicios_venta_form.html"
+    ).read_text(encoding="utf-8")
+
+    datos_principales = contenido[
+        contenido.index('id="psv-datos-principales"') : contenido.index(
+            'id="psv-tabs-panel"'
+        )
+    ]
+    precios = contenido[
+        contenido.index('id="psv-panel-precios"') : contenido.index(
+            'id="psv-panel-contable"'
+        )
+    ]
+    contable = contenido[
+        contenido.index('id="psv-panel-contable"') : contenido.index(
+            'id="psv-panel-observaciones"'
+        )
+    ]
+    observaciones = contenido[contenido.index('id="psv-panel-observaciones"') :]
+
+    assert 'id="psv-nombre"' in datos_principales
+    assert 'id="psv-tipo"' in datos_principales
+    assert 'id="psv-activo"' in datos_principales
+    assert 'id="psv-moneda"' in precios
+    assert 'id="psv-precio-sugerido"' in precios
+    assert 'id="psv-cotizacion"' in precios
+    assert 'id="psv-precio-sugerido-ars"' in precios
+    assert 'id="psv-cuenta-ingreso"' in contable
+    assert 'id="psv-observaciones"' in observaciones
+    assert 'id="psv-orden"' not in contenido
+
+
 def test_crear_producto_servicio_venta_nuevo_desde_pantalla():
     """Valida POST de alta manual sin SQL en route."""
     app = create_app(TestConfig)

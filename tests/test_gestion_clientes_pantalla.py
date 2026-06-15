@@ -337,9 +337,12 @@ def test_formulario_cliente_tiene_tabs():
     assert b'id="cl-panel-fiscal"' in response.data
     assert b'id="cl-tab-contable"' in response.data
     assert b'id="cl-panel-contable"' in response.data
+    assert b'id="cl-tab-observaciones"' in response.data
+    assert b'id="cl-panel-observaciones"' in response.data
     assert b"Contacto" in response.data
     assert b"Fiscal" in response.data
     assert "Conexión contable".encode("utf-8") in response.data
+    assert b"Observaciones" in response.data
 
 
 def test_formulario_nuevo_cliente_default_argentina_santa_fe():
@@ -439,6 +442,27 @@ def test_formulario_cliente_respeta_orden_uiux_fiscal():
     assert "Condición IVA" in fiscal
     assert "Tipo documento fiscal" in fiscal
     assert "Número documento fiscal" in fiscal
+
+
+def test_formulario_cliente_observaciones_tiene_tab_propia():
+    """Valida que observaciones no quede dentro de conexion contable."""
+    contenido = Path("app/gestion/templates/gestion/clientes_form.html").read_text(
+        encoding="utf-8"
+    )
+
+    contable = contenido[
+        contenido.index('id="cl-panel-contable"') : contenido.index(
+            'id="cl-panel-observaciones"'
+        )
+    ]
+    observaciones = contenido[contenido.index('id="cl-panel-observaciones"') :]
+
+    assert 'id="cl-tab-observaciones"' in contenido
+    assert 'id="cl-panel-observaciones"' in contenido
+    assert 'id="cl-observaciones"' not in contable
+    assert 'id="cl-observaciones"' in observaciones
+    assert 'name="observaciones"' in observaciones
+
 
 def test_formulario_cliente_tabs_en_panel_secundario():
     """Valida que los tabs del formulario queden contenidos en un panel visual secundario."""

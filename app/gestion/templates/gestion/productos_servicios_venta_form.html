@@ -35,10 +35,10 @@
             <form id="psv-formulario" method="post" action="{{ action_url }}" data-table="articulos_venta">
                 <div id="psv-datos-principales" class="row g-3 mb-3">
                     <div class="col-12">
-                        <h2 id="psv-datos-principales-titulo" class="h6 mb-0">Datos del producto o servicio</h2>
+                        <h2 id="psv-datos-principales-titulo" class="h6 mb-0">Producto o servicio</h2>
                     </div>
 
-                    <div class="col-12 col-lg-8">
+                    <div class="col-12 col-lg-7">
                         <label for="psv-nombre" class="form-label">Producto o servicio</label>
                         <input
                             id="psv-nombre"
@@ -51,7 +51,7 @@
                         >
                     </div>
 
-                    <div class="col-12 col-lg-4">
+                    <div class="col-12 col-lg-3">
                         <label for="psv-tipo" class="form-label">Tipo</label>
                         <select
                             id="psv-tipo"
@@ -71,105 +71,7 @@
                         </select>
                     </div>
 
-                    <div class="col-12 col-lg-4">
-                        <label for="psv-moneda" class="form-label">Moneda</label>
-                        <select
-                            id="psv-moneda"
-                            data-ns-select="normal"
-                            data-table="articulos_venta"
-                            data-field="moneda_codigo"
-                            name="moneda_codigo"
-                            class="form-select"
-                            required
-                        >
-                            <option value="">Seleccionar moneda...</option>
-                            {% for moneda in monedas %}
-                                <option value="{{ moneda.codigo }}" {% if articulo.moneda_codigo | default('', true) | string == moneda.codigo | string %}selected{% endif %}>
-                                    {{ moneda.descripcion_select }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="col-12 col-lg-4">
-                        <label for="psv-precio-sugerido" class="form-label">Precio unitario sugerido moneda</label>
-                        <input
-                            id="psv-precio-sugerido"
-                            data-field="precio_unitario_sugerido_centavos"
-                            data-money-ar="centavos"
-                            name="precio_unitario_sugerido_centavos"
-                            type="text"
-                            inputmode="decimal"
-                            class="form-control text-end"
-                            value="{{ articulo.precio_unitario_sugerido_argentina | default('0,00', true) }}"
-                            placeholder="0,00"
-                            autocomplete="off"
-                        >
-                    </div>
-
-                    <div class="col-12 col-lg-4">
-                        <label for="psv-cotizacion" class="form-label">Cotización a ARS</label>
-                        <input
-                            id="psv-cotizacion"
-                            data-field="cotizacion_1000000"
-                            data-cotizacion-ar="1000000"
-                            name="cotizacion_1000000"
-                            type="text"
-                            inputmode="decimal"
-                            class="form-control text-end"
-                            value="{{ articulo.cotizacion_argentina | default('1,000000', true) }}"
-                            placeholder="1,000000"
-                            autocomplete="off"
-                        >
-                    </div>
-
-                    <div class="col-12 col-lg-4">
-                        <label for="psv-precio-sugerido-ars" class="form-label">Precio unitario sugerido ARS</label>
-                        <input
-                            id="psv-precio-sugerido-ars"
-                            data-field="precio_unitario_sugerido_ars_centavos"
-                            type="text"
-                            class="form-control text-end"
-                            value="{{ articulo.precio_unitario_sugerido_ars_argentina | default('0,00', true) }}"
-                            readonly
-                        >
-                    </div>
-
-                    <div class="col-12 col-lg-4">
-                        <label for="psv-orden" class="form-label">Orden</label>
-                        <input
-                            id="psv-orden"
-                            data-field="orden"
-                            name="orden"
-                            type="number"
-                            min="0"
-                            step="1"
-                            class="form-control"
-                            value="{{ articulo.orden | default(0, true) }}"
-                            required
-                        >
-                    </div>
-
-                    <div class="col-12">
-                        <label for="psv-cuenta-ingreso" class="form-label">Cuenta de ingreso sugerida</label>
-                        <select
-                            id="psv-cuenta-ingreso"
-                            data-ns-select="normal"
-                            data-table="articulos_venta"
-                            data-field="cuenta_ingreso_codigo"
-                            name="cuenta_ingreso_codigo"
-                            class="form-select"
-                        >
-                            <option value="">Sin cuenta sugerida...</option>
-                            {% for cuenta in cuentas_contables_imputables %}
-                                <option value="{{ cuenta.cuenta }}" {% if articulo.cuenta_ingreso_codigo | default('', true) | string == cuenta.cuenta | string %}selected{% endif %}>
-                                    {{ cuenta.cuenta }} - {{ cuenta.descripcion }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="col-12 col-lg-4 d-flex align-items-end">
+                    <div class="col-12 col-lg-2 d-flex align-items-end">
                         <div class="form-check mb-2">
                             <input
                                 id="psv-activo"
@@ -183,20 +85,182 @@
                             <label for="psv-activo" class="form-check-label">Activo</label>
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-12">
-                        <label for="psv-observaciones" class="form-label">Observaciones</label>
-                        <textarea
-                            id="psv-observaciones"
-                            data-field="observaciones"
-                            name="observaciones"
-                            class="form-control"
-                            rows="3"
-                        >{{ articulo.observaciones | default('', true) }}</textarea>
+                <div id="psv-tabs-panel" class="border rounded-3 p-3 bg-body-tertiary">
+                    <ul id="psv-tabs" class="nav nav-tabs mb-3" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button
+                                id="psv-tab-precios"
+                                class="nav-link active"
+                                data-bs-toggle="tab"
+                                data-bs-target="#psv-panel-precios"
+                                type="button"
+                                role="tab"
+                                aria-controls="psv-panel-precios"
+                                aria-selected="true"
+                            >
+                                Precios
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                id="psv-tab-contable"
+                                class="nav-link"
+                                data-bs-toggle="tab"
+                                data-bs-target="#psv-panel-contable"
+                                type="button"
+                                role="tab"
+                                aria-controls="psv-panel-contable"
+                                aria-selected="false"
+                            >
+                                Conexión contable
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button
+                                id="psv-tab-observaciones"
+                                class="nav-link"
+                                data-bs-toggle="tab"
+                                data-bs-target="#psv-panel-observaciones"
+                                type="button"
+                                role="tab"
+                                aria-controls="psv-panel-observaciones"
+                                aria-selected="false"
+                            >
+                                Observaciones
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div id="psv-tabs-contenido" class="tab-content">
+                        <div
+                            id="psv-panel-precios"
+                            class="tab-pane fade show active"
+                            role="tabpanel"
+                            aria-labelledby="psv-tab-precios"
+                            tabindex="0"
+                        >
+                            <div class="row g-3">
+                                <div class="col-12 col-lg-3">
+                                    <label for="psv-moneda" class="form-label">Moneda</label>
+                                    <select
+                                        id="psv-moneda"
+                                        data-ns-select="normal"
+                                        data-table="articulos_venta"
+                                        data-field="moneda_codigo"
+                                        name="moneda_codigo"
+                                        class="form-select"
+                                        required
+                                    >
+                                        <option value="">Seleccionar moneda...</option>
+                                        {% for moneda in monedas %}
+                                            <option value="{{ moneda.codigo }}" {% if articulo.moneda_codigo | default('', true) | string == moneda.codigo | string %}selected{% endif %}>
+                                                {{ moneda.descripcion_select }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-lg-3">
+                                    <label for="psv-precio-sugerido" class="form-label">Unitario sugerido moneda</label>
+                                    <input
+                                        id="psv-precio-sugerido"
+                                        data-field="precio_unitario_sugerido_centavos"
+                                        data-money-ar="centavos"
+                                        name="precio_unitario_sugerido_centavos"
+                                        type="text"
+                                        inputmode="decimal"
+                                        class="form-control text-end"
+                                        value="{{ articulo.precio_unitario_sugerido_argentina | default('0,00', true) }}"
+                                        placeholder="0,00"
+                                        autocomplete="off"
+                                    >
+                                </div>
+
+                                <div class="col-12 col-lg-3">
+                                    <label for="psv-cotizacion" class="form-label">Cotización ARS</label>
+                                    <input
+                                        id="psv-cotizacion"
+                                        data-field="cotizacion_1000000"
+                                        data-cotizacion-ar="1000000"
+                                        name="cotizacion_1000000"
+                                        type="text"
+                                        inputmode="decimal"
+                                        class="form-control text-end"
+                                        value="{{ articulo.cotizacion_argentina | default('1,000000', true) }}"
+                                        placeholder="1,000000"
+                                        autocomplete="off"
+                                    >
+                                </div>
+
+                                <div class="col-12 col-lg-3">
+                                    <label for="psv-precio-sugerido-ars" class="form-label">Sugerido ARS</label>
+                                    <input
+                                        id="psv-precio-sugerido-ars"
+                                        data-field="precio_unitario_sugerido_ars_centavos"
+                                        type="text"
+                                        class="form-control text-end"
+                                        value="{{ articulo.precio_unitario_sugerido_ars_argentina | default('0,00', true) }}"
+                                        readonly
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            id="psv-panel-contable"
+                            class="tab-pane fade"
+                            role="tabpanel"
+                            aria-labelledby="psv-tab-contable"
+                            tabindex="0"
+                        >
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="psv-cuenta-ingreso" class="form-label">Cuenta de ingreso sugerida</label>
+                                    <select
+                                        id="psv-cuenta-ingreso"
+                                        data-ns-select="normal"
+                                        data-table="articulos_venta"
+                                        data-field="cuenta_ingreso_codigo"
+                                        name="cuenta_ingreso_codigo"
+                                        class="form-select"
+                                    >
+                                        <option value="">Sin cuenta sugerida...</option>
+                                        {% for cuenta in cuentas_contables_imputables %}
+                                            <option value="{{ cuenta.cuenta }}" {% if articulo.cuenta_ingreso_codigo | default('', true) | string == cuenta.cuenta | string %}selected{% endif %}>
+                                                {{ cuenta.cuenta }} - {{ cuenta.descripcion }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            id="psv-panel-observaciones"
+                            class="tab-pane fade"
+                            role="tabpanel"
+                            aria-labelledby="psv-tab-observaciones"
+                            tabindex="0"
+                        >
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label for="psv-observaciones" class="form-label">Observaciones</label>
+                                    <textarea
+                                        id="psv-observaciones"
+                                        data-field="observaciones"
+                                        name="observaciones"
+                                        class="form-control"
+                                        rows="3"
+                                    >{{ articulo.observaciones | default('', true) }}</textarea>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div id="psv-form-botones" class="d-flex justify-content-end gap-2">
+                <div id="psv-form-botones" class="d-flex justify-content-end gap-2 mt-3">
                     {{ secondary_link("Cancelar", form_cancelar_url) }}
                     {{ primary_button(form_submit_label) }}
                 </div>
