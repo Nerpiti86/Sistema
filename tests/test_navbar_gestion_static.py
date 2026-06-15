@@ -7,7 +7,7 @@ def test_navbar_gestion_usa_mega_menu_por_grupos():
     con módulo a la izquierda y accesos agrupados a la derecha.
 
     El grupo Clientes contiene maestro de clientes y grupos de clientes.
-    El grupo Ventas contiene productos o servicios para la venta.
+    El grupo Ventas contiene productos/servicios y comprobantes de venta.
     """
     html = Path("app/ui/templates/components/layout.html").read_text(encoding="utf-8")
 
@@ -27,9 +27,14 @@ def test_navbar_gestion_usa_mega_menu_por_grupos():
     assert 'id="ns-nav-productos-servicios-venta"' in bloque_gestion
     assert "Productos o servicios para la venta" in bloque_gestion
     assert "gestion.ver_listado_productos_servicios_venta" in bloque_gestion
+    assert 'id="ns-nav-comprobantes-venta"' in bloque_gestion
+    assert "Comprobantes de venta" in bloque_gestion
+    assert "gestion.ver_listado_comprobantes_venta" in bloque_gestion
 
     assert "{% if es_grupos_clientes or es_clientes %}active{% endif %}" in bloque_gestion
+    assert "{% if es_productos_servicios_venta or es_comprobantes_venta %}active{% endif %}" in bloque_gestion
     assert "{% if es_productos_servicios_venta %}active{% endif %}" in bloque_gestion
+    assert "{% if es_comprobantes_venta %}active{% endif %}" in bloque_gestion
 
     posicion_clientes = bloque_gestion.index('id="ns-nav-clientes"')
     posicion_maestro = bloque_gestion.index('id="ns-nav-clientes-maestro"')
@@ -38,6 +43,9 @@ def test_navbar_gestion_usa_mega_menu_por_grupos():
     posicion_productos_servicios_venta = bloque_gestion.index(
         'id="ns-nav-productos-servicios-venta"'
     )
+    posicion_comprobantes_venta = bloque_gestion.index(
+        'id="ns-nav-comprobantes-venta"'
+    )
 
     assert (
         posicion_clientes
@@ -45,6 +53,7 @@ def test_navbar_gestion_usa_mega_menu_por_grupos():
         < posicion_grupos
         < posicion_ventas
         < posicion_productos_servicios_venta
+        < posicion_comprobantes_venta
     )
 
 
