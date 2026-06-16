@@ -11,6 +11,7 @@ from app.contabilidad.ejercicios_contables_repository import (
 from app.contabilidad.libros_contables_repository import (
     listar_movimientos_libro_diario,
     listar_movimientos_mayor_por_cuenta,
+    listar_saldos_mayor_general,
     obtener_saldo_inicial_mayor_por_cuenta,
 )
 from app.shared.formatos import (
@@ -470,6 +471,133 @@ def _normalizar_texto_obligatorio(valor: Any, mensaje_error: str) -> str:
         raise ValueError(mensaje_error)
 
     return valor_normalizado
+
+
+def obtener_contexto_mayor_general(
+    ejercicio_id: Any,
+    fecha_desde: Any = None,
+    fecha_hasta: Any = None,
+    estado: Any = "CONFIRMADO",
+) -> dict[str, Any]:
+    """
+    Devuelve saldos por cuenta para el Libro Mayor General.
+
+    Calcula saldo inicial, totales del periodo, saldo del periodo y saldo final
+    respetando el saldo habitual de cada cuenta.
+    """
+    saldos = listar_saldos_mayor_general(
+        ejercicio_id,
+        fecha_desde,
+        fecha_hasta,
+        estado,
+    )
+
+    cuentas_pantalla = []
+    total_debe_periodo_centavos = 0
+    total_haber_periodo_centavos = 0
+    total_saldo_inicial_centavos = 0
+    total_saldo_periodo_centavos = 0
+    total_saldo_final_centavos = 0
+
+    for saldo in saldos:
+        saldo_habitual = str(saldo["cuenta_saldo_habitual"]).strip().upper()
+        saldo_inicial_centavos = _calcular_saldo_natural_centavos(
+            saldo["saldo_inicial_debe_centavos"],
+            saldo["saldo_inicial_haber_centavos"],
+            saldo_habitual,
+        )
+        saldo_periodo_centavos = _calcular_saldo_natural_centavos(
+            saldo["total_debe_periodo_centavos"],
+            saldo["total_haber_periodo_centavos"],
+            saldo_habitual,
+        )
+        saldo_final_centavos = saldo_inicial_centavos + saldo_periodo_centavos
+
+        total_debe_periodo_centavos += saldo["total_debe_periodo_centavos"]
+        total_haber_periodo_centavos += saldo["total_haber_periodo_centavos"]
+        total_saldo_inicial_centavos += saldo_inicial_centavos
+        total_saldo_periodo_centavos += saldo_periodo_centavos
+        total_saldo_final_centavos += saldo_final_centavos
+
+        cuentas_pantalla.append(
+            {
+                "cuenta": saldo["cuenta_contable_codigo"],
+                "descripcion": saldo["cuenta_nombre"],
+                "saldo_habitual": saldo_habitual,
+                "naturaleza": saldo["cuenta_naturaleza"],
+                "imputable": saldo["cuenta_imputable"],
+                "monetaria": saldo["cuenta_monetaria"],
+                "saldo_inicial_debe_centavos": saldo[
+                    "saldo_inicial_debe_centavos"
+                ],
+                "saldo_inicial_haber_centavos": saldo[
+                    "saldo_inicial_haber_centavos"
+                ],
+                "saldo_inicial_centavos": saldo_inicial_centavos,
+                "total_debe_periodo_centavos": saldo[
+                    "total_debe_periodo_centavos"
+                ],
+                "total_haber_periodo_centavos": saldo[
+                    "total_haber_periodo_centavos"
+                ],
+                "saldo_periodo_centavos": saldo_periodo_centavos,
+                "saldo_final_centavos": saldo_final_centavos,
+                "saldo_inicial_argentina": _formatear_centavos(
+                    saldo_inicial_centavos
+                ),
+                "total_debe_periodo_argentina": _formatear_centavos(
+                    saldo["total_debe_periodo_centavos"]
+                ),
+                "total_haber_periodo_argentina": _formatear_centavos(
+                    saldo["total_haber_periodo_centavos"]
+                ),
+                "saldo_periodo_argentina": _formatear_centavos(
+                    saldo_periodo_centavos
+                ),
+                "saldo_final_argentina": _formatear_centavos(
+                    saldo_final_centavos
+                ),
+            }
+        )
+
+    diferencia_periodo_centavos = (
+        total_debe_periodo_centavos - total_haber_periodo_centavos
+    )
+
+    return {
+        "filtros": {
+            "ejercicio_id": ejercicio_id,
+            "fecha_desde": fecha_desde,
+            "fecha_hasta": fecha_hasta,
+            "estado": estado,
+        },
+        "mayor_general_cuentas": cuentas_pantalla,
+        "cantidad_cuentas": len(cuentas_pantalla),
+        "total_saldo_inicial_centavos": total_saldo_inicial_centavos,
+        "total_debe_periodo_centavos": total_debe_periodo_centavos,
+        "total_haber_periodo_centavos": total_haber_periodo_centavos,
+        "total_saldo_periodo_centavos": total_saldo_periodo_centavos,
+        "total_saldo_final_centavos": total_saldo_final_centavos,
+        "diferencia_periodo_centavos": diferencia_periodo_centavos,
+        "total_saldo_inicial_argentina": _formatear_centavos(
+            total_saldo_inicial_centavos
+        ),
+        "total_debe_periodo_argentina": _formatear_centavos(
+            total_debe_periodo_centavos
+        ),
+        "total_haber_periodo_argentina": _formatear_centavos(
+            total_haber_periodo_centavos
+        ),
+        "total_saldo_periodo_argentina": _formatear_centavos(
+            total_saldo_periodo_centavos
+        ),
+        "total_saldo_final_argentina": _formatear_centavos(
+            total_saldo_final_centavos
+        ),
+        "diferencia_periodo_argentina": _formatear_centavos(
+            diferencia_periodo_centavos
+        ),
+    }
 
 
 def obtener_contexto_pantalla_mayor_por_cuenta(

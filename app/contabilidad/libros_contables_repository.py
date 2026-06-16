@@ -322,6 +322,134 @@ def obtener_saldo_inicial_mayor_por_cuenta(
     }
 
 
+def listar_saldos_mayor_general(
+    ejercicio_id: Any,
+    fecha_desde: Any = None,
+    fecha_hasta: Any = None,
+    estado: Any = "CONFIRMADO",
+) -> list[dict[str, Any]]:
+    """
+    Devuelve saldos agregados por cuenta para armar el Libro Mayor General.
+
+    El repository concentra SQL. El service calcula saldo natural, formatea
+    importes y arma el contexto de lectura.
+    """
+    ejercicio_id_validado = _validar_entero_positivo(
+        ejercicio_id,
+        "El ejercicio contable es obligatorio.",
+    )
+    fecha_desde_validada = _validar_fecha_iso_opcional(
+        fecha_desde,
+        "La fecha desde debe tener formato YYYY-MM-DD.",
+    )
+    fecha_hasta_validada = _validar_fecha_iso_opcional(
+        fecha_hasta,
+        "La fecha hasta debe tener formato YYYY-MM-DD.",
+    )
+
+    if (
+        fecha_desde_validada is not None
+        and fecha_hasta_validada is not None
+        and fecha_desde_validada > fecha_hasta_validada
+    ):
+        raise ValueError("La fecha desde no puede ser posterior a la fecha hasta.")
+
+    estado_validado = _validar_estado_opcional(estado)
+    fecha_corte_inicial = fecha_desde_validada or "0001-01-01"
+
+    condiciones = ["asientos_contables.ejercicio_id = ?"]
+    parametros_where: list[Any] = [ejercicio_id_validado]
+
+    if fecha_hasta_validada is not None:
+        condiciones.append("asientos_contables.fecha <= ?")
+        parametros_where.append(fecha_hasta_validada)
+
+    if estado_validado is not None:
+        condiciones.append("asientos_contables.estado = ?")
+        parametros_where.append(estado_validado)
+
+    where_sql = " AND ".join(condiciones)
+    parametros_select = [
+        fecha_corte_inicial,
+        fecha_corte_inicial,
+        fecha_corte_inicial,
+        fecha_corte_inicial,
+    ]
+
+    filas = get_db().execute(
+        f"""
+        SELECT
+            asientos_contables_detalle.cuenta_contable_codigo,
+            cuentas_contables.descripcion AS cuenta_nombre,
+            cuentas_contables.saldo_habitual AS cuenta_saldo_habitual,
+            cuentas_contables.naturaleza AS cuenta_naturaleza,
+            cuentas_contables.imputable AS cuenta_imputable,
+            cuentas_contables.monetaria AS cuenta_monetaria,
+            COALESCE(SUM(
+                CASE
+                    WHEN asientos_contables.fecha < ?
+                    THEN asientos_contables_detalle.debe_centavos
+                    ELSE 0
+                END
+            ), 0) AS saldo_inicial_debe_centavos,
+            COALESCE(SUM(
+                CASE
+                    WHEN asientos_contables.fecha < ?
+                    THEN asientos_contables_detalle.haber_centavos
+                    ELSE 0
+                END
+            ), 0) AS saldo_inicial_haber_centavos,
+            COALESCE(SUM(
+                CASE
+                    WHEN asientos_contables.fecha >= ?
+                    THEN asientos_contables_detalle.debe_centavos
+                    ELSE 0
+                END
+            ), 0) AS total_debe_periodo_centavos,
+            COALESCE(SUM(
+                CASE
+                    WHEN asientos_contables.fecha >= ?
+                    THEN asientos_contables_detalle.haber_centavos
+                    ELSE 0
+                END
+            ), 0) AS total_haber_periodo_centavos
+        FROM asientos_contables
+        JOIN asientos_contables_detalle
+          ON asientos_contables_detalle.asiento_id = asientos_contables.id
+        JOIN cuentas_contables
+          ON cuentas_contables.cuenta = asientos_contables_detalle.cuenta_contable_codigo
+        WHERE {where_sql}
+        GROUP BY
+            asientos_contables_detalle.cuenta_contable_codigo,
+            cuentas_contables.descripcion,
+            cuentas_contables.saldo_habitual,
+            cuentas_contables.naturaleza,
+            cuentas_contables.imputable,
+            cuentas_contables.monetaria
+        ORDER BY asientos_contables_detalle.cuenta_contable_codigo
+        """,
+        parametros_select + parametros_where,
+    ).fetchall()
+
+    return [_normalizar_saldo_mayor_general(fila) for fila in filas]
+
+
+def _normalizar_saldo_mayor_general(fila) -> dict[str, Any]:
+    saldo = dict(fila)
+
+    for campo in (
+        "cuenta_imputable",
+        "cuenta_monetaria",
+        "saldo_inicial_debe_centavos",
+        "saldo_inicial_haber_centavos",
+        "total_debe_periodo_centavos",
+        "total_haber_periodo_centavos",
+    ):
+        saldo[campo] = int(saldo[campo])
+
+    return saldo
+
+
 def _validar_texto_obligatorio(valor: Any, mensaje_error: str) -> str:
     valor_validado = str(valor or "").strip()
 
