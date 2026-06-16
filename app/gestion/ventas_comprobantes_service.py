@@ -833,52 +833,28 @@ def _obtener_ejercicio_para_confirmacion(fecha: str) -> dict[str, Any]:
 
 
 def _descripcion_confirmacion_venta(comprobante: dict[str, Any]) -> str:
-    return (
-        f"Venta {_descripcion_comprobante_venta(comprobante)} - "
-        f"{_descripcion_cliente_comprobante(comprobante)}"
-    )
+    return _descripcion_comprobante_sujeto(comprobante)
 
 
 def _descripcion_movimiento_cuenta_corriente_confirmacion(
     comprobante: dict[str, Any],
 ) -> str:
-    return _descripcion_comprobante_venta(comprobante)
+    return _descripcion_comprobante_sujeto(comprobante)
 
 
 def _descripcion_linea_deudores_confirmacion(comprobante: dict[str, Any]) -> str:
+    return _descripcion_comprobante_sujeto(comprobante)
+
+
+def _descripcion_linea_resultado_confirmacion(comprobante: dict[str, Any]) -> str:
+    return _descripcion_comprobante_sujeto(comprobante)
+
+
+def _descripcion_comprobante_sujeto(comprobante: dict[str, Any]) -> str:
     return (
-        f"{_descripcion_comprobante_venta(comprobante)} - "
-        f"{_descripcion_cliente_comprobante(comprobante)}"
+        f"Comprobante: {comprobante['numero_formateado']} | "
+        f"Sujeto: {_descripcion_cliente_comprobante(comprobante)}"
     )
-
-
-def _descripcion_linea_resultado_confirmacion(
-    comprobante: dict[str, Any],
-    detalle: dict[str, Any],
-) -> str:
-    descripcion_detalle = _validar_texto_obligatorio(
-        detalle.get("descripcion"),
-        "El renglon no tiene descripcion para el asiento.",
-    )
-
-    return (
-        f"{_descripcion_comprobante_venta(comprobante)} - "
-        f"{descripcion_detalle} - "
-        f"{_descripcion_cliente_comprobante(comprobante)}"
-    )
-
-
-def _descripcion_comprobante_venta(comprobante: dict[str, Any]) -> str:
-    descripcion = str(comprobante["numero_formateado"])
-
-    asociacion = obtener_asociacion_comprobante_venta(comprobante["id"])
-    if asociacion is not None:
-        descripcion = (
-            f"{descripcion} modifica "
-            f"{asociacion['comprobante_asociado_numero_formateado']}"
-        )
-
-    return descripcion
 
 
 def _descripcion_cliente_comprobante(comprobante: dict[str, Any]) -> str:
@@ -886,7 +862,6 @@ def _descripcion_cliente_comprobante(comprobante: dict[str, Any]) -> str:
         comprobante.get("cliente_razon_social"),
         "El comprobante no tiene cliente para describir el asiento.",
     )
-
 
 def _armar_detalles_asiento_confirmacion(
     comprobante: dict[str, Any],
@@ -915,7 +890,7 @@ def _armar_detalles_asiento_confirmacion(
         detalles_asiento.append(
             _crear_renglon_asiento_confirmacion(
                 cuenta_ingreso_codigo,
-                _descripcion_linea_resultado_confirmacion(comprobante, detalle),
+                _descripcion_linea_resultado_confirmacion(comprobante),
                 debe_centavos=importe_linea if es_nota_credito else 0,
                 haber_centavos=0 if es_nota_credito else importe_linea,
             )

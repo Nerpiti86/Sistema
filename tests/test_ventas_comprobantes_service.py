@@ -729,10 +729,10 @@ def test_confirmar_comprobante_venta_factura_genera_asiento_y_cuenta_corriente()
     assert comprobante_confirmado["asiento_id"] == asiento["id"]
     assert asiento["estado"] == "CONFIRMADO"
     assert asiento["tipo"] == "VENTA"
-    assert asiento["descripcion"] == "Venta FC C 0001-00000025 - Cliente Venta"
+    assert asiento["descripcion"] == "Comprobante: FC C 0001-00000025 | Sujeto: Cliente Venta"
     assert movimiento["estado"] == "CONFIRMADO"
     assert movimiento["tipo_movimiento"] == "FACTURA"
-    assert movimiento["descripcion"] == "FC C 0001-00000025"
+    assert movimiento["descripcion"] == "Comprobante: FC C 0001-00000025 | Sujeto: Cliente Venta"
     assert movimiento["debe_centavos"] == 100000
     assert movimiento["haber_centavos"] == 0
     assert movimiento["origen_tipo"] == "VENTA_COMPROBANTE"
@@ -741,11 +741,11 @@ def test_confirmar_comprobante_venta_factura_genera_asiento_y_cuenta_corriente()
 
     detalles_asiento = asiento["detalles"]
     assert detalles_asiento[0]["cuenta_contable_codigo"] == cuenta_deudores
-    assert detalles_asiento[0]["descripcion"] == "FC C 0001-00000025 - Cliente Venta"
+    assert detalles_asiento[0]["descripcion"] == "Comprobante: FC C 0001-00000025 | Sujeto: Cliente Venta"
     assert detalles_asiento[0]["debe_centavos"] == 100000
     assert detalles_asiento[0]["haber_centavos"] == 0
     assert detalles_asiento[1]["cuenta_contable_codigo"] == cuenta_ingreso
-    assert detalles_asiento[1]["descripcion"] == "FC C 0001-00000025 - Sesion - Cliente Venta"
+    assert detalles_asiento[1]["descripcion"] == "Comprobante: FC C 0001-00000025 | Sujeto: Cliente Venta"
     assert detalles_asiento[1]["debe_centavos"] == 0
     assert detalles_asiento[1]["haber_centavos"] == 100000
 
@@ -1032,8 +1032,8 @@ def test_asociar_comprobante_venta_a_factura_vincula_nd_con_fc_confirmada():
     assert asociacion_leida["id"] == asociacion["id"]
 
 
-def test_confirmar_nota_debito_asociada_describe_asiento_y_movimiento_con_fc():
-    """Contrato: ND asociada describe cabecera, lineas y cuenta corriente con la FC modificada."""
+def test_confirmar_nota_debito_asociada_describe_comprobante_y_sujeto():
+    """Contrato: ND asociada usa descripcion corta; la FC modificada queda en la asociacion."""
     app = create_app(TestConfig)
 
     with app.app_context():
@@ -1072,16 +1072,16 @@ def test_confirmar_nota_debito_asociada_describe_asiento_y_movimiento_con_fc():
     detalles_asiento = asiento["detalles"]
 
     assert asiento["descripcion"] == (
-        "Venta ND C 0001-00000001 modifica FC C 0001-00000001 - Cliente Venta"
+        "Comprobante: ND C 0001-00000001 | Sujeto: Cliente Venta"
     )
     assert movimiento["descripcion"] == (
-        "ND C 0001-00000001 modifica FC C 0001-00000001"
+        "Comprobante: ND C 0001-00000001 | Sujeto: Cliente Venta"
     )
     assert detalles_asiento[0]["descripcion"] == (
-        "ND C 0001-00000001 modifica FC C 0001-00000001 - Cliente Venta"
+        "Comprobante: ND C 0001-00000001 | Sujeto: Cliente Venta"
     )
     assert detalles_asiento[1]["descripcion"] == (
-        "ND C 0001-00000001 modifica FC C 0001-00000001 - Sesion - Cliente Venta"
+        "Comprobante: ND C 0001-00000001 | Sujeto: Cliente Venta"
     )
 
 
