@@ -1158,8 +1158,8 @@ def test_asociar_comprobante_venta_a_factura_rechaza_fc_de_otro_cliente():
             asociar_comprobante_venta_a_factura(nd["id"], fc_confirmada["id"])
 
 
-def test_asociar_comprobante_venta_a_factura_rechaza_fc_no_confirmada():
-    """Contrato: una ND/NC debe modificar una FC ya confirmada."""
+def test_asociar_comprobante_venta_a_factura_rechaza_comprobante_no_confirmado():
+    """Contrato: una ND/NC debe modificar un comprobante ya confirmado."""
     app = create_app(TestConfig)
 
     with app.app_context():
@@ -1186,7 +1186,7 @@ def test_asociar_comprobante_venta_a_factura_rechaza_fc_no_confirmada():
             [_detalle(articulo_id)],
         )
 
-        with pytest.raises(ValueError, match="CONFIRMADA"):
+        with pytest.raises(ValueError, match="CONFIRMADO"):
             asociar_comprobante_venta_a_factura(nc["id"], fc_borrador["id"])
 
 
