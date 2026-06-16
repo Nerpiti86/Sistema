@@ -10,25 +10,41 @@
                 <div class="ns-alerts-stack">
                     {% for category, message in messages %}
                         {% set alert_category = category if category in ["success", "danger", "warning", "info"] else "info" %}
+                        {% set alert_icon = "info-circle" %}
+
+                        {% if alert_category == "success" %}
+                            {% set alert_icon = "circle-check" %}
+                        {% elif alert_category == "danger" %}
+                            {% set alert_icon = "alert-triangle" %}
+                        {% elif alert_category == "warning" %}
+                            {% set alert_icon = "alert-circle" %}
+                        {% endif %}
+
                         <div
-                            class="alert alert-{{ alert_category }} alert-dismissible fade show ns-alert-modal shadow-lg"
+                            class="alert alert-{{ alert_category }} alert-dismissible fade show ns-alert-modal ns-alert-modal--{{ alert_category }}"
                             role="alert"
                             data-ns-alert
                         >
                             <button
                                 type="button"
-                                class="btn-close position-absolute top-0 end-0 m-3"
+                                class="btn-close ns-alert-close"
                                 data-bs-dismiss="alert"
                                 aria-label="Cerrar"
                             ></button>
 
-                            <div class="ns-alert-body">
-                                <div
-                                    class="ns-alert-date small fw-semibold text-body-secondary mb-1"
-                                    data-ns-alert-created-at
-                                ></div>
-                                <div class="ns-alert-message fw-semibold">
-                                    {{ message }}
+                            <div class="ns-alert-content">
+                                <div class="ns-alert-icon" aria-hidden="true">
+                                    <i class="ti ti-{{ alert_icon }}"></i>
+                                </div>
+
+                                <div class="ns-alert-body">
+                                    <div
+                                        class="ns-alert-date"
+                                        data-ns-alert-created-at
+                                    ></div>
+                                    <div class="ns-alert-message">
+                                        {{ message }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
