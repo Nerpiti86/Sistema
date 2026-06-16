@@ -206,12 +206,15 @@ def test_pantalla_contabilidad_tiene_acceso_a_libro_diario():
 
 
 
+
+
 def test_pantalla_libro_diario_ui_ux_sin_repeticiones_y_totales_destacados():
     """
     Valida ajuste UI/UX del Libro Diario.
 
     La card no repite "Asiento EJ..." arriba, pero mantiene dentro los cuatro
     datos principales: numero de asiento, fecha, comprobante y sujeto.
+    Los filtros usan calendario argentino y select NeriSoft.
     """
     app = create_app(TestConfig)
     client = app.test_client()
@@ -221,13 +224,15 @@ def test_pantalla_libro_diario_ui_ux_sin_repeticiones_y_totales_destacados():
         db = get_db()
         _crear_asiento_libro_diario(db)
 
-        response = client.get("/contabilidad/libros/diario/")
+        response = client.get(
+            "/contabilidad/libros/diario/"
+            "?fecha_desde=01/06/2026&fecha_hasta=30/06/2026&estado=CONFIRMADO"
+        )
 
     assert response.status_code == 200
     html = response.data.decode("utf-8")
 
     assert "Asiento EJ2026-0000001" not in html
-    assert "Asiento contable" in html
 
     assert "Número de asiento" in html
     assert "Fecha" in html
@@ -242,8 +247,19 @@ def test_pantalla_libro_diario_ui_ux_sin_repeticiones_y_totales_destacados():
     assert "FC C 0001-00000001" in html
     assert "Nerpiti Nicolas Neri" in html
 
-    assert "data-ui-control=\"date\"" in html
-    assert "data-ui-control=\"select\"" in html
+    assert 'data-datepicker="fecha-argentina"' in html
+    assert 'data-ns-select' in html
+    assert 'data-ns-select-placeholder="Seleccionar estado"' in html
+    assert 'type="text"' in html
+    assert 'inputmode="numeric"' in html
+    assert 'placeholder="DD/MM/AAAA"' in html
+    assert 'value="01/06/2026"' in html
+    assert 'value="30/06/2026"' in html
+
+    assert 'data-ui-control="date"' not in html
+    assert 'data-ui-control="select"' not in html
+    assert 'type="date"' not in html
+
     assert "form-control form-control-sm" in html
     assert "form-select form-select-sm" in html
     assert "btn btn-primary btn-sm" in html

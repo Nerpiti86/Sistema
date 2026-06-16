@@ -50,10 +50,13 @@
                         <input
                             id="ld-fecha-desde"
                             data-field="fecha_desde"
-                            data-ui-control="date"
-                            type="date"
+                                                        data-datepicker="fecha-argentina"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            placeholder="DD/MM/AAAA"
                             name="fecha_desde"
-                            value="{{ filtros.fecha_desde }}"
+                            value="{{ filtros.fecha_desde_argentina }}"
                             class="form-control form-control-sm"
                         >
                     </div>
@@ -63,10 +66,13 @@
                         <input
                             id="ld-fecha-hasta"
                             data-field="fecha_hasta"
-                            data-ui-control="date"
-                            type="date"
+                                                        data-datepicker="fecha-argentina"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            placeholder="DD/MM/AAAA"
                             name="fecha_hasta"
-                            value="{{ filtros.fecha_hasta }}"
+                            value="{{ filtros.fecha_hasta_argentina }}"
                             class="form-control form-control-sm"
                         >
                     </div>
@@ -76,7 +82,8 @@
                         <select
                             id="ld-estado"
                             data-field="estado"
-                            data-ui-control="select"
+                                                        data-ns-select
+                            data-ns-select-placeholder="Seleccionar estado"
                             name="estado"
                             class="form-select form-select-sm"
                         >

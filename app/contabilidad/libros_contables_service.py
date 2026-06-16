@@ -16,6 +16,7 @@ from app.contabilidad.libros_contables_repository import (
 from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
     formatear_fecha_iso_a_argentina,
+    normalizar_fecha_argentina_a_iso,
 )
 
 _PREFIJO_COMPROBANTE = "Comprobante:"
@@ -205,13 +206,15 @@ def obtener_contexto_pantalla_libro_diario(filtros: Any | None = None) -> dict[s
         if ejercicio is None:
             raise ValueError("No existe el ejercicio contable seleccionado.")
 
-    fecha_desde = (
-        _normalizar_texto_opcional(filtros_dict.get("fecha_desde"))
-        or ejercicio["fecha_desde"]
+    fecha_desde = _normalizar_fecha_filtro_libro_a_iso(
+        filtros_dict.get("fecha_desde"),
+        ejercicio["fecha_desde"],
+        "La fecha desde debe tener formato DD/MM/YYYY.",
     )
-    fecha_hasta = (
-        _normalizar_texto_opcional(filtros_dict.get("fecha_hasta"))
-        or ejercicio["fecha_hasta"]
+    fecha_hasta = _normalizar_fecha_filtro_libro_a_iso(
+        filtros_dict.get("fecha_hasta"),
+        ejercicio["fecha_hasta"],
+        "La fecha hasta debe tener formato DD/MM/YYYY.",
     )
     estado = _normalizar_estado_pantalla(filtros_dict.get("estado"))
 
@@ -229,6 +232,8 @@ def obtener_contexto_pantalla_libro_diario(filtros: Any | None = None) -> dict[s
         "ejercicio_id": str(ejercicio["id"]),
         "fecha_desde": fecha_desde,
         "fecha_hasta": fecha_hasta,
+        "fecha_desde_argentina": formatear_fecha_iso_a_argentina(fecha_desde),
+        "fecha_hasta_argentina": formatear_fecha_iso_a_argentina(fecha_hasta),
         "estado": estado,
     }
 
@@ -283,6 +288,30 @@ def _normalizar_entero_positivo_opcional(valor: Any) -> int | None:
 def _normalizar_texto_opcional(valor: Any) -> str | None:
     valor_normalizado = str(valor or "").strip()
     return valor_normalizado or None
+
+def _normalizar_fecha_filtro_libro_a_iso(
+    valor: Any,
+    fecha_default_iso: str,
+    mensaje_error: str,
+) -> str:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return fecha_default_iso
+
+    try:
+        if (
+            len(valor_normalizado) == 10
+            and valor_normalizado[4] == "-"
+            and valor_normalizado[7] == "-"
+        ):
+            formatear_fecha_iso_a_argentina(valor_normalizado)
+            return valor_normalizado
+
+        return normalizar_fecha_argentina_a_iso(valor_normalizado)
+    except ValueError as exc:
+        raise ValueError(mensaje_error) from exc
+
 
 
 def obtener_contexto_mayor_por_cuenta(
