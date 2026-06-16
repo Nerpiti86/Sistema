@@ -278,8 +278,15 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
     assert b'data-field="subtotal_centavos"' in response.data
     assert b'id="vc-confirmar"' in response.data
     assert b"Sin asiento" in response.data
-    assert b'id="vc-detalle-cuenta-corriente"' in response.data
-    assert b"Sin movimiento de cuenta corriente asociado." in response.data
+    assert b'id="vc-detalle-comprobante"' in response.data
+    assert b"Comprobante completo" in response.data
+    assert b"Venta a crÃ©dito" in response.data
+    assert b'id="vc-detalle-cuenta-corriente"' not in response.data
+    assert b"Sin movimiento de cuenta corriente asociado." not in response.data
+    assert b"Cuenta ingreso" not in response.data
+    assert b"Cantidad esc." not in response.data
+    assert b"Valor bonif." not in response.data
+    assert b"1,00" in response.data
 
 
 def test_confirmar_venta_desde_pantalla():
@@ -303,9 +310,11 @@ def test_confirmar_venta_desde_pantalla():
     assert b"CONFIRMADO" in response.data
     assert b"Sin asiento" not in response.data
     assert b"EJ2026-0000001" in response.data
-    assert b'id="vc-detalle-cuenta-corriente"' in response.data
-    assert b'id="vc-cuenta-corriente-movimiento"' in response.data
-    assert b"VENTA_COMPROBANTE" in response.data
+    assert b'id="vc-detalle-comprobante"' in response.data
+    assert b"Comprobante completo" in response.data
+    assert b'id="vc-detalle-cuenta-corriente"' not in response.data
+    assert b'id="vc-cuenta-corriente-movimiento"' not in response.data
+    assert b"VENTA_COMPROBANTE" not in response.data
     assert b"(ID " in response.data
     assert b'id="vc-confirmar"' not in response.data
 

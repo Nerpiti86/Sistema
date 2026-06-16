@@ -3,6 +3,15 @@
 {% from "components/buttons.html" import primary_link, secondary_link %}
 
 {% block content %}
+{% set estado_badge = "text-bg-secondary" %}
+{% if comprobante_venta.estado == "CONFIRMADO" %}
+    {% set estado_badge = "text-bg-success" %}
+{% elif comprobante_venta.estado == "BORRADOR" %}
+    {% set estado_badge = "text-bg-warning" %}
+{% elif comprobante_venta.estado == "ANULADO" %}
+    {% set estado_badge = "text-bg-danger" %}
+{% endif %}
+
 <section id="vc-detalle" data-table="ventas_comprobantes" data-row-id="{{ comprobante_venta.id }}" class="row g-3">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
@@ -26,12 +35,16 @@
 
     <div class="col-12 col-lg-6">
         <div id="vc-detalle-cabecera">
-            {% call card("Cabecera", "Comprobante") %}
+            {% call card("Cabecera") %}
                 <dl class="row mb-0">
                     <dt class="col-sm-4">Estado</dt>
-                    <dd id="vc-estado" data-field="estado" class="col-sm-8">{{ comprobante_venta.estado }}</dd>
+                    <dd id="vc-estado" data-field="estado" class="col-sm-8">
+                        <span class="badge {{ estado_badge }}">{{ comprobante_venta.estado }}</span>
+                    </dd>
+
                     <dt class="col-sm-4">Fecha</dt>
                     <dd id="vc-fecha" data-field="fecha" class="col-sm-8">{{ comprobante_venta.fecha_argentina }}</dd>
+
                     <dt class="col-sm-4">Vencimiento</dt>
                     <dd id="vc-fecha-vencimiento" data-field="fecha_vencimiento" class="col-sm-8">
                         {% if comprobante_venta.fecha_vencimiento_argentina %}
@@ -40,14 +53,17 @@
                             <span class="text-muted">Sin vencimiento</span>
                         {% endif %}
                     </dd>
+
                     <dt class="col-sm-4">Cliente</dt>
                     <dd id="vc-cliente" data-field="cliente_razon_social" class="col-sm-8">{{ comprobante_venta.cliente_razon_social }}</dd>
+
                     {% if asociacion_comprobante_venta %}
                         <dt class="col-sm-4">Modifica a</dt>
                         <dd id="vc-comprobante-asociado-detalle" data-field="comprobante_asociado_id" class="col-sm-8">
                             {{ asociacion_comprobante_venta.comprobante_asociado_numero_formateado }}
                         </dd>
                     {% endif %}
+
                     <dt class="col-sm-4">Asiento</dt>
                     <dd id="vc-asiento" data-field="asiento_id" class="col-sm-8 mb-0">
                         {% if comprobante_venta.asiento_mostrar %}
@@ -67,81 +83,100 @@
 
     <div class="col-12 col-lg-6">
         <div id="vc-detalle-importes">
-            {% call card("Importes", "Resumen") %}
-                <dl class="row mb-0">
+            {% call card("Importes") %}
+                <dl class="row mb-3">
                     <dt class="col-sm-4">Subtotal</dt>
                     <dd id="vc-subtotal" data-field="subtotal_centavos" class="col-sm-8 text-end">{{ comprobante_venta.subtotal_argentina }}</dd>
+
                     <dt class="col-sm-4">Descuento</dt>
                     <dd id="vc-descuento" data-field="descuento_centavos" class="col-sm-8 text-end">{{ comprobante_venta.descuento_argentina }}</dd>
+
                     <dt class="col-sm-4">Recargo</dt>
                     <dd id="vc-recargo" data-field="recargo_centavos" class="col-sm-8 text-end">{{ comprobante_venta.recargo_argentina }}</dd>
+
                     <dt class="col-sm-4">IVA</dt>
-                    <dd id="vc-iva" data-field="iva_centavos" class="col-sm-8 text-end">{{ comprobante_venta.iva_argentina }}</dd>
-                    <dt class="col-sm-4">Total</dt>
-                    <dd id="vc-total" data-field="total_centavos" class="col-sm-8 text-end fw-semibold mb-0">{{ comprobante_venta.total_argentina }}</dd>
+                    <dd id="vc-iva" data-field="iva_centavos" class="col-sm-8 text-end mb-0">{{ comprobante_venta.iva_argentina }}</dd>
                 </dl>
+
+                <div class="d-flex justify-content-between align-items-center border rounded bg-light p-3">
+                    <div class="fw-semibold fs-5">Total</div>
+                    <div id="vc-total" data-field="total_centavos" class="fw-bold fs-4 text-end">
+                        {{ comprobante_venta.total_argentina }}
+                    </div>
+                </div>
             {% endcall %}
         </div>
     </div>
 
     <div class="col-12">
-        <div id="vc-detalle-cuenta-corriente" data-table="clientes_cuenta_corriente_movimientos">
-            {% call card("Cuenta corriente", "Impacto") %}
-                {% if movimiento_cuenta_corriente_venta %}
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">Movimiento</dt>
-                        <dd id="vc-cuenta-corriente-movimiento" data-field="movimiento_cuenta_corriente_id" class="col-sm-9">
-                            ID {{ movimiento_cuenta_corriente_venta.id }}
-                        </dd>
-                        <dt class="col-sm-3">Estado</dt>
-                        <dd id="vc-cuenta-corriente-estado" data-field="estado" class="col-sm-9">
-                            {{ movimiento_cuenta_corriente_venta.estado }}
-                        </dd>
-                        <dt class="col-sm-3">Fecha</dt>
-                        <dd id="vc-cuenta-corriente-fecha" data-field="fecha" class="col-sm-9">
-                            {{ movimiento_cuenta_corriente_venta.fecha_argentina }}
-                        </dd>
-                        <dt class="col-sm-3">Tipo</dt>
-                        <dd id="vc-cuenta-corriente-tipo" data-field="tipo_movimiento" class="col-sm-9">
-                            {{ movimiento_cuenta_corriente_venta.tipo_movimiento }}
-                        </dd>
-                        <dt class="col-sm-3">Lado</dt>
-                        <dd id="vc-cuenta-corriente-lado" data-field="lado" class="col-sm-9">
-                            {{ movimiento_cuenta_corriente_venta.lado }}
-                        </dd>
-                        <dt class="col-sm-3">Importe</dt>
-                        <dd id="vc-cuenta-corriente-importe" data-field="importe_centavos" class="col-sm-9 text-end fw-semibold">
-                            {{ movimiento_cuenta_corriente_venta.importe_argentina }}
-                        </dd>
-                        <dt class="col-sm-3">Origen</dt>
-                        <dd id="vc-cuenta-corriente-origen" data-field="origen" class="col-sm-9 mb-0">
-                            {{ movimiento_cuenta_corriente_venta.origen_tipo }} #{{ movimiento_cuenta_corriente_venta.origen_id }}
-                        </dd>
-                    </dl>
-                {% else %}
-                    <p id="vc-cuenta-corriente-sin-movimiento" class="text-muted mb-0">
-                        Sin movimiento de cuenta corriente asociado.
-                    </p>
-                {% endif %}
+        <div id="vc-detalle-comprobante">
+            {% call card("Comprobante") %}
+                <div class="row g-0 border rounded overflow-hidden">
+                    <div class="col-12 col-md-2 p-3 border-end">
+                        <div class="text-muted small">Tipo</div>
+                        <div id="vc-comprobante-tipo" data-field="tipo_comprobante" class="fw-semibold">
+                            {{ comprobante_venta.tipo_comprobante }}
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-1 p-3 border-end">
+                        <div class="text-muted small">Clase</div>
+                        <div id="vc-comprobante-letra" data-field="letra" class="fw-semibold">
+                            {{ comprobante_venta.letra }}
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-2 p-3 border-end">
+                        <div class="text-muted small">Punto de venta</div>
+                        <div id="vc-comprobante-punto-venta" data-field="punto_venta" class="fw-semibold">
+                            {{ comprobante_venta.punto_venta_mostrar }}
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-2 p-3 border-end">
+                        <div class="text-muted small">Número</div>
+                        <div id="vc-comprobante-numero" data-field="numero" class="fw-semibold">
+                            {{ comprobante_venta.numero_mostrar }}
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-1 p-3 border-end">
+                        <div class="text-muted small">Moneda</div>
+                        <div id="vc-comprobante-moneda" data-field="moneda_codigo" class="fw-semibold">
+                            {{ comprobante_venta.moneda_codigo }}
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-2 p-3 border-end">
+                        <div class="text-muted small">Condición</div>
+                        <div id="vc-comprobante-condicion" data-field="condicion_venta" class="fw-semibold">
+                            {{ comprobante_venta.condicion_venta_mostrar }}
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-2 p-3">
+                        <div class="text-muted small">Comprobante completo</div>
+                        <div id="vc-comprobante-numero-formateado" data-field="numero_formateado" class="fw-semibold">
+                            {{ comprobante_venta.numero_formateado }}
+                        </div>
+                    </div>
+                </div>
             {% endcall %}
         </div>
     </div>
 
     <div class="col-12">
         <div id="vc-detalle-renglones" data-table="ventas_comprobantes_detalle">
-            {% call card("Renglones", "Detalle") %}
+            {% call card("Renglones") %}
                 <div class="table-responsive">
                     <table id="vc-detalle-tabla" class="table table-sm align-middle mb-0">
                         <thead>
                             <tr>
                                 <th data-field="descripcion">Descripción</th>
-                                <th data-field="cuenta_ingreso_codigo">Cuenta ingreso</th>
-                                <th data-field="cantidad_1000000" class="text-end">Cantidad esc.</th>
+                                <th data-field="cantidad_1000000" class="text-end">Cantidad</th>
                                 <th data-field="unidad_medida_codigo">U. medida</th>
                                 <th data-field="precio_unitario_centavos" class="text-end">Precio unitario</th>
                                 <th data-field="tipo_bonificacion_codigo">Bonificación</th>
-                                <th data-field="bonificacion_valor_10000" class="text-end">Valor bonif.</th>
-                                <th data-field="descuento_centavos" class="text-end">Importe bonif.</th>
                                 <th data-field="subtotal_centavos" class="text-end">Subtotal</th>
                                 <th data-field="iva_centavos" class="text-end">IVA</th>
                                 <th data-field="total_linea_centavos" class="text-end">Total línea</th>
@@ -151,8 +186,7 @@
                             {% for detalle in detalles_comprobante_venta %}
                                 <tr id="vc-detalle-row-{{ detalle.id }}" data-row-id="{{ detalle.id }}">
                                     <td data-field="descripcion">{{ detalle.descripcion }}</td>
-                                    <td data-field="cuenta_ingreso_codigo">{{ detalle.cuenta_ingreso_codigo }}</td>
-                                    <td data-field="cantidad_1000000" class="text-end">{{ detalle.cantidad_1000000 }}</td>
+                                    <td data-field="cantidad_1000000" class="text-end">{{ detalle.cantidad_argentina }}</td>
                                     <td data-field="unidad_medida_codigo">
                                         {% if detalle.unidad_medida_descripcion %}
                                             {{ detalle.unidad_medida_descripcion }}
@@ -168,15 +202,13 @@
                                             <span class="text-muted">Sin bonificación</span>
                                         {% endif %}
                                     </td>
-                                    <td data-field="bonificacion_valor_10000" class="text-end">{{ detalle.bonificacion_valor_argentina }}</td>
-                                    <td data-field="descuento_centavos" class="text-end">{{ detalle.descuento_argentina }}</td>
                                     <td data-field="subtotal_centavos" class="text-end">{{ detalle.subtotal_argentina }}</td>
                                     <td data-field="iva_centavos" class="text-end">{{ detalle.iva_argentina }}</td>
-                                    <td data-field="total_linea_centavos" class="text-end">{{ detalle.total_linea_argentina }}</td>
+                                    <td data-field="total_linea_centavos" class="text-end fw-semibold">{{ detalle.total_linea_argentina }}</td>
                                 </tr>
                             {% else %}
                                 <tr id="vc-detalle-row-sin-datos">
-                                    <td colspan="11" class="text-center text-muted py-4">No hay renglones para este comprobante.</td>
+                                    <td colspan="8" class="text-center text-muted py-4">No hay renglones para este comprobante.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

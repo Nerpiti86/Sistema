@@ -236,6 +236,15 @@ def _preparar_comprobante_venta_para_pantalla(
     comprobante_pantalla["total_argentina"] = _formatear_centavos(
         comprobante.get("total_centavos", 0)
     )
+    comprobante_pantalla["punto_venta_mostrar"] = _formatear_entero_con_ceros(
+        comprobante.get("punto_venta", 0),
+        4,
+    )
+    comprobante_pantalla["numero_mostrar"] = _formatear_entero_con_ceros(
+        comprobante.get("numero", 0),
+        8,
+    )
+    comprobante_pantalla["condicion_venta_mostrar"] = "Venta a crédito"
     _agregar_asiento_contable_para_pantalla(comprobante_pantalla)
 
     return comprobante_pantalla
@@ -278,6 +287,9 @@ def _preparar_detalle_comprobante_venta_para_pantalla(
     detalle: dict[str, Any],
 ) -> dict[str, Any]:
     detalle_pantalla = dict(detalle)
+    detalle_pantalla["cantidad_argentina"] = _formatear_cantidad_1000000(
+        detalle.get("cantidad_1000000", 0)
+    )
     detalle_pantalla["precio_unitario_argentina"] = _formatear_centavos(
         detalle.get("precio_unitario_centavos", 0)
     )
@@ -311,6 +323,18 @@ def _formatear_fecha_iso_opcional(fecha: Any) -> str:
 
 def _formatear_centavos(valor: Any) -> str:
     return formatear_entero_escala_a_decimal_argentino(int(valor or 0), 2)
+
+
+def _formatear_entero_con_ceros(valor: Any, ancho: int) -> str:
+    return f"{int(valor or 0):0{int(ancho)}d}"
+
+
+def _formatear_cantidad_1000000(valor: Any) -> str:
+    cantidad_entera = int(valor or 0)
+    cantidad_centecimos = (
+        cantidad_entera * 100 + (_ESCALA_CANTIDAD // 2)
+    ) // _ESCALA_CANTIDAD
+    return formatear_entero_escala_a_decimal_argentino(cantidad_centecimos, 2)
 
 
 def _formatear_bonificacion_valor(detalle: dict[str, Any]) -> str:
