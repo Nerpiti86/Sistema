@@ -1,6 +1,81 @@
 {% macro main_navbar(brand) %}
 {% set endpoint_actual = request.endpoint or "" %}
 {% set es_inicio = endpoint_actual == "ui.dashboard" %}
+
+{% set es_gestion = endpoint_actual.startswith("gestion.") %}
+{% set es_grupos_clientes = endpoint_actual in [
+    "gestion.ver_listado_grupos_clientes",
+    "gestion.ver_formulario_nuevo_grupo_cliente",
+    "gestion.crear_grupo_cliente_nuevo",
+    "gestion.ver_formulario_editar_grupo_cliente",
+    "gestion.actualizar_grupo_cliente_existente",
+    "gestion.activar_grupo_cliente_existente",
+    "gestion.desactivar_grupo_cliente_existente",
+] %}
+{% set es_clientes = endpoint_actual in [
+    "gestion.ver_listado_clientes",
+    "gestion.ver_formulario_nuevo_cliente",
+    "gestion.crear_cliente_nuevo",
+    "gestion.ver_formulario_editar_cliente",
+    "gestion.actualizar_cliente_existente",
+    "gestion.ver_cuenta_corriente_cliente",
+    "gestion.activar_cliente_existente",
+    "gestion.desactivar_cliente_existente",
+] %}
+{% set es_articulos_venta = endpoint_actual in [
+    "gestion.ver_listado_productos_servicios_venta",
+    "gestion.ver_formulario_nuevo_producto_servicio_venta",
+    "gestion.crear_producto_servicio_venta_nuevo",
+    "gestion.ver_formulario_editar_producto_servicio_venta",
+    "gestion.actualizar_producto_servicio_venta_existente",
+    "gestion.activar_producto_servicio_venta_existente",
+    "gestion.desactivar_producto_servicio_venta_existente",
+] %}
+{% set es_nuevo_comprobante_venta = endpoint_actual in [
+    "gestion.ver_formulario_nuevo_comprobante_venta",
+    "gestion.crear_comprobante_venta_nuevo",
+] %}
+{% set es_listado_comprobantes_venta = endpoint_actual in [
+    "gestion.ver_listado_comprobantes_venta",
+    "gestion.ver_detalle_comprobante_venta",
+    "gestion.confirmar_comprobante_venta_existente",
+] %}
+{% set es_comprobantes_venta = es_nuevo_comprobante_venta or es_listado_comprobantes_venta %}
+
+{% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
+{% set es_ejercicios = endpoint_actual in [
+    "contabilidad.ver_listado_ejercicios_contables",
+    "contabilidad.ver_formulario_crear_ejercicio_contable",
+    "contabilidad.crear_ejercicio_contable",
+    "contabilidad.ver_detalle_ejercicio_contable",
+    "contabilidad.ver_formulario_editar_ejercicio_contable",
+    "contabilidad.actualizar_ejercicio_contable",
+    "contabilidad.generar_coeficientes_inflacion_para_ejercicio",
+] %}
+{% set es_indices = endpoint_actual in [
+    "contabilidad.ver_indices_inflacion",
+    "contabilidad.guardar_indice_inflacion_mensual",
+] %}
+{% set es_cuentas = endpoint_actual in [
+    "contabilidad.ver_formulario_nueva_cuenta_contable",
+    "contabilidad.crear_cuenta_contable_nueva",
+    "contabilidad.ver_listado_cuentas_contables",
+    "contabilidad.ver_formulario_editar_cuenta_contable",
+    "contabilidad.actualizar_cuenta_contable_existente",
+    "contabilidad.buscar_cuenta_contable_para_sumarizadora",
+] %}
+{% set es_asientos = endpoint_actual in [
+    "contabilidad.ver_listado_asientos_contables",
+    "contabilidad.ver_formulario_nuevo_asiento_contable",
+    "contabilidad.crear_asiento_contable_nuevo",
+    "contabilidad.ver_detalle_asiento_contable",
+] %}
+{% set es_libros = endpoint_actual in [
+    "contabilidad.ver_libro_diario",
+    "contabilidad.ver_mayor_por_cuenta",
+    "contabilidad.ver_mayor_general",
+] %}
+
 {% set es_tablas_comunes = endpoint_actual.startswith("tablas_comunes.") or endpoint_actual.startswith("tablas_comunes_fiscales.") %}
 {% set es_monedas = endpoint_actual in [
     "tablas_comunes.ver_listado_monedas",
@@ -19,24 +94,6 @@
     "tablas_comunes.actualizar_banco_existente",
     "tablas_comunes.activar_banco_existente",
     "tablas_comunes.desactivar_banco_existente",
-] %}
-{% set es_paises = endpoint_actual in [
-    "tablas_comunes.ver_listado_paises",
-    "tablas_comunes.ver_formulario_nuevo_pais",
-    "tablas_comunes.crear_pais_nuevo",
-    "tablas_comunes.ver_formulario_editar_pais",
-    "tablas_comunes.actualizar_pais_existente",
-    "tablas_comunes.activar_pais_existente",
-    "tablas_comunes.desactivar_pais_existente",
-] %}
-{% set es_provincias = endpoint_actual in [
-    "tablas_comunes.ver_listado_provincias",
-    "tablas_comunes.ver_formulario_nueva_provincia",
-    "tablas_comunes.crear_provincia_nueva",
-    "tablas_comunes.ver_formulario_editar_provincia",
-    "tablas_comunes.actualizar_provincia_existente",
-    "tablas_comunes.activar_provincia_existente",
-    "tablas_comunes.desactivar_provincia_existente",
 ] %}
 {% set es_medios_operativos = endpoint_actual in [
     "tablas_comunes.ver_listado_medios_operativos",
@@ -92,65 +149,25 @@
     "tablas_comunes_fiscales.activar_tipo_comprobante_existente",
     "tablas_comunes_fiscales.desactivar_tipo_comprobante_existente",
 ] %}
-{% set es_gestion = endpoint_actual.startswith("gestion.") %}
-{% set es_grupos_clientes = endpoint_actual in [
-    "gestion.ver_listado_grupos_clientes",
-    "gestion.ver_formulario_nuevo_grupo_cliente",
-    "gestion.crear_grupo_cliente_nuevo",
-    "gestion.ver_formulario_editar_grupo_cliente",
-    "gestion.actualizar_grupo_cliente_existente",
-    "gestion.activar_grupo_cliente_existente",
-    "gestion.desactivar_grupo_cliente_existente",
+{% set es_paises = endpoint_actual in [
+    "tablas_comunes.ver_listado_paises",
+    "tablas_comunes.ver_formulario_nuevo_pais",
+    "tablas_comunes.crear_pais_nuevo",
+    "tablas_comunes.ver_formulario_editar_pais",
+    "tablas_comunes.actualizar_pais_existente",
+    "tablas_comunes.activar_pais_existente",
+    "tablas_comunes.desactivar_pais_existente",
 ] %}
-{% set es_clientes = endpoint_actual in [
-    "gestion.ver_listado_clientes",
-    "gestion.ver_formulario_nuevo_cliente",
-    "gestion.crear_cliente_nuevo",
-    "gestion.ver_formulario_editar_cliente",
-    "gestion.actualizar_cliente_existente",
-    "gestion.activar_cliente_existente",
-    "gestion.desactivar_cliente_existente",
+{% set es_provincias = endpoint_actual in [
+    "tablas_comunes.ver_listado_provincias",
+    "tablas_comunes.ver_formulario_nueva_provincia",
+    "tablas_comunes.crear_provincia_nueva",
+    "tablas_comunes.ver_formulario_editar_provincia",
+    "tablas_comunes.actualizar_provincia_existente",
+    "tablas_comunes.activar_provincia_existente",
+    "tablas_comunes.desactivar_provincia_existente",
 ] %}
-{% set es_productos_servicios_venta = endpoint_actual in [
-    "gestion.ver_listado_productos_servicios_venta",
-    "gestion.ver_formulario_nuevo_producto_servicio_venta",
-    "gestion.crear_producto_servicio_venta_nuevo",
-    "gestion.ver_formulario_editar_producto_servicio_venta",
-    "gestion.actualizar_producto_servicio_venta_existente",
-    "gestion.activar_producto_servicio_venta_existente",
-    "gestion.desactivar_producto_servicio_venta_existente",
-] %}
-{% set es_comprobantes_venta = endpoint_actual in [
-    "gestion.ver_listado_comprobantes_venta",
-    "gestion.ver_detalle_comprobante_venta",
-    "gestion.confirmar_comprobante_venta_existente",
-] %}
-{% set es_contabilidad = endpoint_actual.startswith("contabilidad.") %}
-{% set es_asientos = endpoint_actual in [
-    "contabilidad.ver_listado_asientos_contables",
-    "contabilidad.ver_formulario_nuevo_asiento_contable",
-    "contabilidad.crear_asiento_contable_nuevo",
-    "contabilidad.ver_detalle_asiento_contable",
-] %}
-{% set es_cuentas = endpoint_actual in [
-    "contabilidad.ver_formulario_nueva_cuenta_contable",
-    "contabilidad.crear_cuenta_contable_nueva",
-    "contabilidad.ver_listado_cuentas_contables",
-    "contabilidad.ver_formulario_editar_cuenta_contable",
-    "contabilidad.actualizar_cuenta_contable_existente",
-    "contabilidad.buscar_cuenta_contable_para_sumarizadora",
-] %}
-{% set es_ejercicios = endpoint_actual in [
-    "contabilidad.ver_listado_ejercicios_contables",
-    "contabilidad.ver_formulario_crear_ejercicio_contable",
-    "contabilidad.crear_ejercicio_contable",
-    "contabilidad.ver_detalle_ejercicio_contable",
-    "contabilidad.ver_formulario_editar_ejercicio_contable",
-    "contabilidad.actualizar_ejercicio_contable",
-    "contabilidad.generar_coeficientes_inflacion_para_ejercicio",
-    "contabilidad.ver_indices_inflacion",
-    "contabilidad.guardar_indice_inflacion_mensual",
-] %}
+
 <nav
     id="ns-navbar"
     class="navbar navbar-expand-lg border-bottom shadow-sm sticky-top ns-navbar"
@@ -184,6 +201,309 @@
                     >
                         Inicio
                     </a>
+                </li>
+
+                <li class="nav-item dropdown ns-mega-dropdown">
+                    <a
+                        id="ns-nav-gestion"
+                        class="nav-link dropdown-toggle {% if es_gestion %}active{% endif %}"
+                        href="#"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        data-bs-auto-close="outside"
+                        data-component="navbar"
+                        data-action="abrir_menu"
+                        data-module="gestion"
+                        aria-expanded="false"
+                    >
+                        <span class="ns-nav-link-label">Gestión</span>
+                        <i class="ti ti-chevron-down ns-dropdown-chevron" aria-hidden="true"></i>
+                    </a>
+
+                    <div
+                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-wide"
+                        aria-labelledby="ns-nav-gestion"
+                    >
+                        <div class="ns-mega-header">
+                            <div>
+                                <div class="ns-mega-eyebrow">Circuito comercial</div>
+                                <div class="ns-mega-title">Gestión</div>
+                                <p class="ns-mega-description">
+                                    Accesos principales para clientes, artículos y comprobantes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="ns-mega-grid">
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-clientes">
+                                <h2 id="ns-nav-clientes" class="ns-mega-section-title {% if es_grupos_clientes or es_clientes %}active{% endif %}">
+                                    Clientes
+                                </h2>
+
+                                <a
+                                    id="ns-nav-grupos-clientes"
+                                    class="ns-mega-link {% if es_grupos_clientes %}active{% endif %}"
+                                    href="{{ url_for('gestion.ver_listado_grupos_clientes') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="gestion"
+                                    data-endpoint="gestion.ver_listado_grupos_clientes"
+                                >
+                                    <span class="ns-mega-link-title">Grupo clientes</span>
+                                    <span class="ns-mega-link-text">Segmentación comercial de clientes.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-clientes-maestro"
+                                    class="ns-mega-link {% if es_clientes %}active{% endif %}"
+                                    href="{{ url_for('gestion.ver_listado_clientes') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="gestion"
+                                    data-endpoint="gestion.ver_listado_clientes"
+                                >
+                                    <span class="ns-mega-link-title">Cliente</span>
+                                    <span class="ns-mega-link-text">Maestro comercial, fiscal y contable de clientes.</span>
+                                </a>
+                            </section>
+
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-ventas">
+                                <h2 id="ns-nav-ventas" class="ns-mega-section-title {% if es_articulos_venta or es_comprobantes_venta %}active{% endif %}">
+                                    Ventas
+                                </h2>
+
+                                <a
+                                    id="ns-nav-productos-servicios-venta"
+                                    class="ns-mega-link {% if es_articulos_venta %}active{% endif %}"
+                                    href="{{ url_for('gestion.ver_listado_productos_servicios_venta') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="gestion"
+                                    data-endpoint="gestion.ver_listado_productos_servicios_venta"
+                                >
+                                    <span class="ns-mega-link-title">Artículos</span>
+                                    <span class="ns-mega-link-text">Maestro de artículos y servicios vendibles.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-nuevo-comprobante-venta"
+                                    class="ns-mega-link {% if es_nuevo_comprobante_venta %}active{% endif %}"
+                                    href="{{ url_for('gestion.ver_formulario_nuevo_comprobante_venta') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="gestion"
+                                    data-endpoint="gestion.ver_formulario_nuevo_comprobante_venta"
+                                >
+                                    <span class="ns-mega-link-title">Nuevo comprobante</span>
+                                    <span class="ns-mega-link-text">Cargar y confirmar un comprobante de venta.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-comprobantes-venta"
+                                    class="ns-mega-link {% if es_listado_comprobantes_venta %}active{% endif %}"
+                                    href="{{ url_for('gestion.ver_listado_comprobantes_venta') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="gestion"
+                                    data-endpoint="gestion.ver_listado_comprobantes_venta"
+                                >
+                                    <span class="ns-mega-link-title">Comprobantes</span>
+                                    <span class="ns-mega-link-text">Listado, detalle y confirmación de ventas.</span>
+                                </a>
+                            </section>
+                        </div>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown ns-mega-dropdown">
+                    <a
+                        id="ns-nav-contabilidad"
+                        class="nav-link dropdown-toggle {% if es_contabilidad %}active{% endif %}"
+                        href="#"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        data-bs-display="static"
+                        data-bs-auto-close="outside"
+                        data-component="navbar"
+                        data-action="abrir_menu"
+                        data-module="contabilidad"
+                        aria-expanded="false"
+                    >
+                        <span class="ns-nav-link-label">Contabilidad</span>
+                        <i class="ti ti-chevron-down ns-dropdown-chevron" aria-hidden="true"></i>
+                    </a>
+
+                    <div
+                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-wide"
+                        aria-labelledby="ns-nav-contabilidad"
+                    >
+                        <div class="ns-mega-header">
+                            <div>
+                                <div class="ns-mega-eyebrow">Módulo contable</div>
+                                <div class="ns-mega-title">Contabilidad</div>
+                                <p class="ns-mega-description">
+                                    Accesos principales para ejercicios, cuentas, asientos y libros.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="ns-mega-grid">
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-ejercicios">
+                                <h2 id="ns-nav-ejercicios" class="ns-mega-section-title {% if es_ejercicios or es_indices %}active{% endif %}">
+                                    Ejercicios
+                                </h2>
+
+                                <a
+                                    id="ns-nav-ejercicio"
+                                    class="ns-mega-link {% if es_ejercicios %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="ejercicios"
+                                    data-endpoint="contabilidad.ver_listado_ejercicios_contables"
+                                >
+                                    <span class="ns-mega-link-title">Ejercicio</span>
+                                    <span class="ns-mega-link-text">Abrir, revisar y mantener ejercicios contables.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-indices"
+                                    class="ns-mega-link {% if es_indices %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_indices_inflacion') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="ejercicios"
+                                    data-endpoint="contabilidad.ver_indices_inflacion"
+                                >
+                                    <span class="ns-mega-link-title">Índices</span>
+                                    <span class="ns-mega-link-text">Cargar índices mensuales de inflación.</span>
+                                </a>
+                            </section>
+
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-cuentas">
+                                <h2 id="ns-nav-cuentas" class="ns-mega-section-title {% if es_cuentas %}active{% endif %}">
+                                    Cuentas
+                                </h2>
+
+                                <a
+                                    id="ns-nav-listado-cuentas-contables"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_listado_cuentas_contables',
+                                        'contabilidad.ver_formulario_editar_cuenta_contable',
+                                        'contabilidad.actualizar_cuenta_contable_existente'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_listado_cuentas_contables') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="cuentas"
+                                    data-endpoint="contabilidad.ver_listado_cuentas_contables"
+                                >
+                                    <span class="ns-mega-link-title">Plan de cuentas</span>
+                                    <span class="ns-mega-link-text">Revisar estructura y editar cuentas existentes.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-cuentas-contables"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_formulario_nueva_cuenta_contable',
+                                        'contabilidad.crear_cuenta_contable_nueva'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_formulario_nueva_cuenta_contable') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="cuentas"
+                                    data-endpoint="contabilidad.ver_formulario_nueva_cuenta_contable"
+                                >
+                                    <span class="ns-mega-link-title">Nueva cuenta</span>
+                                    <span class="ns-mega-link-text">Crear cuentas imputables o sumarizadoras.</span>
+                                </a>
+                            </section>
+
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-asientos">
+                                <h2 id="ns-nav-asientos" class="ns-mega-section-title {% if es_asientos %}active{% endif %}">
+                                    Asientos
+                                </h2>
+
+                                <a
+                                    id="ns-nav-nuevo-asiento"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_formulario_nuevo_asiento_contable',
+                                        'contabilidad.crear_asiento_contable_nuevo'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_formulario_nuevo_asiento_contable') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="asientos"
+                                    data-endpoint="contabilidad.ver_formulario_nuevo_asiento_contable"
+                                >
+                                    <span class="ns-mega-link-title">Nuevo asiento</span>
+                                    <span class="ns-mega-link-text">Registrar una nueva operación contable.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-listado-asientos"
+                                    class="ns-mega-link {% if endpoint_actual in [
+                                        'contabilidad.ver_listado_asientos_contables',
+                                        'contabilidad.ver_detalle_asiento_contable'
+                                    ] %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_listado_asientos_contables') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="asientos"
+                                    data-endpoint="contabilidad.ver_listado_asientos_contables"
+                                >
+                                    <span class="ns-mega-link-title">Listado de asientos</span>
+                                    <span class="ns-mega-link-text">Consultar, revisar y abrir asientos existentes.</span>
+                                </a>
+                            </section>
+
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-libros">
+                                <h2 id="ns-nav-libros" class="ns-mega-section-title {% if es_libros %}active{% endif %}">
+                                    Libros
+                                </h2>
+
+                                <a
+                                    id="ns-nav-libro-diario"
+                                    class="ns-mega-link {% if endpoint_actual == 'contabilidad.ver_libro_diario' %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_libro_diario') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="libros"
+                                    data-endpoint="contabilidad.ver_libro_diario"
+                                >
+                                    <span class="ns-mega-link-title">Libro diario</span>
+                                    <span class="ns-mega-link-text">Consultar asientos ordenados por fecha.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-libro-mayor"
+                                    class="ns-mega-link {% if endpoint_actual == 'contabilidad.ver_mayor_por_cuenta' %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_mayor_por_cuenta') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="libros"
+                                    data-endpoint="contabilidad.ver_mayor_por_cuenta"
+                                >
+                                    <span class="ns-mega-link-title">Libro mayor</span>
+                                    <span class="ns-mega-link-text">Consultar movimientos de una cuenta contable.</span>
+                                </a>
+
+                                <a
+                                    id="ns-nav-libro-mayor-general"
+                                    class="ns-mega-link {% if endpoint_actual == 'contabilidad.ver_mayor_general' %}active{% endif %}"
+                                    href="{{ url_for('contabilidad.ver_mayor_general') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="libros"
+                                    data-endpoint="contabilidad.ver_mayor_general"
+                                >
+                                    <span class="ns-mega-link-title">Libro mayor general</span>
+                                    <span class="ns-mega-link-text">Consultar movimientos agrupados por cuenta.</span>
+                                </a>
+                            </section>
+                        </div>
+                    </div>
                 </li>
 
                 <li class="nav-item dropdown ns-mega-dropdown">
@@ -264,42 +584,23 @@
                                 </a>
                             </section>
 
-                            <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-geografia">
-                                <h2 id="ns-nav-tablas-geografia" class="ns-mega-section-title {% if es_paises or es_provincias %}active{% endif %}">
-                                    Geografía
-                                </h2>
-
-                                <a
-                                    id="ns-nav-paises"
-                                    class="ns-mega-link {% if es_paises %}active{% endif %}"
-                                    href="{{ url_for('tablas_comunes.ver_listado_paises') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="tablas_comunes"
-                                    data-endpoint="tablas_comunes.ver_listado_paises"
-                                >
-                                    <span class="ns-mega-link-title">Países</span>
-                                    <span class="ns-mega-link-text">Catálogo común para domicilios y datos fiscales.</span>
-                                </a>
-
-                                <a
-                                    id="ns-nav-provincias"
-                                    class="ns-mega-link {% if es_provincias %}active{% endif %}"
-                                    href="{{ url_for('tablas_comunes.ver_listado_provincias') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="tablas_comunes"
-                                    data-endpoint="tablas_comunes.ver_listado_provincias"
-                                >
-                                    <span class="ns-mega-link-title">Provincias</span>
-                                    <span class="ns-mega-link-text">Jurisdicciones asociadas a cada país.</span>
-                                </a>
-                            </section>
-
                             <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-fiscal">
-                                <h2 id="ns-nav-tablas-fiscal" class="ns-mega-section-title {% if es_condiciones_iva or es_tipos_documento or es_unidades_medida or es_tipos_bonificacion or es_tipos_comprobante %}active{% endif %}">
+                                <h2 id="ns-nav-tablas-fiscal" class="ns-mega-section-title {% if es_tipos_comprobante or es_condiciones_iva or es_tipos_documento or es_unidades_medida or es_tipos_bonificacion %}active{% endif %}">
                                     Fiscal
                                 </h2>
+
+                                <a
+                                    id="ns-nav-tipos-comprobante"
+                                    class="ns-mega-link {% if es_tipos_comprobante %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes_fiscales.ver_listado_tipos_comprobante') }}"
+                                    data-component="navbar"
+                                    data-action="navegar"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes_fiscales.ver_listado_tipos_comprobante"
+                                >
+                                    <span class="ns-mega-link-title">Tipos de comprobantes</span>
+                                    <span class="ns-mega-link-text">Códigos fiscales de comprobantes.</span>
+                                </a>
 
                                 <a
                                     id="ns-nav-condiciones-iva"
@@ -352,275 +653,37 @@
                                     <span class="ns-mega-link-title">Tipos de bonificación</span>
                                     <span class="ns-mega-link-text">Descuentos por porcentaje o monto.</span>
                                 </a>
+                            </section>
+
+                            <section class="ns-mega-section" aria-labelledby="ns-nav-tablas-geografia">
+                                <h2 id="ns-nav-tablas-geografia" class="ns-mega-section-title {% if es_paises or es_provincias %}active{% endif %}">
+                                    Geografía
+                                </h2>
 
                                 <a
-                                    id="ns-nav-tipos-comprobante"
-                                    class="ns-mega-link {% if es_tipos_comprobante %}active{% endif %}"
-                                    href="{{ url_for('tablas_comunes_fiscales.ver_listado_tipos_comprobante') }}"
+                                    id="ns-nav-paises"
+                                    class="ns-mega-link {% if es_paises %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes.ver_listado_paises') }}"
                                     data-component="navbar"
                                     data-action="navegar"
                                     data-module="tablas_comunes"
-                                    data-endpoint="tablas_comunes_fiscales.ver_listado_tipos_comprobante"
+                                    data-endpoint="tablas_comunes.ver_listado_paises"
                                 >
-                                    <span class="ns-mega-link-title">Tipos de comprobantes</span>
-                                    <span class="ns-mega-link-text">Códigos fiscales de comprobantes.</span>
-                                </a>
-                            </section>
-                        </div>
-                    </div>
-                </li>
-
-                <li class="nav-item dropdown ns-mega-dropdown">
-                    <a
-                        id="ns-nav-gestion"
-                        class="nav-link dropdown-toggle {% if es_gestion %}active{% endif %}"
-                        href="#"
-                        role="button"
-                        data-bs-toggle="dropdown"
-                        data-bs-display="static"
-                        data-bs-auto-close="outside"
-                        data-component="navbar"
-                        data-action="abrir_menu"
-                        data-module="gestion"
-                        aria-expanded="false"
-                    >
-                        <span class="ns-nav-link-label">Gestión</span>
-                        <i class="ti ti-chevron-down ns-dropdown-chevron" aria-hidden="true"></i>
-                    </a>
-
-                    <div
-                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-wide"
-                        aria-labelledby="ns-nav-gestion"
-                    >
-                        <div class="ns-mega-header">
-                            <div>
-                                <div class="ns-mega-eyebrow">Circuito comercial</div>
-                                <div class="ns-mega-title">Gestión</div>
-                                <p class="ns-mega-description">
-                                    Accesos principales para maestros y operaciones comerciales.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="ns-mega-grid">
-                            <section class="ns-mega-section" aria-labelledby="ns-nav-clientes">
-                                <h2 id="ns-nav-clientes" class="ns-mega-section-title {% if es_grupos_clientes or es_clientes %}active{% endif %}">
-                                    Clientes
-                                </h2>
-
-                                <a
-                                    id="ns-nav-clientes-maestro"
-                                    class="ns-mega-link {% if es_clientes %}active{% endif %}"
-                                    href="{{ url_for('gestion.ver_listado_clientes') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="gestion"
-                                    data-endpoint="gestion.ver_listado_clientes"
-                                >
-                                    <span class="ns-mega-link-title">Clientes</span>
-                                    <span class="ns-mega-link-text">Maestro comercial, fiscal y contable de clientes.</span>
+                                    <span class="ns-mega-link-title">Países</span>
+                                    <span class="ns-mega-link-text">Catálogo común para domicilios y datos fiscales.</span>
                                 </a>
 
                                 <a
-                                    id="ns-nav-grupos-clientes"
-                                    class="ns-mega-link {% if es_grupos_clientes %}active{% endif %}"
-                                    href="{{ url_for('gestion.ver_listado_grupos_clientes') }}"
+                                    id="ns-nav-provincias"
+                                    class="ns-mega-link {% if es_provincias %}active{% endif %}"
+                                    href="{{ url_for('tablas_comunes.ver_listado_provincias') }}"
                                     data-component="navbar"
                                     data-action="navegar"
-                                    data-module="gestion"
-                                    data-endpoint="gestion.ver_listado_grupos_clientes"
+                                    data-module="tablas_comunes"
+                                    data-endpoint="tablas_comunes.ver_listado_provincias"
                                 >
-                                    <span class="ns-mega-link-title">Grupos de clientes</span>
-                                    <span class="ns-mega-link-text">Segmentación comercial de clientes.</span>
-                                </a>
-                            </section>
-
-                            <section class="ns-mega-section" aria-labelledby="ns-nav-ventas">
-                                <h2 id="ns-nav-ventas" class="ns-mega-section-title {% if es_productos_servicios_venta or es_comprobantes_venta %}active{% endif %}">
-                                    Ventas
-                                </h2>
-
-                                <a
-                                    id="ns-nav-productos-servicios-venta"
-                                    class="ns-mega-link {% if es_productos_servicios_venta %}active{% endif %}"
-                                    href="{{ url_for('gestion.ver_listado_productos_servicios_venta') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="gestion"
-                                    data-endpoint="gestion.ver_listado_productos_servicios_venta"
-                                >
-                                    <span class="ns-mega-link-title">Productos o servicios para la venta</span>
-                                    <span class="ns-mega-link-text">Maestro de conceptos vendibles del circuito de ventas.</span>
-                                </a>
-
-                                <a
-                                    id="ns-nav-comprobantes-venta"
-                                    class="ns-mega-link {% if es_comprobantes_venta %}active{% endif %}"
-                                    href="{{ url_for('gestion.ver_listado_comprobantes_venta') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="gestion"
-                                    data-endpoint="gestion.ver_listado_comprobantes_venta"
-                                >
-                                    <span class="ns-mega-link-title">Comprobantes de venta</span>
-                                    <span class="ns-mega-link-text">Listado, detalle y confirmación de ventas sin mover fondos.</span>
-                                </a>
-                            </section>
-
-                        </div>
-                    </div>
-                </li>
-
-                <li class="nav-item dropdown ns-mega-dropdown">
-                    <a
-                        id="ns-nav-contabilidad"
-                        class="nav-link dropdown-toggle {% if es_contabilidad %}active{% endif %}"
-                        href="#"
-                        role="button"
-                        data-bs-toggle="dropdown"
-                        data-bs-display="static"
-                        data-bs-auto-close="outside"
-                        data-component="navbar"
-                        data-action="abrir_menu"
-                        data-module="contabilidad"
-                        aria-expanded="false"
-                    >
-                        <span class="ns-nav-link-label">Contabilidad</span>
-                        <i class="ti ti-chevron-down ns-dropdown-chevron" aria-hidden="true"></i>
-                    </a>
-
-                    <div
-                        class="dropdown-menu ns-dropdown-menu ns-mega-menu ns-mega-menu-wide"
-                        aria-labelledby="ns-nav-contabilidad"
-                    >
-                        <div class="ns-mega-header">
-                            <div>
-                                <div class="ns-mega-eyebrow">Módulo contable</div>
-                                <div class="ns-mega-title">Contabilidad</div>
-                                <p class="ns-mega-description">
-                                    Accesos principales para carga, consulta y mantenimiento contable.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="ns-mega-grid">
-                            <section class="ns-mega-section" aria-labelledby="ns-nav-asientos">
-                                <h2 id="ns-nav-asientos" class="ns-mega-section-title {% if es_asientos %}active{% endif %}">
-                                    Asientos
-                                </h2>
-
-                                <a
-                                    id="ns-nav-nuevo-asiento"
-                                    class="ns-mega-link {% if endpoint_actual in [
-                                        'contabilidad.ver_formulario_nuevo_asiento_contable',
-                                        'contabilidad.crear_asiento_contable_nuevo'
-                                    ] %}active{% endif %}"
-                                    href="{{ url_for('contabilidad.ver_formulario_nuevo_asiento_contable') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="asientos"
-                                    data-endpoint="contabilidad.ver_formulario_nuevo_asiento_contable"
-                                >
-                                    <span class="ns-mega-link-title">Nuevo asiento</span>
-                                    <span class="ns-mega-link-text">Registrar una nueva operación contable.</span>
-                                </a>
-
-                                <a
-                                    id="ns-nav-listado-asientos"
-                                    class="ns-mega-link {% if endpoint_actual in [
-                                        'contabilidad.ver_listado_asientos_contables',
-                                        'contabilidad.ver_detalle_asiento_contable'
-                                    ] %}active{% endif %}"
-                                    href="{{ url_for('contabilidad.ver_listado_asientos_contables') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="asientos"
-                                    data-endpoint="contabilidad.ver_listado_asientos_contables"
-                                >
-                                    <span class="ns-mega-link-title">Listado de asientos</span>
-                                    <span class="ns-mega-link-text">Consultar, revisar y abrir asientos existentes.</span>
-                                </a>
-                            </section>
-
-                            <section class="ns-mega-section" aria-labelledby="ns-nav-cuentas">
-                                <h2 id="ns-nav-cuentas" class="ns-mega-section-title {% if es_cuentas %}active{% endif %}">
-                                    Cuentas
-                                </h2>
-
-                                <a
-                                    id="ns-nav-cuentas-contables"
-                                    class="ns-mega-link {% if endpoint_actual in [
-                                        'contabilidad.ver_formulario_nueva_cuenta_contable',
-                                        'contabilidad.crear_cuenta_contable_nueva'
-                                    ] %}active{% endif %}"
-                                    href="{{ url_for('contabilidad.ver_formulario_nueva_cuenta_contable') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="cuentas"
-                                    data-endpoint="contabilidad.ver_formulario_nueva_cuenta_contable"
-                                >
-                                    <span class="ns-mega-link-title">Nueva cuenta</span>
-                                    <span class="ns-mega-link-text">Crear cuentas imputables o sumarizadoras.</span>
-                                </a>
-
-                                <a
-                                    id="ns-nav-listado-cuentas-contables"
-                                    class="ns-mega-link {% if endpoint_actual in [
-                                        'contabilidad.ver_listado_cuentas_contables',
-                                        'contabilidad.ver_formulario_editar_cuenta_contable',
-                                        'contabilidad.actualizar_cuenta_contable_existente'
-                                    ] %}active{% endif %}"
-                                    href="{{ url_for('contabilidad.ver_listado_cuentas_contables') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="cuentas"
-                                    data-endpoint="contabilidad.ver_listado_cuentas_contables"
-                                >
-                                    <span class="ns-mega-link-title">Plan de cuentas</span>
-                                    <span class="ns-mega-link-text">Revisar estructura y editar cuentas existentes.</span>
-                                </a>
-                            </section>
-
-                            <section class="ns-mega-section" aria-labelledby="ns-nav-ejercicios">
-                                <h2 id="ns-nav-ejercicios" class="ns-mega-section-title {% if es_ejercicios %}active{% endif %}">
-                                    Ejercicios
-                                </h2>
-
-                                <a
-                                    id="ns-nav-ejercicio"
-                                    class="ns-mega-link {% if endpoint_actual in [
-                                        'contabilidad.ver_listado_ejercicios_contables',
-                                        'contabilidad.ver_formulario_crear_ejercicio_contable',
-                                        'contabilidad.crear_ejercicio_contable',
-                                        'contabilidad.ver_detalle_ejercicio_contable',
-                                        'contabilidad.ver_formulario_editar_ejercicio_contable',
-                                        'contabilidad.actualizar_ejercicio_contable',
-                                        'contabilidad.generar_coeficientes_inflacion_para_ejercicio'
-                                    ] %}active{% endif %}"
-                                    href="{{ url_for('contabilidad.ver_listado_ejercicios_contables') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="ejercicios"
-                                    data-endpoint="contabilidad.ver_listado_ejercicios_contables"
-                                >
-                                    <span class="ns-mega-link-title">Ejercicios contables</span>
-                                    <span class="ns-mega-link-text">Abrir, revisar y mantener ejercicios contables.</span>
-                                </a>
-
-                                <a
-                                    id="ns-nav-indices"
-                                    class="ns-mega-link {% if endpoint_actual in [
-                                        'contabilidad.ver_indices_inflacion',
-                                        'contabilidad.guardar_indice_inflacion_mensual'
-                                    ] %}active{% endif %}"
-                                    href="{{ url_for('contabilidad.ver_indices_inflacion') }}"
-                                    data-component="navbar"
-                                    data-action="navegar"
-                                    data-module="ejercicios"
-                                    data-endpoint="contabilidad.ver_indices_inflacion"
-                                >
-                                    <span class="ns-mega-link-title">Índices de inflación</span>
-                                    <span class="ns-mega-link-text">Cargar índices mensuales para cálculo de coeficientes.</span>
+                                    <span class="ns-mega-link-title">Provincias</span>
+                                    <span class="ns-mega-link-text">Jurisdicciones asociadas a cada país.</span>
                                 </a>
                             </section>
                         </div>
