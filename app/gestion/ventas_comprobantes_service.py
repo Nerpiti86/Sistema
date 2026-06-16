@@ -721,27 +721,29 @@ def confirmar_comprobante_venta(comprobante_id: Any) -> dict[str, Any]:
         cliente = _obtener_cliente_activo(comprobante["cliente_id"])
         cuenta_deudores_codigo = _obtener_cuenta_deudores_cliente(cliente)
         ejercicio = _obtener_ejercicio_para_confirmacion(comprobante["fecha"])
-        descripcion = _descripcion_confirmacion_venta(comprobante)
+        descripcion_asiento = _descripcion_confirmacion_venta(comprobante)
+        descripcion_movimiento = _descripcion_movimiento_cuenta_corriente_confirmacion(
+            comprobante
+        )
 
         asiento = crear_asiento_contable_automatico_confirmado(
             {
                 "ejercicio_id": ejercicio["id"],
                 "fecha": comprobante["fecha"],
-                "descripcion": descripcion,
+                "descripcion": descripcion_asiento,
                 "tipo": "VENTA",
                 "cotizacion_tipo": "CIERRE",
             },
             _armar_detalles_asiento_confirmacion(
                 comprobante,
                 cuenta_deudores_codigo,
-                descripcion,
             ),
         )
 
         movimiento_cuenta_corriente = _crear_movimiento_cuenta_corriente_confirmacion(
             comprobante,
             asiento["id"],
-            descripcion,
+            descripcion_movimiento,
         )
 
         comprobante_confirmado = marcar_venta_comprobante_confirmado(
@@ -831,13 +833,64 @@ def _obtener_ejercicio_para_confirmacion(fecha: str) -> dict[str, Any]:
 
 
 def _descripcion_confirmacion_venta(comprobante: dict[str, Any]) -> str:
-    return f"Venta {comprobante['numero_formateado']}"
+    return (
+        f"Venta {_descripcion_comprobante_venta(comprobante)} - "
+        f"{_descripcion_cliente_comprobante(comprobante)}"
+    )
+
+
+def _descripcion_movimiento_cuenta_corriente_confirmacion(
+    comprobante: dict[str, Any],
+) -> str:
+    return _descripcion_comprobante_venta(comprobante)
+
+
+def _descripcion_linea_deudores_confirmacion(comprobante: dict[str, Any]) -> str:
+    return (
+        f"{_descripcion_comprobante_venta(comprobante)} - "
+        f"{_descripcion_cliente_comprobante(comprobante)}"
+    )
+
+
+def _descripcion_linea_resultado_confirmacion(
+    comprobante: dict[str, Any],
+    detalle: dict[str, Any],
+) -> str:
+    descripcion_detalle = _validar_texto_obligatorio(
+        detalle.get("descripcion"),
+        "El renglon no tiene descripcion para el asiento.",
+    )
+
+    return (
+        f"{_descripcion_comprobante_venta(comprobante)} - "
+        f"{descripcion_detalle} - "
+        f"{_descripcion_cliente_comprobante(comprobante)}"
+    )
+
+
+def _descripcion_comprobante_venta(comprobante: dict[str, Any]) -> str:
+    descripcion = str(comprobante["numero_formateado"])
+
+    asociacion = obtener_asociacion_comprobante_venta(comprobante["id"])
+    if asociacion is not None:
+        descripcion = (
+            f"{descripcion} modifica "
+            f"{asociacion['comprobante_asociado_numero_formateado']}"
+        )
+
+    return descripcion
+
+
+def _descripcion_cliente_comprobante(comprobante: dict[str, Any]) -> str:
+    return _validar_texto_obligatorio(
+        comprobante.get("cliente_razon_social"),
+        "El comprobante no tiene cliente para describir el asiento.",
+    )
 
 
 def _armar_detalles_asiento_confirmacion(
     comprobante: dict[str, Any],
     cuenta_deudores_codigo: str,
-    descripcion: str,
 ) -> list[dict[str, Any]]:
     es_nota_credito = comprobante["tipo_comprobante"] == "NOTA_CREDITO"
     total_centavos = int(comprobante["total_centavos"])
@@ -846,7 +899,7 @@ def _armar_detalles_asiento_confirmacion(
     detalles_asiento.append(
         _crear_renglon_asiento_confirmacion(
             cuenta_deudores_codigo,
-            descripcion,
+            _descripcion_linea_deudores_confirmacion(comprobante),
             debe_centavos=0 if es_nota_credito else total_centavos,
             haber_centavos=total_centavos if es_nota_credito else 0,
         )
@@ -862,7 +915,7 @@ def _armar_detalles_asiento_confirmacion(
         detalles_asiento.append(
             _crear_renglon_asiento_confirmacion(
                 cuenta_ingreso_codigo,
-                str(detalle["descripcion"]),
+                _descripcion_linea_resultado_confirmacion(comprobante, detalle),
                 debe_centavos=importe_linea if es_nota_credito else 0,
                 haber_centavos=0 if es_nota_credito else importe_linea,
             )

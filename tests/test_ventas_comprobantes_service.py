@@ -729,8 +729,10 @@ def test_confirmar_comprobante_venta_factura_genera_asiento_y_cuenta_corriente()
     assert comprobante_confirmado["asiento_id"] == asiento["id"]
     assert asiento["estado"] == "CONFIRMADO"
     assert asiento["tipo"] == "VENTA"
+    assert asiento["descripcion"] == "Venta FC C 0001-00000025 - Cliente Venta"
     assert movimiento["estado"] == "CONFIRMADO"
     assert movimiento["tipo_movimiento"] == "FACTURA"
+    assert movimiento["descripcion"] == "FC C 0001-00000025"
     assert movimiento["debe_centavos"] == 100000
     assert movimiento["haber_centavos"] == 0
     assert movimiento["origen_tipo"] == "VENTA_COMPROBANTE"
@@ -739,9 +741,11 @@ def test_confirmar_comprobante_venta_factura_genera_asiento_y_cuenta_corriente()
 
     detalles_asiento = asiento["detalles"]
     assert detalles_asiento[0]["cuenta_contable_codigo"] == cuenta_deudores
+    assert detalles_asiento[0]["descripcion"] == "FC C 0001-00000025 - Cliente Venta"
     assert detalles_asiento[0]["debe_centavos"] == 100000
     assert detalles_asiento[0]["haber_centavos"] == 0
     assert detalles_asiento[1]["cuenta_contable_codigo"] == cuenta_ingreso
+    assert detalles_asiento[1]["descripcion"] == "FC C 0001-00000025 - Sesion - Cliente Venta"
     assert detalles_asiento[1]["debe_centavos"] == 0
     assert detalles_asiento[1]["haber_centavos"] == 100000
 
@@ -1026,6 +1030,59 @@ def test_asociar_comprobante_venta_a_factura_vincula_nd_con_fc_confirmada():
     assert asociacion["comprobante_numero_formateado"].startswith("ND C ")
     assert asociacion["comprobante_asociado_numero_formateado"].startswith("FC C ")
     assert asociacion_leida["id"] == asociacion["id"]
+
+
+def test_confirmar_nota_debito_asociada_describe_asiento_y_movimiento_con_fc():
+    """Contrato: ND asociada describe cabecera, lineas y cuenta corriente con la FC modificada."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.990",
+            "Ingresos por servicios descripciones",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        fc = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=1),
+            [_detalle(articulo_id)],
+        )
+        fc_confirmada = confirmar_comprobante_venta(fc["id"])["comprobante"]
+
+        nd = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id, numero=1),
+                "tipo_comprobante": "NOTA_DEBITO",
+            },
+            [_detalle(articulo_id)],
+        )
+        asociar_comprobante_venta_a_factura(nd["id"], fc_confirmada["id"])
+
+        resultado = confirmar_comprobante_venta(nd["id"])
+
+    asiento = resultado["asiento"]
+    movimiento = resultado["movimiento_cuenta_corriente"]
+    detalles_asiento = asiento["detalles"]
+
+    assert asiento["descripcion"] == (
+        "Venta ND C 0001-00000001 modifica FC C 0001-00000001 - Cliente Venta"
+    )
+    assert movimiento["descripcion"] == (
+        "ND C 0001-00000001 modifica FC C 0001-00000001"
+    )
+    assert detalles_asiento[0]["descripcion"] == (
+        "ND C 0001-00000001 modifica FC C 0001-00000001 - Cliente Venta"
+    )
+    assert detalles_asiento[1]["descripcion"] == (
+        "ND C 0001-00000001 modifica FC C 0001-00000001 - Sesion - Cliente Venta"
+    )
 
 
 def test_asociar_comprobante_venta_a_factura_rechaza_factura_como_modificadora():
