@@ -320,3 +320,26 @@ def test_pantalla_mayor_por_cuenta_filtros_usan_contrato_ui():
     assert "form-control-sm" not in html
     assert "form-select-sm" not in html
     assert "btn-sm" not in html
+
+
+
+def test_pantalla_mayor_por_cuenta_estado_usa_ns_select():
+    """Valida que el filtro Estado use NeriSoft Select, no solo placeholder."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_datos_mayor_cuenta(db)
+
+        response = client.get("/contabilidad/libros/mayor-cuenta/")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+
+    assert re.search(
+        r'id="lmc-estado"[\s\S]*?data-ns-select[\s\S]*?name="estado"',
+        html,
+    ) is not None
+    assert 'data-ns-select-placeholder="Seleccionar estado"' in html
