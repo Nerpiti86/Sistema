@@ -425,6 +425,87 @@
         }
     };
 
+    const parsearFechaFormulario = (valor) => {
+        const fechaNormalizada = String(valor || "").trim();
+
+        if (!fechaNormalizada) {
+            return null;
+        }
+
+        const argentina = fechaNormalizada.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (argentina) {
+            const dia = Number.parseInt(argentina[1], 10);
+            const mes = Number.parseInt(argentina[2], 10);
+            const anio = Number.parseInt(argentina[3], 10);
+            const fecha = new Date(anio, mes - 1, dia);
+
+            if (
+                fecha.getFullYear() === anio &&
+                fecha.getMonth() === mes - 1 &&
+                fecha.getDate() === dia
+            ) {
+                return fecha;
+            }
+
+            return null;
+        }
+
+        const iso = fechaNormalizada.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (iso) {
+            const anio = Number.parseInt(iso[1], 10);
+            const mes = Number.parseInt(iso[2], 10);
+            const dia = Number.parseInt(iso[3], 10);
+            const fecha = new Date(anio, mes - 1, dia);
+
+            if (
+                fecha.getFullYear() === anio &&
+                fecha.getMonth() === mes - 1 &&
+                fecha.getDate() === dia
+            ) {
+                return fecha;
+            }
+        }
+
+        return null;
+    };
+
+    const formatearFechaArgentina = (fecha) => {
+        const dia = String(fecha.getDate()).padStart(2, "0");
+        const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+        const anio = String(fecha.getFullYear());
+
+        return `${dia}/${mes}/${anio}`;
+    };
+
+    const sumarDias = (fecha, dias) => {
+        const resultado = new Date(
+            fecha.getFullYear(),
+            fecha.getMonth(),
+            fecha.getDate()
+        );
+        resultado.setDate(resultado.getDate() + dias);
+
+        return resultado;
+    };
+
+    const sincronizarVencimientoPorFecha = () => {
+        const fecha = document.getElementById("vc-fecha-form");
+        const vencimiento = document.getElementById("vc-fecha-vencimiento-form");
+
+        if (!fecha || !vencimiento) {
+            return;
+        }
+
+        const fechaComprobante = parsearFechaFormulario(fecha.value);
+
+        if (!fechaComprobante) {
+            return;
+        }
+
+        vencimiento.value = formatearFechaArgentina(sumarDias(fechaComprobante, 30));
+        vencimiento.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+
     const obtenerElementoAsociacion = () => ({
         cliente: document.getElementById("vc-cliente"),
         tipoComprobante: document.getElementById("vc-tipo-comprobante"),
@@ -662,6 +743,13 @@
 
         const cliente = document.getElementById("vc-cliente");
         const tipoComprobante = document.getElementById("vc-tipo-comprobante");
+        const fecha = document.getElementById("vc-fecha-form");
+
+        if (fecha) {
+            fecha.addEventListener("input", sincronizarVencimientoPorFecha);
+            fecha.addEventListener("change", sincronizarVencimientoPorFecha);
+            fecha.addEventListener("blur", sincronizarVencimientoPorFecha);
+        }
 
         if (cliente) {
             cliente.addEventListener("change", sincronizarSelectorComprobanteAsociado);

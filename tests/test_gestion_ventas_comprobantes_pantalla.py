@@ -384,6 +384,23 @@ def test_js_ventas_comprobantes_actualiza_cabecera_por_tipo():
     assert "opcion.dataset.monedaCodigo" in contenido
     assert "sincronizarCabeceraPorTipoComprobante();" in contenido
 
+
+def test_js_ventas_comprobantes_actualiza_vencimiento_al_cambiar_fecha():
+    """
+    Contrato: al cambiar fecha, el vencimiento se recalcula como fecha + 30 dias.
+    """
+    contenido = Path("app/static/js/ventas_comprobantes_form.js").read_text(encoding="utf-8")
+
+    assert "sincronizarVencimientoPorFecha" in contenido
+    assert "parsearFechaFormulario" in contenido
+    assert "formatearFechaArgentina" in contenido
+    assert "sumarDias(fechaComprobante, 30)" in contenido
+    assert 'document.getElementById("vc-fecha-form")' in contenido
+    assert 'document.getElementById("vc-fecha-vencimiento-form")' in contenido
+    assert 'fecha.addEventListener("input", sincronizarVencimientoPorFecha)' in contenido
+    assert 'fecha.addEventListener("change", sincronizarVencimientoPorFecha)' in contenido
+    assert 'fecha.addEventListener("blur", sincronizarVencimientoPorFecha)' in contenido
+
 def test_formulario_nuevo_comprobante_venta_responde_ok():
     """Valida pantalla de alta minima de comprobante de venta."""
     app = create_app(TestConfig)
