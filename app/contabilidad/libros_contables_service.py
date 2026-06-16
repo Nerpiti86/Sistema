@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.contabilidad.cuentas_contables_repository import (
+    listar_cuentas_contables,
     obtener_cuenta_contable_por_cuenta,
 )
 from app.contabilidad.ejercicios_contables_repository import (
@@ -440,3 +441,131 @@ def _normalizar_texto_obligatorio(valor: Any, mensaje_error: str) -> str:
         raise ValueError(mensaje_error)
 
     return valor_normalizado
+
+
+def obtener_contexto_pantalla_mayor_por_cuenta(
+    filtros: Any | None = None,
+) -> dict[str, Any]:
+    """
+    Devuelve contexto de pantalla para Libro Mayor por Cuenta.
+
+    Permite abrir la pantalla sin cuenta seleccionada y cargar el reporte al
+    aplicar filtros.
+    """
+    filtros_dict = dict(filtros or {})
+    ejercicio_id_filtro = _normalizar_entero_positivo_opcional(
+        filtros_dict.get("ejercicio_id")
+    )
+
+    if ejercicio_id_filtro is None:
+        ejercicio = obtener_ejercicio_contable_activo()
+    else:
+        ejercicio = obtener_ejercicio_contable_por_id(ejercicio_id_filtro)
+        if ejercicio is None:
+            raise ValueError("No existe el ejercicio contable seleccionado.")
+
+    fecha_desde = (
+        _normalizar_texto_opcional(filtros_dict.get("fecha_desde"))
+        or ejercicio["fecha_desde"]
+    )
+    fecha_hasta = (
+        _normalizar_texto_opcional(filtros_dict.get("fecha_hasta"))
+        or ejercicio["fecha_hasta"]
+    )
+    estado = _normalizar_estado_pantalla(filtros_dict.get("estado"))
+    cuenta_codigo = _normalizar_texto_opcional(
+        filtros_dict.get("cuenta_contable_codigo")
+    )
+
+    cuentas_selector = [
+        _preparar_cuenta_contable_para_selector_mayor(cuenta)
+        for cuenta in listar_cuentas_contables()
+        if int(cuenta["imputable"]) == 1
+    ]
+
+    if cuenta_codigo is None:
+        return _contexto_mayor_cuenta_vacio(
+            ejercicio,
+            cuentas_selector,
+            fecha_desde,
+            fecha_hasta,
+            estado,
+            "Seleccione una cuenta contable para emitir el mayor.",
+        )
+
+    contexto = obtener_contexto_mayor_por_cuenta(
+        ejercicio["id"],
+        cuenta_codigo,
+        fecha_desde,
+        fecha_hasta,
+        estado,
+    )
+    contexto["ejercicio_contable"] = _preparar_ejercicio_para_pantalla_libro_diario(
+        ejercicio
+    )
+    contexto["cuentas_contables_mayor"] = cuentas_selector
+    contexto["estados_mayor_cuenta"] = list(_ESTADOS_PANTALLA_LIBRO_DIARIO)
+    contexto["filtros"] = {
+        "ejercicio_id": str(ejercicio["id"]),
+        "cuenta_contable_codigo": cuenta_codigo,
+        "fecha_desde": fecha_desde,
+        "fecha_hasta": fecha_hasta,
+        "estado": estado,
+    }
+    contexto["mensaje_contexto_mayor"] = (
+        "" if contexto["mayor_movimientos"] else "No hay movimientos para la cuenta seleccionada."
+    )
+
+    return contexto
+
+
+def _contexto_mayor_cuenta_vacio(
+    ejercicio: dict[str, Any],
+    cuentas_selector: list[dict[str, Any]],
+    fecha_desde: str,
+    fecha_hasta: str,
+    estado: str,
+    mensaje: str,
+) -> dict[str, Any]:
+    return {
+        "ejercicio_contable": _preparar_ejercicio_para_pantalla_libro_diario(
+            ejercicio
+        ),
+        "cuentas_contables_mayor": cuentas_selector,
+        "estados_mayor_cuenta": list(_ESTADOS_PANTALLA_LIBRO_DIARIO),
+        "filtros": {
+            "ejercicio_id": str(ejercicio["id"]),
+            "cuenta_contable_codigo": "",
+            "fecha_desde": fecha_desde,
+            "fecha_hasta": fecha_hasta,
+            "estado": estado,
+        },
+        "cuenta_contable": None,
+        "mayor_movimientos": [],
+        "cantidad_movimientos": 0,
+        "saldo_inicial_debe_centavos": 0,
+        "saldo_inicial_haber_centavos": 0,
+        "saldo_inicial_centavos": 0,
+        "total_debe_periodo_centavos": 0,
+        "total_haber_periodo_centavos": 0,
+        "saldo_periodo_centavos": 0,
+        "saldo_final_centavos": 0,
+        "saldo_inicial_argentina": _formatear_centavos(0),
+        "total_debe_periodo_argentina": _formatear_centavos(0),
+        "total_haber_periodo_argentina": _formatear_centavos(0),
+        "saldo_periodo_argentina": _formatear_centavos(0),
+        "saldo_final_argentina": _formatear_centavos(0),
+        "mensaje_contexto_mayor": mensaje,
+    }
+
+
+def _preparar_cuenta_contable_para_selector_mayor(
+    cuenta: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "cuenta": cuenta["cuenta"],
+        "descripcion": cuenta["descripcion"],
+        "label": f"{cuenta['cuenta']} - {cuenta['descripcion']}",
+        "saldo_habitual": cuenta["saldo_habitual"],
+        "naturaleza": cuenta["naturaleza"],
+    }

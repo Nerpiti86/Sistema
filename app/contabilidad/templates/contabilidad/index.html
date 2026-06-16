@@ -44,6 +44,13 @@
                 >
                     {{ secondary_link("Libro diario", url_for("contabilidad.ver_libro_diario")) }}
                 </span>
+                <span
+                    id="lmc-acceso"
+                    data-table="asientos_contables_detalle"
+                    data-action="ver_mayor_por_cuenta"
+                >
+                    {{ secondary_link("Libro mayor por cuenta", url_for("contabilidad.ver_mayor_por_cuenta")) }}
+                </span>
                 {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
             </div>
         {% endcall %}

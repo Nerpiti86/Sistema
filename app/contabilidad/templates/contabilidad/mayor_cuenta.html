@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section
+    id="lmc-listado"
+    data-table="asientos_contables_detalle"
+    data-query="obtener_contexto_pantalla_mayor_por_cuenta"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="lmc-titulo" class="h3 mb-1">
+                    Libro mayor por cuenta
+                </h1>
+                <p id="lmc-descripcion" class="text-muted mb-0">
+                    Movimientos de una cuenta contable con saldo inicial, saldo acumulado y saldo final.
+                </p>
+            </div>
+            <div id="lmc-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver a contabilidad", url_for("contabilidad.index")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="lmc-filtros"
+            data-table="asientos_contables_detalle"
+            data-query="obtener_contexto_pantalla_mayor_por_cuenta"
+        >
+            {% call card("Filtros", "Libro mayor por cuenta") %}
+                <form
+                    id="lmc-form-filtros"
+                    method="get"
+                    action="{{ url_for('contabilidad.ver_mayor_por_cuenta') }}"
+                    class="row g-3 align-items-end mb-0"
+                >
+                    <input
+                        id="lmc-ejercicio-id"
+                        type="hidden"
+                        name="ejercicio_id"
+                        value="{{ filtros.ejercicio_id }}"
+                    >
+
+                    <div class="col-12 col-lg-4">
+                        <label for="lmc-cuenta" class="form-label">Cuenta contable</label>
+                        <select
+                            id="lmc-cuenta"
+                            data-table="cuentas_contables"
+                            data-field="cuenta_contable_codigo"
+                            name="cuenta_contable_codigo"
+                            class="form-select"
+                        >
+                            <option value="">Seleccionar cuenta...</option>
+                            {% for cuenta_selector in cuentas_contables_mayor %}
+                                <option
+                                    value="{{ cuenta_selector.cuenta }}"
+                                    {% if filtros.cuenta_contable_codigo == cuenta_selector.cuenta %}selected{% endif %}
+                                >
+                                    {{ cuenta_selector.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <label for="lmc-fecha-desde" class="form-label">Desde</label>
+                        <input
+                            id="lmc-fecha-desde"
+                            data-field="fecha_desde"
+                            type="date"
+                            name="fecha_desde"
+                            value="{{ filtros.fecha_desde }}"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <label for="lmc-fecha-hasta" class="form-label">Hasta</label>
+                        <input
+                            id="lmc-fecha-hasta"
+                            data-field="fecha_hasta"
+                            type="date"
+                            name="fecha_hasta"
+                            value="{{ filtros.fecha_hasta }}"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-3 col-lg-2">
+                        <label for="lmc-estado" class="form-label">Estado</label>
+                        <select
+                            id="lmc-estado"
+                            data-field="estado"
+                            name="estado"
+                            class="form-select"
+                        >
+                            {% for estado_mayor in estados_mayor_cuenta %}
+                                <option
+                                    value="{{ estado_mayor.codigo }}"
+                                    {% if filtros.estado == estado_mayor.codigo %}selected{% endif %}
+                                >
+                                    {{ estado_mayor.descripcion }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-3 col-lg-2 text-md-end">
+                        <button
+                            id="lmc-aplicar-filtros"
+                            data-action="ver_mayor_por_cuenta"
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Aplicar filtros
+                        </button>
+                    </div>
+                </form>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="lmc-resumen"
+            data-table="asientos_contables_detalle"
+            data-query="obtener_contexto_pantalla_mayor_por_cuenta"
+        >
+            {% call card("Resumen", "Saldos de la cuenta") %}
+                {% if mensaje_contexto_mayor %}
+                    <p
+                        id="lmc-mensaje-contexto"
+                        data-field="mensaje_contexto_mayor"
+                        class="text-muted mb-3"
+                    >
+                        {{ mensaje_contexto_mayor }}
+                    </p>
+                {% endif %}
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Ejercicio</dt>
+                    <dd
+                        id="lmc-ejercicio"
+                        data-table="ejercicios_contables"
+                        data-field="ejercicio_id"
+                        class="col-sm-9"
+                    >
+                        {{ ejercicio_contable.codigo }}
+                        - {{ ejercicio_contable.nombre }}
+                        ({{ ejercicio_contable.fecha_desde_argentina }}
+                        a {{ ejercicio_contable.fecha_hasta_argentina }})
+                    </dd>
+
+                    <dt class="col-sm-3">Cuenta</dt>
+                    <dd
+                        id="lmc-cuenta-resumen"
+                        data-table="cuentas_contables"
+                        data-field="cuenta"
+                        class="col-sm-9"
+                    >
+                        {% if cuenta_contable %}
+                            {{ cuenta_contable.cuenta }}
+                            - {{ cuenta_contable.descripcion }}
+                            · Saldo habitual {{ cuenta_contable.saldo_habitual }}
+                        {% else %}
+                            Sin cuenta seleccionada
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-3">Cantidad de movimientos</dt>
+                    <dd
+                        id="lmc-cantidad-movimientos"
+                        data-field="cantidad_movimientos"
+                        class="col-sm-9"
+                    >
+                        {{ cantidad_movimientos }}
+                    </dd>
+
+                    <dt class="col-sm-3">Saldo inicial</dt>
+                    <dd
+                        id="lmc-saldo-inicial"
+                        data-field="saldo_inicial_centavos"
+                        class="col-sm-9 text-end fw-semibold"
+                    >
+                        {{ saldo_inicial_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Debe período</dt>
+                    <dd
+                        id="lmc-total-debe"
+                        data-field="total_debe_periodo_centavos"
+                        class="col-sm-9 text-end fw-semibold"
+                    >
+                        {{ total_debe_periodo_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Haber período</dt>
+                    <dd
+                        id="lmc-total-haber"
+                        data-field="total_haber_periodo_centavos"
+                        class="col-sm-9 text-end fw-semibold"
+                    >
+                        {{ total_haber_periodo_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Saldo período</dt>
+                    <dd
+                        id="lmc-saldo-periodo"
+                        data-field="saldo_periodo_centavos"
+                        class="col-sm-9 text-end fw-semibold"
+                    >
+                        {{ saldo_periodo_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Saldo final</dt>
+                    <dd
+                        id="lmc-saldo-final"
+                        data-field="saldo_final_centavos"
+                        class="col-sm-9 text-end fw-semibold mb-0"
+                    >
+                        {{ saldo_final_argentina }}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="lmc-movimientos"
+            data-table="asientos_contables_detalle"
+            data-query="obtener_contexto_mayor_por_cuenta"
+        >
+            {% call card("Movimientos", "Mayor de la cuenta") %}
+                <div class="table-responsive">
+                    <table
+                        id="lmc-tabla"
+                        data-table="asientos_contables_detalle"
+                        data-query="obtener_contexto_mayor_por_cuenta"
+                        class="table table-sm align-middle mb-0"
+                    >
+                        <thead>
+                            <tr>
+                                <th data-field="fecha">Fecha</th>
+                                <th data-field="numero_asiento">Asiento</th>
+                                <th data-field="comprobante">Comprobante</th>
+                                <th data-field="sujeto">Sujeto</th>
+                                <th data-field="descripcion">Descripción</th>
+                                <th data-field="debe_centavos" class="text-end">Debe</th>
+                                <th data-field="haber_centavos" class="text-end">Haber</th>
+                                <th data-field="saldo_acumulado_centavos" class="text-end">Saldo acumulado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lmc-tbody">
+                            {% for movimiento in mayor_movimientos %}
+                                <tr
+                                    id="lmc-row-{{ movimiento.detalle_id }}"
+                                    data-table="asientos_contables_detalle"
+                                    data-row-id="{{ movimiento.detalle_id }}"
+                                >
+                                    <td data-field="fecha">
+                                        {{ movimiento.fecha_argentina }}
+                                    </td>
+                                    <td data-field="numero_asiento">
+                                        {{ movimiento.numero_asiento_mostrar }}
+                                    </td>
+                                    <td data-field="comprobante">
+                                        {{ movimiento.comprobante }}
+                                    </td>
+                                    <td data-field="sujeto">
+                                        {{ movimiento.sujeto }}
+                                    </td>
+                                    <td data-field="descripcion">
+                                        {{ movimiento.descripcion }}
+                                    </td>
+                                    <td data-field="debe_centavos" class="text-end">
+                                        {{ movimiento.debe_argentina }}
+                                    </td>
+                                    <td data-field="haber_centavos" class="text-end">
+                                        {{ movimiento.haber_argentina }}
+                                    </td>
+                                    <td data-field="saldo_acumulado_centavos" class="text-end fw-semibold">
+                                        {{ movimiento.saldo_acumulado_argentina }}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr
+                                    id="lmc-row-sin-datos"
+                                    data-table="asientos_contables_detalle"
+                                    data-query="obtener_contexto_mayor_por_cuenta"
+                                >
+                                    <td
+                                        id="lmc-mensaje-sin-datos"
+                                        colspan="8"
+                                        class="text-center text-muted py-4"
+                                    >
+                                        No hay movimientos para el Mayor por Cuenta.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}
