@@ -57,7 +57,7 @@
                             placeholder="DD/MM/AAAA"
                             name="fecha_desde"
                             value="{{ filtros.fecha_desde_argentina }}"
-                            class="form-control form-control-sm"
+                            class="form-control"
                         >
                     </div>
 
@@ -73,7 +73,7 @@
                             placeholder="DD/MM/AAAA"
                             name="fecha_hasta"
                             value="{{ filtros.fecha_hasta_argentina }}"
-                            class="form-control form-control-sm"
+                            class="form-control"
                         >
                     </div>
 
@@ -85,7 +85,7 @@
                                                         data-ns-select
                             data-ns-select-placeholder="Seleccionar estado"
                             name="estado"
-                            class="form-select form-select-sm"
+                            class="form-select"
                         >
                             {% for estado_libro in estados_libro_diario %}
                                 <option
@@ -103,7 +103,7 @@
                             id="ld-aplicar-filtros"
                             data-action="ver_libro_diario"
                             type="submit"
-                            class="btn btn-primary btn-sm"
+                            class="btn btn-primary"
                         >
                             Aplicar filtros
                         </button>

@@ -260,7 +260,44 @@ def test_pantalla_libro_diario_ui_ux_sin_repeticiones_y_totales_destacados():
     assert 'data-ui-control="select"' not in html
     assert 'type="date"' not in html
 
-    assert "form-control form-control-sm" in html
-    assert "form-select form-select-sm" in html
-    assert "btn btn-primary btn-sm" in html
+    assert 'class="form-control"' in html
+    assert "form-control-sm" not in html
+    assert 'class="form-select"' in html
+    assert "form-select-sm" not in html
+    assert 'class="btn btn-primary"' in html
+    assert "btn-sm" not in html
     assert "table-light border-top border-2" in html
+
+
+
+def test_pantalla_libro_diario_filtros_usan_tamano_normal_de_contrato():
+    """
+    Valida que los filtros del Libro Diario usen tamaño normal de la app.
+
+    El contrato visual del calendario/select no debe depender de variantes sm.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _insertar_ejercicio_libro_diario(db)
+
+        response = client.get("/contabilidad/libros/diario/")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+
+    assert 'id="ld-fecha-desde"' in html
+    assert 'id="ld-fecha-hasta"' in html
+    assert 'id="ld-estado"' in html
+    assert 'id="ld-aplicar-filtros"' in html
+
+    assert 'class="form-control"' in html
+    assert 'class="form-select"' in html
+    assert 'class="btn btn-primary"' in html
+
+    assert "form-control-sm" not in html
+    assert "form-select-sm" not in html
+    assert "btn-sm" not in html
