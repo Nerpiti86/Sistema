@@ -1,0 +1,169 @@
+from typing import Any
+
+from app.contabilidad.libros_contables_repository import (
+    listar_movimientos_libro_diario,
+)
+from app.shared.formatos import (
+    formatear_entero_escala_a_decimal_argentino,
+    formatear_fecha_iso_a_argentina,
+)
+
+_PREFIJO_COMPROBANTE = "Comprobante:"
+_PREFIJO_SUJETO = "Sujeto:"
+
+
+def obtener_contexto_libro_diario(
+    ejercicio_id: Any,
+    fecha_desde: Any = None,
+    fecha_hasta: Any = None,
+    estado: Any = "CONFIRMADO",
+) -> dict[str, Any]:
+    """
+    Devuelve el Libro Diario agrupado por asiento.
+
+    El service no ejecuta SQL. Toma movimientos planos del repository y prepara
+    datos de lectura: comprobante, sujeto, renglones, totales por asiento y
+    totales generales.
+    """
+    movimientos = listar_movimientos_libro_diario(
+        ejercicio_id,
+        fecha_desde,
+        fecha_hasta,
+        estado,
+    )
+    asientos = _agrupar_movimientos_por_asiento(movimientos)
+    total_debe_centavos = sum(asiento["total_debe_centavos"] for asiento in asientos)
+    total_haber_centavos = sum(asiento["total_haber_centavos"] for asiento in asientos)
+    diferencia_centavos = total_debe_centavos - total_haber_centavos
+
+    return {
+        "filtros": {
+            "ejercicio_id": ejercicio_id,
+            "fecha_desde": fecha_desde,
+            "fecha_hasta": fecha_hasta,
+            "estado": estado,
+        },
+        "libro_diario_asientos": asientos,
+        "cantidad_asientos": len(asientos),
+        "total_debe_centavos": total_debe_centavos,
+        "total_haber_centavos": total_haber_centavos,
+        "diferencia_centavos": diferencia_centavos,
+        "total_debe_argentina": _formatear_centavos(total_debe_centavos),
+        "total_haber_argentina": _formatear_centavos(total_haber_centavos),
+        "diferencia_argentina": _formatear_centavos(diferencia_centavos),
+    }
+
+
+def _agrupar_movimientos_por_asiento(
+    movimientos: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    asientos_por_id: dict[int, dict[str, Any]] = {}
+    asientos: list[dict[str, Any]] = []
+
+    for movimiento in movimientos:
+        asiento_id = int(movimiento["asiento_id"])
+
+        if asiento_id not in asientos_por_id:
+            comprobante, sujeto = _extraer_comprobante_y_sujeto(
+                movimiento.get("asiento_descripcion")
+            )
+            asiento = {
+                "asiento_id": asiento_id,
+                "ejercicio_id": int(movimiento["ejercicio_id"]),
+                "ejercicio_codigo": movimiento.get("ejercicio_codigo"),
+                "numero_asiento": movimiento.get("numero_asiento"),
+                "numero_asiento_mostrar": _formatear_numero_asiento(
+                    movimiento.get("ejercicio_codigo"),
+                    movimiento.get("numero_asiento"),
+                ),
+                "fecha": movimiento.get("fecha"),
+                "fecha_argentina": _formatear_fecha(movimiento.get("fecha")),
+                "estado": movimiento.get("estado"),
+                "tipo": movimiento.get("tipo"),
+                "descripcion": movimiento.get("asiento_descripcion") or "",
+                "comprobante": comprobante,
+                "sujeto": sujeto,
+                "renglones": [],
+                "total_debe_centavos": 0,
+                "total_haber_centavos": 0,
+                "diferencia_centavos": 0,
+                "total_debe_argentina": "0,00",
+                "total_haber_argentina": "0,00",
+                "diferencia_argentina": "0,00",
+            }
+            asientos_por_id[asiento_id] = asiento
+            asientos.append(asiento)
+
+        asiento = asientos_por_id[asiento_id]
+        debe_centavos = int(movimiento["debe_centavos"])
+        haber_centavos = int(movimiento["haber_centavos"])
+
+        asiento["renglones"].append(
+            {
+                "detalle_id": int(movimiento["detalle_id"]),
+                "renglon": int(movimiento["renglon"]),
+                "cuenta": movimiento.get("cuenta_contable_codigo"),
+                "cuenta_nombre": movimiento.get("cuenta_nombre"),
+                "descripcion": movimiento.get("detalle_descripcion") or "",
+                "debe_centavos": debe_centavos,
+                "haber_centavos": haber_centavos,
+                "debe_argentina": _formatear_centavos(debe_centavos),
+                "haber_argentina": _formatear_centavos(haber_centavos),
+            }
+        )
+        asiento["total_debe_centavos"] += debe_centavos
+        asiento["total_haber_centavos"] += haber_centavos
+        asiento["diferencia_centavos"] = (
+            asiento["total_debe_centavos"] - asiento["total_haber_centavos"]
+        )
+        asiento["total_debe_argentina"] = _formatear_centavos(
+            asiento["total_debe_centavos"]
+        )
+        asiento["total_haber_argentina"] = _formatear_centavos(
+            asiento["total_haber_centavos"]
+        )
+        asiento["diferencia_argentina"] = _formatear_centavos(
+            asiento["diferencia_centavos"]
+        )
+
+    return asientos
+
+
+def _extraer_comprobante_y_sujeto(descripcion: Any) -> tuple[str, str]:
+    texto = str(descripcion or "").strip()
+    comprobante = ""
+    sujeto = ""
+
+    for parte in texto.split("|"):
+        parte_normalizada = parte.strip()
+
+        if parte_normalizada.startswith(_PREFIJO_COMPROBANTE):
+            comprobante = parte_normalizada[len(_PREFIJO_COMPROBANTE) :].strip()
+            continue
+
+        if parte_normalizada.startswith(_PREFIJO_SUJETO):
+            sujeto = parte_normalizada[len(_PREFIJO_SUJETO) :].strip()
+
+    return comprobante, sujeto
+
+
+def _formatear_numero_asiento(ejercicio_codigo: Any, numero_asiento: Any) -> str:
+    if numero_asiento is None:
+        return "Borrador"
+
+    codigo = str(ejercicio_codigo or "").strip().upper()
+    prefijo = codigo if codigo.startswith("EJ") else f"EJ{codigo}"
+    return f"{prefijo}-{int(numero_asiento):07d}"
+
+
+def _formatear_fecha(fecha: Any) -> str:
+    fecha_normalizada = str(fecha or "").strip()
+
+    if not fecha_normalizada:
+        return ""
+
+    return formatear_fecha_iso_a_argentina(fecha_normalizada)
+
+
+def _formatear_centavos(valor: Any) -> str:
+    return formatear_entero_escala_a_decimal_argentino(int(valor or 0), 2)
