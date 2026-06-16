@@ -1,11 +1,16 @@
 from typing import Any
 
+from app.contabilidad.cuentas_contables_repository import (
+    obtener_cuenta_contable_por_cuenta,
+)
 from app.contabilidad.ejercicios_contables_repository import (
     obtener_ejercicio_contable_activo,
     obtener_ejercicio_contable_por_id,
 )
 from app.contabilidad.libros_contables_repository import (
     listar_movimientos_libro_diario,
+    listar_movimientos_mayor_por_cuenta,
+    obtener_saldo_inicial_mayor_por_cuenta,
 )
 from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
@@ -277,3 +282,161 @@ def _normalizar_entero_positivo_opcional(valor: Any) -> int | None:
 def _normalizar_texto_opcional(valor: Any) -> str | None:
     valor_normalizado = str(valor or "").strip()
     return valor_normalizado or None
+
+
+def obtener_contexto_mayor_por_cuenta(
+    ejercicio_id: Any,
+    cuenta_contable_codigo: Any,
+    fecha_desde: Any = None,
+    fecha_hasta: Any = None,
+    estado: Any = "CONFIRMADO",
+) -> dict[str, Any]:
+    """
+    Devuelve el Libro Mayor de una cuenta.
+
+    Calcula saldo inicial, movimientos del periodo, saldo acumulado por renglon,
+    totales del periodo y saldo final.
+    """
+    cuenta_codigo = _normalizar_texto_obligatorio(
+        cuenta_contable_codigo,
+        "La cuenta contable es obligatoria.",
+    )
+    cuenta = obtener_cuenta_contable_por_cuenta(cuenta_codigo)
+
+    if cuenta is None:
+        raise ValueError("No existe la cuenta contable seleccionada.")
+
+    saldo_habitual = str(cuenta["saldo_habitual"]).strip().upper()
+    saldo_inicial_bruto = obtener_saldo_inicial_mayor_por_cuenta(
+        ejercicio_id,
+        cuenta_codigo,
+        fecha_desde,
+        estado,
+    )
+    saldo_inicial_centavos = _calcular_saldo_natural_centavos(
+        saldo_inicial_bruto["debe_centavos"],
+        saldo_inicial_bruto["haber_centavos"],
+        saldo_habitual,
+    )
+    movimientos = listar_movimientos_mayor_por_cuenta(
+        ejercicio_id,
+        cuenta_codigo,
+        fecha_desde,
+        fecha_hasta,
+        estado,
+    )
+
+    saldo_acumulado_centavos = saldo_inicial_centavos
+    movimientos_pantalla = []
+
+    total_debe_periodo_centavos = 0
+    total_haber_periodo_centavos = 0
+
+    for movimiento in movimientos:
+        debe_centavos = int(movimiento["debe_centavos"])
+        haber_centavos = int(movimiento["haber_centavos"])
+        comprobante, sujeto = _extraer_comprobante_y_sujeto(
+            movimiento.get("asiento_descripcion")
+        )
+
+        total_debe_periodo_centavos += debe_centavos
+        total_haber_periodo_centavos += haber_centavos
+        saldo_acumulado_centavos += _calcular_saldo_natural_centavos(
+            debe_centavos,
+            haber_centavos,
+            saldo_habitual,
+        )
+
+        movimientos_pantalla.append(
+            {
+                "detalle_id": int(movimiento["detalle_id"]),
+                "asiento_id": int(movimiento["asiento_id"]),
+                "renglon": int(movimiento["renglon"]),
+                "fecha": movimiento.get("fecha"),
+                "fecha_argentina": _formatear_fecha(movimiento.get("fecha")),
+                "numero_asiento": movimiento.get("numero_asiento"),
+                "numero_asiento_mostrar": _formatear_numero_asiento(
+                    movimiento.get("ejercicio_codigo"),
+                    movimiento.get("numero_asiento"),
+                ),
+                "comprobante": comprobante,
+                "sujeto": sujeto,
+                "descripcion": movimiento.get("detalle_descripcion") or "",
+                "debe_centavos": debe_centavos,
+                "haber_centavos": haber_centavos,
+                "debe_argentina": _formatear_centavos(debe_centavos),
+                "haber_argentina": _formatear_centavos(haber_centavos),
+                "saldo_acumulado_centavos": saldo_acumulado_centavos,
+                "saldo_acumulado_argentina": _formatear_centavos(
+                    saldo_acumulado_centavos
+                ),
+            }
+        )
+
+    saldo_periodo_centavos = _calcular_saldo_natural_centavos(
+        total_debe_periodo_centavos,
+        total_haber_periodo_centavos,
+        saldo_habitual,
+    )
+    saldo_final_centavos = saldo_inicial_centavos + saldo_periodo_centavos
+
+    return {
+        "filtros": {
+            "ejercicio_id": ejercicio_id,
+            "cuenta_contable_codigo": cuenta_codigo,
+            "fecha_desde": fecha_desde,
+            "fecha_hasta": fecha_hasta,
+            "estado": estado,
+        },
+        "cuenta_contable": {
+            "cuenta": cuenta["cuenta"],
+            "descripcion": cuenta["descripcion"],
+            "saldo_habitual": saldo_habitual,
+            "naturaleza": cuenta["naturaleza"],
+            "imputable": cuenta["imputable"],
+            "monetaria": cuenta["monetaria"],
+        },
+        "mayor_movimientos": movimientos_pantalla,
+        "cantidad_movimientos": len(movimientos_pantalla),
+        "saldo_inicial_debe_centavos": saldo_inicial_bruto["debe_centavos"],
+        "saldo_inicial_haber_centavos": saldo_inicial_bruto["haber_centavos"],
+        "saldo_inicial_centavos": saldo_inicial_centavos,
+        "total_debe_periodo_centavos": total_debe_periodo_centavos,
+        "total_haber_periodo_centavos": total_haber_periodo_centavos,
+        "saldo_periodo_centavos": saldo_periodo_centavos,
+        "saldo_final_centavos": saldo_final_centavos,
+        "saldo_inicial_argentina": _formatear_centavos(saldo_inicial_centavos),
+        "total_debe_periodo_argentina": _formatear_centavos(
+            total_debe_periodo_centavos
+        ),
+        "total_haber_periodo_argentina": _formatear_centavos(
+            total_haber_periodo_centavos
+        ),
+        "saldo_periodo_argentina": _formatear_centavos(saldo_periodo_centavos),
+        "saldo_final_argentina": _formatear_centavos(saldo_final_centavos),
+    }
+
+
+def _calcular_saldo_natural_centavos(
+    debe_centavos: int,
+    haber_centavos: int,
+    saldo_habitual: str,
+) -> int:
+    saldo_habitual_normalizado = str(saldo_habitual or "").strip().upper()
+
+    if saldo_habitual_normalizado == "DEBE":
+        return int(debe_centavos) - int(haber_centavos)
+
+    if saldo_habitual_normalizado == "HABER":
+        return int(haber_centavos) - int(debe_centavos)
+
+    raise ValueError("El saldo habitual de la cuenta contable es invalido.")
+
+
+def _normalizar_texto_obligatorio(valor: Any, mensaje_error: str) -> str:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        raise ValueError(mensaje_error)
+
+    return valor_normalizado
