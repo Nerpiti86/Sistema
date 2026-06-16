@@ -12,6 +12,8 @@
         "NOTA_DEBITO",
         "NOTA_CREDITO",
     ]);
+    const TIPOS_COMPROBANTE_NOTA_DEBITO = new Set(["012", "NOTA_DEBITO"]);
+    const TIPOS_COMPROBANTE_NOTA_CREDITO = new Set(["013", "NOTA_CREDITO"]);
 
     const SELECTORES = {
         formulario: "#vc-formulario",
@@ -402,12 +404,22 @@
         submit: document.getElementById("vc-submit"),
     });
 
-    const requiereComprobanteAsociado = () => {
+    const obtenerTipoComprobanteSeleccionado = () => {
         const { tipoComprobante } = obtenerElementoAsociacion();
-        const valorTipo = tipoComprobante ? tipoComprobante.value : "";
-
-        return TIPOS_COMPROBANTE_MODIFICADORES.has(valorTipo);
+        return tipoComprobante ? tipoComprobante.value : "";
     };
+
+    const esTipoNotaDebito = (valorTipo) => (
+        TIPOS_COMPROBANTE_NOTA_DEBITO.has(valorTipo)
+    );
+
+    const esTipoNotaCredito = (valorTipo) => (
+        TIPOS_COMPROBANTE_NOTA_CREDITO.has(valorTipo)
+    );
+
+    const requiereComprobanteAsociado = () => (
+        TIPOS_COMPROBANTE_MODIFICADORES.has(obtenerTipoComprobanteSeleccionado())
+    );
 
     const actualizarControlNeriSoftSelect = (select, deshabilitado) => {
         if (!select) {
@@ -442,8 +454,11 @@
             ayuda,
             submit,
         } = obtenerElementoAsociacion();
+        const tipoSeleccionado = obtenerTipoComprobanteSeleccionado();
         const requiereAsociacion = requiereComprobanteAsociado();
         const clienteId = cliente ? cliente.value : "";
+        const esNotaDebito = esTipoNotaDebito(tipoSeleccionado);
+        const esNotaCredito = esTipoNotaCredito(tipoSeleccionado);
 
         if (!contenedor || !select) {
             return;
@@ -463,9 +478,23 @@
 
             const perteneceAlCliente = Boolean(clienteId) &&
                 opcion.dataset.clienteId === clienteId;
-            opcion.disabled = !perteneceAlCliente;
+            const tipoAsociado = opcion.dataset.tipoComprobante || "";
+            const saldoDisponibleNc = Number.parseInt(
+                opcion.dataset.saldoDisponibleNcCentavos || "0",
+                10
+            );
+            const esFacturaAsociableNd = esNotaDebito &&
+                tipoAsociado === "FACTURA";
+            const esComprobanteAsociableNc = esNotaCredito &&
+                ["FACTURA", "NOTA_DEBITO"].includes(tipoAsociado) &&
+                Number.isFinite(saldoDisponibleNc) &&
+                saldoDisponibleNc > 0;
+            const opcionPermitida = esFacturaAsociableNd || esComprobanteAsociableNc;
+            const seleccionable = perteneceAlCliente && opcionPermitida;
 
-            if (perteneceAlCliente) {
+            opcion.disabled = !seleccionable;
+
+            if (seleccionable) {
                 cantidadOpcionesCliente += 1;
             }
         });
@@ -483,13 +512,17 @@
 
         if (ayuda) {
             if (!requiereAsociacion) {
-                ayuda.textContent = "FC no requiere comprobante asociado.";
+                ayuda.textContent = "La FC no requiere comprobante asociado.";
             } else if (!clienteId) {
-                ayuda.textContent = "Elegí un cliente para listar sus FC confirmadas.";
-            } else if (cantidadOpcionesCliente === 0) {
+                ayuda.textContent = "Elegí un cliente para listar comprobantes confirmados.";
+            } else if (cantidadOpcionesCliente === 0 && esNotaCredito) {
+                ayuda.textContent = "No hay FC o ND confirmadas con saldo disponible para NC.";
+            } else if (cantidadOpcionesCliente === 0 && esNotaDebito) {
                 ayuda.textContent = "No hay FC confirmadas para el cliente seleccionado.";
+            } else if (esNotaCredito) {
+                ayuda.textContent = "Elegí la FC o ND confirmada con saldo disponible para esta NC.";
             } else {
-                ayuda.textContent = "Elegí la FC confirmada que modifica esta ND/NC.";
+                ayuda.textContent = "Elegí la FC confirmada que modifica esta ND.";
             }
         }
 

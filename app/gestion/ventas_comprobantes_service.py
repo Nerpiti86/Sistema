@@ -36,6 +36,7 @@ from app.gestion.ventas_comprobantes_repository import (
     listar_ventas_comprobantes,
     marcar_venta_comprobante_confirmado,
     obtener_asociacion_comprobante_venta as obtener_asociacion_comprobante_venta_repository,
+    obtener_total_notas_credito_confirmadas_asociadas,
     obtener_venta_comprobante_por_id,
     obtener_proximo_numero_venta_comprobante,
 )
@@ -71,6 +72,10 @@ _UNIDAD_MEDIDA_DEFAULT = "7"
 _PUNTO_VENTA_DEFAULT = 1
 _TIPO_BONIFICACION_PORCENTAJE = "1"
 _TIPO_BONIFICACION_MONTO = "2"
+_TIPOS_ASOCIADOS_POR_TIPO_MODIFICADOR = {
+    "NOTA_DEBITO": {"FACTURA"},
+    "NOTA_CREDITO": {"FACTURA", "NOTA_DEBITO"},
+}
 
 
 def listar_comprobantes_venta() -> list[dict[str, Any]]:
@@ -99,38 +104,102 @@ def obtener_asociacion_comprobante_venta(
     return obtener_asociacion_comprobante_venta_repository(comprobante_id)
 
 
+def asociar_comprobante_venta_a_comprobante_modificado(
+    comprobante_id: Any,
+    comprobante_asociado_id: Any,
+) -> dict[str, Any]:
+    """
+    Vincula una ND/NC en BORRADOR con el comprobante confirmado que modifica.
+    """
+    comprobante = obtener_comprobante_venta(comprobante_id)
+    comprobante_asociado = obtener_comprobante_venta(comprobante_asociado_id)
+
+    _validar_comprobante_asociado_para_modificador(
+        comprobante,
+        comprobante_asociado,
+    )
+
+    return crear_asociacion_comprobante_venta_repository(
+        {
+            "comprobante_id": comprobante["id"],
+            "comprobante_asociado_id": comprobante_asociado["id"],
+            "tipo_relacion": "MODIFICA",
+        }
+    )
+
+
 def asociar_comprobante_venta_a_factura(
     comprobante_id: Any,
     factura_id: Any,
 ) -> dict[str, Any]:
     """
-    Vincula una ND/NC en BORRADOR con la FC confirmada que modifica.
+    Compatibilidad: vincula una ND/NC con el comprobante confirmado que modifica.
     """
-    comprobante = obtener_comprobante_venta(comprobante_id)
-    factura = obtener_comprobante_venta(factura_id)
+    return asociar_comprobante_venta_a_comprobante_modificado(
+        comprobante_id,
+        factura_id,
+    )
 
-    if comprobante["tipo_comprobante"] not in {"NOTA_DEBITO", "NOTA_CREDITO"}:
-        raise ValueError("Solo ND o NC pueden modificar una FC.")
+
+def _validar_comprobante_asociado_para_modificador(
+    comprobante: dict[str, Any],
+    comprobante_asociado: dict[str, Any],
+) -> None:
+    tipo_modificador = comprobante["tipo_comprobante"]
+
+    if tipo_modificador not in _TIPOS_ASOCIADOS_POR_TIPO_MODIFICADOR:
+        raise ValueError("Solo ND o NC pueden modificar otro comprobante.")
 
     if comprobante["estado"] != "BORRADOR":
         raise ValueError("La ND/NC debe estar en BORRADOR para asociarla.")
 
-    if factura["tipo_comprobante"] != "FACTURA":
-        raise ValueError("El comprobante asociado debe ser una FC.")
+    tipo_asociado = comprobante_asociado["tipo_comprobante"]
+    tipos_asociados_permitidos = _TIPOS_ASOCIADOS_POR_TIPO_MODIFICADOR[
+        tipo_modificador
+    ]
 
-    if factura["estado"] != "CONFIRMADO":
-        raise ValueError("La FC asociada debe estar CONFIRMADA.")
+    if tipo_asociado not in tipos_asociados_permitidos:
+        if tipo_modificador == "NOTA_DEBITO":
+            raise ValueError("La ND solo puede asociarse a una FC.")
+        raise ValueError("La NC solo puede asociarse a una FC o ND.")
 
-    if int(comprobante["cliente_id"]) != int(factura["cliente_id"]):
-        raise ValueError("La FC asociada debe pertenecer al mismo cliente.")
+    if comprobante_asociado["estado"] != "CONFIRMADO":
+        raise ValueError("El comprobante asociado debe estar CONFIRMADO.")
 
-    return crear_asociacion_comprobante_venta_repository(
-        {
-            "comprobante_id": comprobante["id"],
-            "comprobante_asociado_id": factura["id"],
-            "tipo_relacion": "MODIFICA",
-        }
+    if int(comprobante["cliente_id"]) != int(comprobante_asociado["cliente_id"]):
+        raise ValueError("El comprobante asociado debe pertenecer al mismo cliente.")
+
+    if tipo_modificador == "NOTA_CREDITO":
+        _validar_saldo_disponible_nota_credito(
+            comprobante,
+            comprobante_asociado,
+        )
+
+
+def _validar_saldo_disponible_nota_credito(
+    nota_credito: dict[str, Any],
+    comprobante_asociado: dict[str, Any],
+) -> None:
+    total_nota_credito = int(nota_credito["total_centavos"])
+    saldo_disponible = _calcular_saldo_disponible_nota_credito(
+        comprobante_asociado
     )
+
+    if saldo_disponible <= 0:
+        raise ValueError("El comprobante asociado no tiene saldo disponible para NC.")
+
+    if total_nota_credito > saldo_disponible:
+        raise ValueError("La NC supera el saldo disponible del comprobante asociado.")
+
+
+def _calcular_saldo_disponible_nota_credito(
+    comprobante_asociado: dict[str, Any],
+) -> int:
+    total_asociado = int(comprobante_asociado.get("total_centavos") or 0)
+    total_nc_confirmadas = obtener_total_notas_credito_confirmadas_asociadas(
+        comprobante_asociado["id"]
+    )
+    return total_asociado - total_nc_confirmadas
 
 
 def obtener_contexto_listado_comprobantes_venta() -> dict[str, Any]:
@@ -387,7 +456,7 @@ def obtener_contexto_formulario_comprobante_venta(
     ]
     unidades_medida = listar_catalogo_fiscal_activo("unidades_medida")
     tipos_bonificacion = listar_catalogo_fiscal_activo("tipos_bonificacion")
-    facturas_confirmadas_asociables = _listar_facturas_confirmadas_para_asociacion()
+    comprobantes_confirmados_asociables = _listar_comprobantes_confirmados_para_asociacion()
 
     return {
         "comprobante_form": formulario,
@@ -396,35 +465,46 @@ def obtener_contexto_formulario_comprobante_venta(
         "tipos_comprobante_venta": tipos_comprobante_venta,
         "unidades_medida": unidades_medida,
         "tipos_bonificacion": tipos_bonificacion,
-        "facturas_confirmadas_asociables": facturas_confirmadas_asociables,
+        "comprobantes_confirmados_asociables": comprobantes_confirmados_asociables,
+        "facturas_confirmadas_asociables": comprobantes_confirmados_asociables,
         "cantidad_clientes": len(clientes),
         "cantidad_articulos_venta": len(articulos_venta),
         "cantidad_unidades_medida": len(unidades_medida),
         "cantidad_tipos_bonificacion": len(tipos_bonificacion),
-        "cantidad_facturas_confirmadas_asociables": len(facturas_confirmadas_asociables),
+        "cantidad_comprobantes_confirmados_asociables": len(comprobantes_confirmados_asociables),
+        "cantidad_facturas_confirmadas_asociables": len(comprobantes_confirmados_asociables),
     }
 
 
-def _listar_facturas_confirmadas_para_asociacion() -> list[dict[str, Any]]:
-    """Devuelve FC confirmadas disponibles para asociar ND/NC desde pantalla."""
-    facturas = []
+def _listar_comprobantes_confirmados_para_asociacion() -> list[dict[str, Any]]:
+    """Devuelve FC/ND confirmadas disponibles para asociar desde pantalla."""
+    comprobantes_asociables = []
 
     for comprobante in listar_comprobantes_venta():
-        if comprobante.get("tipo_comprobante") != "FACTURA":
+        if comprobante.get("tipo_comprobante") not in {"FACTURA", "NOTA_DEBITO"}:
             continue
 
         if comprobante.get("estado") != "CONFIRMADO":
             continue
 
-        factura = _preparar_comprobante_venta_para_pantalla(comprobante)
-        factura["opcion_asociacion"] = (
-            f"{factura['numero_formateado']} - "
-            f"{factura['fecha_argentina']} - "
-            f"{factura['total_argentina']}"
+        comprobante_asociable = _preparar_comprobante_venta_para_pantalla(comprobante)
+        saldo_disponible_nc = max(
+            0,
+            _calcular_saldo_disponible_nota_credito(comprobante_asociable),
         )
-        facturas.append(factura)
+        comprobante_asociable["saldo_disponible_nc_centavos"] = saldo_disponible_nc
+        comprobante_asociable["saldo_disponible_nc_argentina"] = _formatear_centavos(
+            saldo_disponible_nc
+        )
+        comprobante_asociable["opcion_asociacion"] = (
+            f"{comprobante_asociable['numero_formateado']} - "
+            f"{comprobante_asociable['fecha_argentina']} - "
+            f"Total {comprobante_asociable['total_argentina']} - "
+            f"Disponible NC {comprobante_asociable['saldo_disponible_nc_argentina']}"
+        )
+        comprobantes_asociables.append(comprobante_asociable)
 
-    return facturas
+    return comprobantes_asociables
 
 
 def crear_borrador_comprobante_venta_desde_formulario(
@@ -716,14 +796,14 @@ def _asociar_comprobante_modificador_desde_formulario_si_corresponde(
     if comprobante_borrador["tipo_comprobante"] not in {"NOTA_DEBITO", "NOTA_CREDITO"}:
         return None
 
-    factura_id = _validar_entero_positivo(
+    comprobante_asociado_id = _validar_entero_positivo(
         formulario.get("comprobante_asociado_id"),
-        "La FC asociada es obligatoria para ND/NC.",
+        "El comprobante asociado es obligatorio para ND/NC.",
     )
 
-    return asociar_comprobante_venta_a_factura(
+    return asociar_comprobante_venta_a_comprobante_modificado(
         comprobante_borrador["id"],
-        factura_id,
+        comprobante_asociado_id,
     )
 
 
@@ -802,6 +882,8 @@ def _validar_comprobante_confirmable(comprobante: dict[str, Any]) -> None:
     if int(comprobante["total_centavos"]) <= 0:
         raise ValueError("El total del comprobante debe ser positivo para confirmar.")
 
+    _validar_saldo_nota_credito_confirmable(comprobante)
+
     detalles = list(comprobante.get("detalles") or [])
 
     if not detalles:
@@ -832,6 +914,23 @@ def _validar_comprobante_confirmable(comprobante: dict[str, Any]) -> None:
 
         if not _normalizar_texto_opcional(detalle.get("cuenta_ingreso_codigo")):
             raise ValueError(f"El renglon {indice} no tiene cuenta de ingreso.")
+
+
+def _validar_saldo_nota_credito_confirmable(comprobante: dict[str, Any]) -> None:
+    if comprobante["tipo_comprobante"] != "NOTA_CREDITO":
+        return
+
+    asociacion = obtener_asociacion_comprobante_venta(comprobante["id"])
+    if asociacion is None:
+        return
+
+    comprobante_asociado = obtener_comprobante_venta(
+        asociacion["comprobante_asociado_id"]
+    )
+    _validar_saldo_disponible_nota_credito(
+        comprobante,
+        comprobante_asociado,
+    )
 
 
 def _obtener_cuenta_deudores_cliente(cliente: dict[str, Any]) -> str:

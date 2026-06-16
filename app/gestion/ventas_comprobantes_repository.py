@@ -225,8 +225,36 @@ def listar_ventas_comprobantes_detalle(
     return [_normalizar_fila_detalle(fila_detalle) for fila_detalle in filas_detalle]
 
 
+def obtener_total_notas_credito_confirmadas_asociadas(
+    comprobante_asociado_id: Any,
+) -> int:
+    """Devuelve total confirmado de NC asociadas directamente a un comprobante."""
+    comprobante_asociado_id_validado = _validar_entero_positivo(
+        comprobante_asociado_id,
+        "El id del comprobante asociado es obligatorio.",
+    )
+
+    fila = get_db().execute(
+        """
+        SELECT COALESCE(SUM(notas_credito.total_centavos), 0) AS total_centavos
+        FROM ventas_comprobantes_asociaciones AS asociaciones
+        JOIN ventas_comprobantes AS notas_credito
+          ON notas_credito.id = asociaciones.comprobante_id
+        WHERE asociaciones.comprobante_asociado_id = ?
+          AND notas_credito.tipo_comprobante = 'NOTA_CREDITO'
+          AND notas_credito.estado = 'CONFIRMADO'
+        """,
+        (comprobante_asociado_id_validado,),
+    ).fetchone()
+
+    if fila is None:
+        return 0
+
+    return int(fila["total_centavos"] or 0)
+
+
 def crear_asociacion_comprobante_venta(datos_asociacion: dict[str, Any]) -> dict[str, Any]:
-    """Inserta la relacion comercial entre una ND/NC y la FC que modifica."""
+    """Inserta la relacion comercial entre una ND/NC y el comprobante que modifica."""
     datos_validados = _validar_datos_asociacion_comprobante(datos_asociacion)
     creado_en = datetime.now().replace(microsecond=0).isoformat(sep=" ")
 

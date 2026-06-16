@@ -63,29 +63,31 @@
                             data-role="vc-comprobante-asociado-contenedor"
                             class="col-12 {% if not requiere_comprobante_asociado %}d-none{% endif %}"
                         >
-                            <label for="vc-comprobante-asociado" class="form-label">FC que modifica</label>
+                            <label for="vc-comprobante-asociado" class="form-label">Comprobante que modifica</label>
                             <select
                                 id="vc-comprobante-asociado"
                                 name="comprobante_asociado_id"
                                 class="form-select"
                                 data-ns-select="search"
-                                data-ns-select-placeholder="Seleccionar FC confirmada..."
-                                data-ns-select-search-placeholder="Buscar FC..."
+                                data-ns-select-placeholder="Seleccionar comprobante confirmado..."
+                                data-ns-select-search-placeholder="Buscar comprobante..."
                                 {% if not requiere_comprobante_asociado %}disabled{% endif %}
                             >
-                                <option value="">Seleccionar FC confirmada...</option>
-                                {% for factura in facturas_confirmadas_asociables %}
+                                <option value="">Seleccionar comprobante confirmado...</option>
+                                {% for comprobante_asociable in comprobantes_confirmados_asociables %}
                                     <option
-                                        value="{{ factura.id }}"
-                                        data-cliente-id="{{ factura.cliente_id }}"
-                                        {% if comprobante_form.comprobante_asociado_id|string == factura.id|string %}selected{% endif %}
+                                        value="{{ comprobante_asociable.id }}"
+                                        data-cliente-id="{{ comprobante_asociable.cliente_id }}"
+                                        data-tipo-comprobante="{{ comprobante_asociable.tipo_comprobante }}"
+                                        data-saldo-disponible-nc-centavos="{{ comprobante_asociable.saldo_disponible_nc_centavos }}"
+                                        {% if comprobante_form.comprobante_asociado_id|string == comprobante_asociable.id|string %}selected{% endif %}
                                     >
-                                        {{ factura.opcion_asociacion }}
+                                        {{ comprobante_asociable.opcion_asociacion }}
                                     </option>
                                 {% endfor %}
                             </select>
                             <div id="vc-comprobante-asociado-ayuda" class="form-text">
-                                Para ND/NC, elegí la FC confirmada del mismo cliente.
+                                Para NC, seleccioná una FC o ND confirmada con saldo disponible. Para ND, seleccioná una FC confirmada.
                             </div>
                         </div>
 

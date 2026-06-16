@@ -4,6 +4,7 @@ from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.gestion.ventas_comprobantes_service import (
+    asociar_comprobante_venta_a_comprobante_modificado,
     asociar_comprobante_venta_a_factura,
     confirmar_comprobante_venta,
     crear_borrador_comprobante_venta,
@@ -1187,3 +1188,157 @@ def test_asociar_comprobante_venta_a_factura_rechaza_fc_no_confirmada():
 
         with pytest.raises(ValueError, match="CONFIRMADA"):
             asociar_comprobante_venta_a_factura(nc["id"], fc_borrador["id"])
+
+
+def test_nota_credito_puede_asociarse_a_nota_debito_confirmada():
+    """Contrato: NC puede acreditar una ND confirmada del mismo cliente."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.989",
+            "Ingresos por servicios NC contra ND",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        fc = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=1),
+            [_detalle(articulo_id)],
+        )
+        fc_confirmada = confirmar_comprobante_venta(fc["id"])["comprobante"]
+
+        nd = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id, numero=1),
+                "tipo_comprobante": "NOTA_DEBITO",
+            },
+            [_detalle(articulo_id)],
+        )
+        asociar_comprobante_venta_a_comprobante_modificado(
+            nd["id"],
+            fc_confirmada["id"],
+        )
+        nd_confirmada = confirmar_comprobante_venta(nd["id"])["comprobante"]
+
+        nc = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id, numero=1),
+                "tipo_comprobante": "NOTA_CREDITO",
+            },
+            [_detalle(articulo_id)],
+        )
+        asociacion = asociar_comprobante_venta_a_comprobante_modificado(
+            nc["id"],
+            nd_confirmada["id"],
+        )
+        resultado = confirmar_comprobante_venta(nc["id"])
+
+    assert asociacion["comprobante_id"] == nc["id"]
+    assert asociacion["comprobante_asociado_id"] == nd_confirmada["id"]
+    assert asociacion["comprobante_asociado_numero_formateado"].startswith("ND C ")
+    assert resultado["comprobante"]["estado"] == "CONFIRMADO"
+    assert resultado["movimiento_cuenta_corriente"]["tipo_movimiento"] == "NOTA_CREDITO"
+    assert resultado["movimiento_cuenta_corriente"]["haber_centavos"] == 100000
+
+
+def test_nota_credito_rechaza_importe_superior_saldo_disponible_fc():
+    """Contrato: NC no puede superar el saldo disponible de la FC asociada."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.988",
+            "Ingresos por servicios NC excedida",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        fc = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=1),
+            [_detalle(articulo_id)],
+        )
+        fc_confirmada = confirmar_comprobante_venta(fc["id"])["comprobante"]
+
+        nc = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id, numero=1),
+                "tipo_comprobante": "NOTA_CREDITO",
+            },
+            [
+                {
+                    **_detalle(articulo_id),
+                    "precio_unitario_centavos": "150000",
+                }
+            ],
+        )
+
+        with pytest.raises(ValueError, match="saldo disponible"):
+            asociar_comprobante_venta_a_comprobante_modificado(
+                nc["id"],
+                fc_confirmada["id"],
+            )
+
+
+def test_nota_credito_total_agota_comprobante_asociado_para_nueva_nc():
+    """Contrato: una NC total agota el comprobante asociado para futuras NC."""
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _obtener_o_crear_ejercicio_venta(db)
+        cuenta_deudores = _crear_cuenta_deudores_ventas(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.987",
+            "Ingresos por servicios NC total",
+        )
+        cliente_id = _crear_cliente(db)
+        _asignar_cuenta_deudores_cliente(db, cliente_id, cuenta_deudores)
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        fc = crear_borrador_comprobante_venta(
+            _datos_comprobante(cliente_id, numero=1),
+            [_detalle(articulo_id)],
+        )
+        fc_confirmada = confirmar_comprobante_venta(fc["id"])["comprobante"]
+
+        nc_total = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id, numero=1),
+                "tipo_comprobante": "NOTA_CREDITO",
+            },
+            [_detalle(articulo_id)],
+        )
+        asociar_comprobante_venta_a_comprobante_modificado(
+            nc_total["id"],
+            fc_confirmada["id"],
+        )
+        confirmar_comprobante_venta(nc_total["id"])
+
+        nc_posterior = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id, numero=2),
+                "tipo_comprobante": "NOTA_CREDITO",
+            },
+            [_detalle(articulo_id)],
+        )
+
+        with pytest.raises(ValueError, match="saldo disponible"):
+            asociar_comprobante_venta_a_comprobante_modificado(
+                nc_posterior["id"],
+                fc_confirmada["id"],
+            )

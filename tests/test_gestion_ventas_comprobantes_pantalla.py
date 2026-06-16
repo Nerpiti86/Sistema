@@ -4,6 +4,7 @@ from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.gestion.ventas_comprobantes_service import (
+    asociar_comprobante_venta_a_comprobante_modificado,
     confirmar_comprobante_venta,
     crear_borrador_comprobante_venta,
 )
@@ -731,7 +732,7 @@ def test_confirmar_nota_credito_desde_formulario_rechaza_sin_fc_asociada():
         ).fetchone()["cantidad"]
 
     assert response.status_code == 400
-    assert b"FC asociada" in response.data
+    assert b"comprobante asociado" in response.data
     assert cantidad_nc == 0
 
 
@@ -1054,3 +1055,61 @@ def test_lookup_productos_servicios_venta_devuelve_json():
     assert payload["resultados"][0]["label"] == "Servicio pantalla venta - ARS"
     assert payload["resultados"][0]["valor"]
 
+
+
+def test_formulario_nuevo_comprobante_venta_lista_nd_confirmadas_para_nc():
+    """Valida que el selector incluya ND confirmadas con saldo disponible para NC."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_ejercicio(db)
+        fc = _crear_comprobante_borrador(db)
+        fc_confirmada = confirmar_comprobante_venta(fc["id"])["comprobante"]
+
+        articulo = db.execute(
+            """
+            SELECT id
+            FROM articulos_venta
+            WHERE nombre = ?
+            ORDER BY id
+            LIMIT 1
+            """,
+            ("Servicio pantalla venta",),
+        ).fetchone()
+
+        nd = crear_borrador_comprobante_venta(
+            {
+                "cliente_id": fc_confirmada["cliente_id"],
+                "fecha": "2026-01-16",
+                "fecha_vencimiento": "2026-02-16",
+                "tipo_comprobante": "NOTA_DEBITO",
+                "letra": "C",
+                "punto_venta": "1",
+                "numero": "1",
+                "moneda_codigo": "ARS",
+                "cotizacion_centavos": "100",
+            },
+            [
+                {
+                    "articulo_venta_id": articulo["id"],
+                    "cantidad_1000000": "1000000",
+                    "iva_centavos": "0",
+                }
+            ],
+        )
+        asociar_comprobante_venta_a_comprobante_modificado(
+            nd["id"],
+            fc_confirmada["id"],
+        )
+        nd_confirmada = confirmar_comprobante_venta(nd["id"])["comprobante"]
+
+        response = client.get("/gestion/ventas/comprobantes/nuevo/")
+
+    assert response.status_code == 200
+    assert b'id="vc-comprobante-asociado"' in response.data
+    assert b'data-tipo-comprobante="NOTA_DEBITO"' in response.data
+    assert b"Disponible NC 1.000,00" in response.data
+    assert nd_confirmada["numero_formateado"].encode() in response.data
