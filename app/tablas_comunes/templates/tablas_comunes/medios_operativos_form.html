@@ -109,16 +109,16 @@
                         <input id="mope-cuit" data-field="cuit" name="cuit" type="text" class="form-control" value="{{ medio_operativo.cuit | default('', true) }}" data-mope-bank-field>
                     </div>
 
+                    <div class="col-12 col-md-3">
+                        <label for="mope-orden" class="form-label">Orden</label>
+                        <input id="mope-orden" data-field="orden" name="orden" type="number" min="0" step="1" class="form-control" value="{{ medio_operativo.orden | default(0, true) }}" required>
+                    </div>
+
                     <div class="col-12 col-md-3 d-flex align-items-end">
                         <div class="form-check mb-2">
                             <input id="mope-activo" data-field="activo" name="activo" type="checkbox" class="form-check-input" value="1" {% if medio_operativo.activo | default(1, true) | int == 1 %}checked{% endif %}>
                             <label for="mope-activo" class="form-check-label">Activo</label>
                         </div>
-                    </div>
-
-                    <div class="col-12 col-md-3">
-                        <label for="mope-orden" class="form-label">Orden</label>
-                        <input id="mope-orden" data-field="orden" name="orden" type="number" min="0" step="1" class="form-control" value="{{ medio_operativo.orden | default(0, true) }}" required>
                     </div>
 
                     <div class="col-12 d-flex justify-content-end gap-2">

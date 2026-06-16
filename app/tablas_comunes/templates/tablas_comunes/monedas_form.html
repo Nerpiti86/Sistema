@@ -36,22 +36,22 @@
                         <input id="mo-nombre" data-field="nombre" name="nombre" type="text" class="form-control" value="{{ moneda.nombre | default('', true) }}" required>
                     </div>
 
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                         <label for="mo-simbolo" class="form-label">Símbolo</label>
                         <input id="mo-simbolo" data-field="simbolo" name="simbolo" type="text" class="form-control" value="{{ moneda.simbolo | default('', true) }}" required>
                     </div>
 
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                         <label for="mo-decimales" class="form-label">Decimales</label>
                         <input id="mo-decimales" data-field="decimales" name="decimales" type="number" min="0" max="6" step="1" class="form-control" value="{{ moneda.decimales | default(2, true) }}" required>
                     </div>
 
-                    <div class="col-12 col-md-4">
+                    <div class="col-12 col-md-3">
                         <label for="mo-orden" class="form-label">Orden</label>
                         <input id="mo-orden" data-field="orden" name="orden" type="number" min="0" step="1" class="form-control" value="{{ moneda.orden | default(0, true) }}" required>
                     </div>
 
-                    <div class="col-12 col-md-4 d-flex align-items-end">
+                    <div class="col-12 col-md-3 d-flex align-items-end">
                         <div class="form-check mb-2">
                             <input id="mo-activa" data-field="activa" name="activa" type="checkbox" class="form-check-input" value="1" {% if moneda.activa | default(1, true) | int == 1 %}checked{% endif %}>
                             <label for="mo-activa" class="form-check-label">Activa</label>

@@ -23,7 +23,7 @@
 
     <div class="col-12 col-lg-4">
         <div id="cl-cc-resumen-cliente">
-            {% call card("Cliente", "Gestión") %}
+            {% call card("Cliente") %}
                 <dl class="row mb-0">
                     <dt class="col-sm-5">Razón social</dt>
                     <dd id="cl-cc-cliente-razon-social" data-field="razon_social" class="col-sm-7">{{ cliente.razon_social }}</dd>
@@ -38,7 +38,7 @@
 
     <div class="col-12 col-lg-8">
         <div id="cl-cc-resumen-saldo">
-            {% call card("Saldo", "Lectura confirmada") %}
+            {% call card("Saldo") %}
                 <dl class="row mb-0">
                     <dt class="col-sm-3">Total debe</dt>
                     <dd id="cl-cc-total-debe" data-field="total_debe_centavos" class="col-sm-9 text-end">{{ lectura_saldo.total_debe_argentina }}</dd>
@@ -46,7 +46,10 @@
                     <dd id="cl-cc-total-haber" data-field="total_haber_centavos" class="col-sm-9 text-end">{{ lectura_saldo.total_haber_argentina }}</dd>
                     <dt class="col-sm-3">Saldo actual</dt>
                     <dd id="cl-cc-saldo" data-field="saldo_centavos" class="col-sm-9 text-end fw-semibold mb-0">
-                        {{ lectura_saldo.saldo_lado }} {{ lectura_saldo.saldo_argentina }}
+                        <div>{{ lectura_saldo.saldo_argentina }}</div>
+                        <div class="mt-1">
+                            <span class="badge text-bg-danger">{{ lectura_saldo.saldo_lado }}</span>
+                        </div>
                     </dd>
                 </dl>
             {% endcall %}
@@ -55,26 +58,17 @@
 
     <div class="col-12">
         <div id="cl-cc-filtros">
-            {% call card("Filtros", "Cuenta corriente") %}
+            {% call card("Filtros") %}
                 <form method="get" class="row g-2 align-items-end">
-                    <div class="col-12 col-md-3">
+                    <div class="col-12 col-md-4">
                         <label for="cl-cc-fecha-desde" class="form-label">Desde</label>
                         <input id="cl-cc-fecha-desde" name="fecha_desde" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ filtros.fecha_desde }}" placeholder="dd/mm/aaaa" autocomplete="off">
                     </div>
-                    <div class="col-12 col-md-3">
+                    <div class="col-12 col-md-4">
                         <label for="cl-cc-fecha-hasta" class="form-label">Hasta</label>
                         <input id="cl-cc-fecha-hasta" name="fecha_hasta" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ filtros.fecha_hasta }}" placeholder="dd/mm/aaaa" autocomplete="off">
                     </div>
-                    <div class="col-12 col-md-3">
-                        <label for="cl-cc-estado" class="form-label">Estado</label>
-                        <select id="cl-cc-estado" name="estado" class="form-select" data-ns-select="normal" data-ns-select-placeholder="Todos">
-                            <option value="" {% if not filtros.estado %}selected{% endif %}>Todos</option>
-                            <option value="CONFIRMADO" {% if filtros.estado == "CONFIRMADO" %}selected{% endif %}>Confirmado</option>
-                            <option value="BORRADOR" {% if filtros.estado == "BORRADOR" %}selected{% endif %}>Borrador</option>
-                            <option value="ANULADO" {% if filtros.estado == "ANULADO" %}selected{% endif %}>Anulado</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3 text-end">
+                    <div class="col-12 col-md-4 text-end">
                         <button id="cl-cc-aplicar-filtros" type="submit" class="btn btn-primary ns-btn-primary">Aplicar filtros</button>
                         <a id="cl-cc-limpiar-filtros" href="{{ url_for('gestion.ver_cuenta_corriente_cliente', cliente_id=cliente.id) }}" class="btn btn-secondary ns-btn-secondary">Limpiar</a>
                     </div>
@@ -85,7 +79,7 @@
 
     <div class="col-12">
         <div id="cl-cc-mayor" data-query="listar_movimientos_cliente_cuenta_corriente">
-            {% call card("Cuenta corriente", "Mayor") %}
+            {% call card("Cuenta corriente") %}
                 <div class="table-responsive">
                     <table id="cl-cc-tabla" class="table table-sm align-middle mb-0">
                         <thead>

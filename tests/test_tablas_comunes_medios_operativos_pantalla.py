@@ -83,8 +83,8 @@ def test_formulario_medio_operativo_respeta_orden_visual():
         'id="mope-sucursal"',
         'id="mope-numero-cuenta"',
         'id="mope-cuit"',
-        'id="mope-activo"',
         'id="mope-orden"',
+        'id="mope-activo"',
     ]
 
     posiciones = [contenido.index(item) for item in ids]

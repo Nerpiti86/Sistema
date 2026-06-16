@@ -1,3 +1,6 @@
+from calendar import monthrange
+from datetime import date
+
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
 from app.gestion.articulos_venta_service import (
@@ -44,6 +47,20 @@ bp = Blueprint(
     url_prefix="/gestion",
     template_folder="templates",
 )
+
+
+def _fecha_relativa_hoy_argentina(meses: int) -> str:
+    """Devuelve fecha relativa a hoy en formato dd/mm/aaaa para filtros UI."""
+    return _sumar_meses(date.today(), meses).strftime("%d/%m/%Y")
+
+
+def _sumar_meses(fecha_base: date, meses: int) -> date:
+    """Suma meses conservando dia cuando el mes destino lo permite."""
+    mes_total = fecha_base.year * 12 + fecha_base.month - 1 + meses
+    anio = mes_total // 12
+    mes = mes_total % 12 + 1
+    dia = min(fecha_base.day, monthrange(anio, mes)[1])
+    return date(anio, mes, dia)
 
 
 @bp.get("/")
@@ -174,9 +191,14 @@ def ver_cuenta_corriente_cliente(cliente_id):
     try:
         contexto = obtener_contexto_cuenta_corriente_cliente(
             cliente_id,
-            estado=request.args.get("estado"),
-            fecha_desde=request.args.get("fecha_desde"),
-            fecha_hasta=request.args.get("fecha_hasta"),
+            fecha_desde=(
+                request.args.get("fecha_desde")
+                or _fecha_relativa_hoy_argentina(-3)
+            ),
+            fecha_hasta=(
+                request.args.get("fecha_hasta")
+                or _fecha_relativa_hoy_argentina(3)
+            ),
         )
     except ValueError as exc:
         flash(str(exc), "danger")
