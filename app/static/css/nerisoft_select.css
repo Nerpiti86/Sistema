@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Sono:wght,MONO@200..800,1&display=swap');
+
 .ns-select-native {
     position: absolute;
     width: 1px;
@@ -11,6 +13,10 @@
 
 .ns-select {
     position: relative;
+    --ns-select-font-family: "Sono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: var(--ns-select-font-family);
+    font-optical-sizing: auto;
+    font-variation-settings: "MONO" 1;
 }
 
 .ns-select__control {

@@ -117,3 +117,15 @@ def test_css_select_define_clases_para_normal_search_y_estado_interactivo():
     assert ".ns-select--open" in contenido
     assert ".ns-select__option--active" in contenido
     assert "transform: rotate(180deg)" in contenido
+
+
+def test_css_select_importa_y_aplica_fuente_sono():
+    """
+    Contrato: todos los pseudo-selects usan la fuente Sono importada desde Google Fonts.
+    """
+    contenido = Path("app/static/css/nerisoft_select.css").read_text(encoding="utf-8")
+
+    assert "@import url('https://fonts.googleapis.com/css2?family=Sono:wght,MONO@200..800,1&display=swap');" in contenido
+    assert '--ns-select-font-family: "Sono"' in contenido
+    assert "font-family: var(--ns-select-font-family)" in contenido
+    assert 'font-variation-settings: "MONO" 1' in contenido
