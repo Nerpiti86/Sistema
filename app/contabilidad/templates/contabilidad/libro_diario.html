@@ -180,11 +180,9 @@
                     data-row-id="{{ asiento.asiento_id }}"
                     class="mb-3"
                 >
-                    {% set asiento_titulo = asiento.comprobante if asiento.comprobante else "Asiento sin comprobante" %}
-                    {% set asiento_subtitulo = asiento.sujeto if asiento.sujeto else "Sin sujeto" %}
-                    {% call card(asiento_titulo, asiento_subtitulo) %}
+                    {% call card("Asiento contable", "") %}
                         <div class="row g-2 mb-3">
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-3">
                                 <div class="text-muted small">Número de asiento</div>
                                 <div
                                     id="ld-asiento-numero-{{ asiento.asiento_id }}"
@@ -195,7 +193,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-3">
                                 <div class="text-muted small">Fecha</div>
                                 <div
                                     id="ld-asiento-fecha-{{ asiento.asiento_id }}"
@@ -203,6 +201,36 @@
                                     class="fw-semibold"
                                 >
                                     {{ asiento.fecha_argentina }}
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-3">
+                                <div class="text-muted small">Comprobante</div>
+                                <div
+                                    id="ld-asiento-comprobante-{{ asiento.asiento_id }}"
+                                    data-field="comprobante"
+                                    class="fw-semibold"
+                                >
+                                    {% if asiento.comprobante %}
+                                        {{ asiento.comprobante }}
+                                    {% else %}
+                                        <span class="text-muted">Sin comprobante</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-3">
+                                <div class="text-muted small">Sujeto</div>
+                                <div
+                                    id="ld-asiento-sujeto-{{ asiento.asiento_id }}"
+                                    data-field="sujeto"
+                                    class="fw-semibold"
+                                >
+                                    {% if asiento.sujeto %}
+                                        {{ asiento.sujeto }}
+                                    {% else %}
+                                        <span class="text-muted">Sin sujeto</span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>

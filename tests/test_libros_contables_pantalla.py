@@ -204,13 +204,14 @@ def test_pantalla_contabilidad_tiene_acceso_a_libro_diario():
 
 
 
+
+
 def test_pantalla_libro_diario_ui_ux_sin_repeticiones_y_totales_destacados():
     """
     Valida ajuste UI/UX del Libro Diario.
 
-    La cabecera de cada asiento no debe repetir "Asiento EJ..." porque el
-    numero ya esta en el bloque de datos. Los controles quedan marcados para el
-    contrato UI y la fila de totales queda destacada.
+    La card no repite "Asiento EJ..." arriba, pero mantiene dentro los cuatro
+    datos principales: numero de asiento, fecha, comprobante y sujeto.
     """
     app = create_app(TestConfig)
     client = app.test_client()
@@ -218,38 +219,7 @@ def test_pantalla_libro_diario_ui_ux_sin_repeticiones_y_totales_destacados():
     with app.app_context():
         apply_migrations()
         db = get_db()
-        ejercicio_id = _insertar_ejercicio_contable_pantalla_para_asientos(db)
-        cuenta_debe = _insertar_cuenta_contable_pantalla_para_asientos(
-            db,
-            "1.1.01.01.995",
-        )
-        cuenta_haber = _insertar_cuenta_contable_pantalla_para_asientos(
-            db,
-            "1.1.01.01.994",
-        )
-
-        crear_asiento_contable_automatico_confirmado(
-            {
-                "ejercicio_id": ejercicio_id,
-                "fecha": "2026-06-10",
-                "descripcion": (
-                    "Comprobante: FC C 0001-00000001 | "
-                    "Sujeto: Nerpiti Nicolas Neri"
-                ),
-            },
-            [
-                {
-                    "cuenta_contable_codigo": cuenta_debe,
-                    "nominal_debe_centavos": 100000,
-                    "debe_centavos": 100000,
-                },
-                {
-                    "cuenta_contable_codigo": cuenta_haber,
-                    "nominal_haber_centavos": 100000,
-                    "haber_centavos": 100000,
-                },
-            ],
-        )
+        _crear_asiento_libro_diario(db)
 
         response = client.get("/contabilidad/libros/diario/")
 
@@ -257,8 +227,21 @@ def test_pantalla_libro_diario_ui_ux_sin_repeticiones_y_totales_destacados():
     html = response.data.decode("utf-8")
 
     assert "Asiento EJ2026-0000001" not in html
+    assert "Asiento contable" in html
+
+    assert "Número de asiento" in html
+    assert "Fecha" in html
+    assert "Comprobante" in html
+    assert "Sujeto" in html
+
+    assert 'id="ld-asiento-numero-' in html
+    assert 'id="ld-asiento-fecha-' in html
+    assert 'id="ld-asiento-comprobante-' in html
+    assert 'id="ld-asiento-sujeto-' in html
+
     assert "FC C 0001-00000001" in html
     assert "Nerpiti Nicolas Neri" in html
+
     assert "data-ui-control=\"date\"" in html
     assert "data-ui-control=\"select\"" in html
     assert "form-control form-control-sm" in html
