@@ -260,3 +260,63 @@ def test_pantalla_contabilidad_tiene_acceso_a_mayor_por_cuenta():
     assert b'id="lmc-acceso"' in response.data
     assert b'data-table="asientos_contables_detalle"' in response.data
     assert b'data-action="ver_mayor_por_cuenta"' in response.data
+
+
+
+def test_pantalla_mayor_por_cuenta_filtros_usan_contrato_ui():
+    """
+    Valida contrato UI de filtros del Mayor por Cuenta.
+
+    Las fechas usan calendario argentino, los select usan NeriSoft Select y los
+    controles conservan tamaño normal.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        _crear_datos_mayor_cuenta(db)
+
+        query = urlencode(
+            {
+                "cuenta_contable_codigo": CUENTA_MAYOR,
+                "fecha_desde": "01/06/2026",
+                "fecha_hasta": "30/06/2026",
+                "estado": "CONFIRMADO",
+            }
+        )
+        response = client.get(f"/contabilidad/libros/mayor-cuenta/?{query}")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+
+    assert 'id="lmc-cuenta"' in html
+    assert 'id="lmc-fecha-desde"' in html
+    assert 'id="lmc-fecha-hasta"' in html
+    assert 'id="lmc-estado"' in html
+    assert 'id="lmc-aplicar-filtros"' in html
+
+    assert 'data-datepicker="fecha-argentina"' in html
+    assert 'data-ns-select="search"' in html
+    assert 'data-ns-select-placeholder="Seleccionar cuenta"' in html
+    assert 'data-ns-select-search-placeholder="Buscar cuenta..."' in html
+    assert 'data-ns-select-placeholder="Seleccionar estado"' in html
+
+    assert 'type="text"' in html
+    assert 'inputmode="numeric"' in html
+    assert 'placeholder="DD/MM/AAAA"' in html
+    assert 'value="01/06/2026"' in html
+    assert 'value="30/06/2026"' in html
+
+    assert 'type="date"' not in html
+    assert 'data-ui-control="date"' not in html
+    assert 'data-ui-control="select"' not in html
+
+    assert 'class="form-control"' in html
+    assert 'class="form-select"' in html
+    assert 'class="btn btn-primary"' in html
+
+    assert "form-control-sm" not in html
+    assert "form-select-sm" not in html
+    assert "btn-sm" not in html

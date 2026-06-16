@@ -51,6 +51,9 @@
                             id="lmc-cuenta"
                             data-table="cuentas_contables"
                             data-field="cuenta_contable_codigo"
+                            data-ns-select="search"
+                            data-ns-select-placeholder="Seleccionar cuenta"
+                            data-ns-select-search-placeholder="Buscar cuenta..."
                             name="cuenta_contable_codigo"
                             class="form-select"
                         >
@@ -71,9 +74,13 @@
                         <input
                             id="lmc-fecha-desde"
                             data-field="fecha_desde"
-                            type="date"
+                            data-datepicker="fecha-argentina"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            placeholder="DD/MM/AAAA"
                             name="fecha_desde"
-                            value="{{ filtros.fecha_desde }}"
+                            value="{{ filtros.fecha_desde_argentina }}"
                             class="form-control"
                         >
                     </div>
@@ -83,9 +90,13 @@
                         <input
                             id="lmc-fecha-hasta"
                             data-field="fecha_hasta"
-                            type="date"
+                            data-datepicker="fecha-argentina"
+                            type="text"
+                            inputmode="numeric"
+                            autocomplete="off"
+                            placeholder="DD/MM/AAAA"
                             name="fecha_hasta"
-                            value="{{ filtros.fecha_hasta }}"
+                            value="{{ filtros.fecha_hasta_argentina }}"
                             class="form-control"
                         >
                     </div>
@@ -95,6 +106,7 @@
                         <select
                             id="lmc-estado"
                             data-field="estado"
+                            data-ns-select-placeholder="Seleccionar estado"
                             name="estado"
                             class="form-select"
                         >

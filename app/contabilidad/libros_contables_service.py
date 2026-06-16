@@ -493,13 +493,15 @@ def obtener_contexto_pantalla_mayor_por_cuenta(
         if ejercicio is None:
             raise ValueError("No existe el ejercicio contable seleccionado.")
 
-    fecha_desde = (
-        _normalizar_texto_opcional(filtros_dict.get("fecha_desde"))
-        or ejercicio["fecha_desde"]
+    fecha_desde = _normalizar_fecha_filtro_libro_a_iso(
+        filtros_dict.get("fecha_desde"),
+        ejercicio["fecha_desde"],
+        "La fecha desde debe tener formato DD/MM/YYYY.",
     )
-    fecha_hasta = (
-        _normalizar_texto_opcional(filtros_dict.get("fecha_hasta"))
-        or ejercicio["fecha_hasta"]
+    fecha_hasta = _normalizar_fecha_filtro_libro_a_iso(
+        filtros_dict.get("fecha_hasta"),
+        ejercicio["fecha_hasta"],
+        "La fecha hasta debe tener formato DD/MM/YYYY.",
     )
     estado = _normalizar_estado_pantalla(filtros_dict.get("estado"))
     cuenta_codigo = _normalizar_texto_opcional(
@@ -539,6 +541,8 @@ def obtener_contexto_pantalla_mayor_por_cuenta(
         "cuenta_contable_codigo": cuenta_codigo,
         "fecha_desde": fecha_desde,
         "fecha_hasta": fecha_hasta,
+        "fecha_desde_argentina": formatear_fecha_iso_a_argentina(fecha_desde),
+        "fecha_hasta_argentina": formatear_fecha_iso_a_argentina(fecha_hasta),
         "estado": estado,
     }
     contexto["mensaje_contexto_mayor"] = (
@@ -567,6 +571,8 @@ def _contexto_mayor_cuenta_vacio(
             "cuenta_contable_codigo": "",
             "fecha_desde": fecha_desde,
             "fecha_hasta": fecha_hasta,
+            "fecha_desde_argentina": formatear_fecha_iso_a_argentina(fecha_desde),
+            "fecha_hasta_argentina": formatear_fecha_iso_a_argentina(fecha_hasta),
             "estado": estado,
         },
         "cuenta_contable": None,
