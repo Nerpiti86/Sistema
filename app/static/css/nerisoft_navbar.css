@@ -41,9 +41,19 @@
 }
 
 .ns-navbar .dropdown-toggle::after {
-    align-self: center;
-    margin-top: 0;
+    display: none;
+}
+
+.ns-navbar .ns-dropdown-chevron {
+    flex: 0 0 auto;
     margin-left: 0.42rem;
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform 0.15s ease-in-out;
+}
+
+.ns-navbar .dropdown-toggle.show .ns-dropdown-chevron {
+    transform: rotate(180deg);
 }
 
 .ns-navbar > .ns-navbar-container .navbar-nav > .nav-item > .nav-link:hover,

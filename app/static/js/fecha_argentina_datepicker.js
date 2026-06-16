@@ -128,12 +128,26 @@
         return boton;
     };
 
+    const crearIcono = (nombreIcono) => {
+        const icono = document.createElement("i");
+        icono.className = `ti ti-${nombreIcono}`;
+        icono.setAttribute("aria-hidden", "true");
+        return icono;
+    };
+
     const construirPanelBase = (input, etiquetaPanel, claseGrilla) => {
         const contenedor = document.createElement("div");
         contenedor.className = "ns-date-field";
 
         input.parentNode.insertBefore(contenedor, input);
         contenedor.appendChild(input);
+
+        const botonIcono = document.createElement("button");
+        botonIcono.type = "button";
+        botonIcono.className = "ns-date-field__button";
+        botonIcono.setAttribute("aria-label", etiquetaPanel);
+        botonIcono.appendChild(crearIcono("calendar"));
+        contenedor.appendChild(botonIcono);
 
         const panel = document.createElement("div");
         panel.className = "ns-date-picker";
@@ -167,6 +181,7 @@
         return {
             contenedor,
             input,
+            botonIcono,
             panel,
             titulo,
             grilla,
@@ -471,6 +486,7 @@
 
         input.addEventListener("focus", () => abrirDatePicker(estado));
         input.addEventListener("click", () => abrirDatePicker(estado));
+        estado.botonIcono.addEventListener("click", () => abrirDatePicker(estado));
 
         input.addEventListener("input", () => {
             input.value = normalizarEntradaFechaArgentina(input.value);
@@ -508,6 +524,7 @@
 
         input.addEventListener("focus", () => abrirPeriodoPicker(estado));
         input.addEventListener("click", () => abrirPeriodoPicker(estado));
+        estado.botonIcono.addEventListener("click", () => abrirPeriodoPicker(estado));
 
         input.addEventListener("input", () => {
             input.value = normalizarEntradaPeriodoArgentino(input.value);

@@ -328,8 +328,12 @@
         const contenedor = crearElemento("div", "ns-select");
         const control = crearElemento("button", "ns-select__control");
         const label = crearElemento("span", "ns-select__label");
-        const arrow = crearElemento("span", "ns-select__arrow", "▼");
+        const arrow = crearElemento("span", "ns-select__arrow");
+        const arrowIcon = crearElemento("i", "ti ti-chevron-down");
         const panel = crearElemento("div", "ns-select__panel");
+
+        arrowIcon.setAttribute("aria-hidden", "true");
+        arrow.appendChild(arrowIcon);
         const options = crearElemento("div", "ns-select__options");
         let search = null;
 

@@ -60,9 +60,13 @@
 }
 
 .ns-select__arrow {
+    display: inline-flex;
     flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
     color: var(--bs-secondary-color);
-    font-size: 0.75rem;
+    font-size: 1rem;
+    line-height: 1;
     transition: transform 0.15s ease-in-out;
 }
 

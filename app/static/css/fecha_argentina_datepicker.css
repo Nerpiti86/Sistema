@@ -2,6 +2,45 @@
     position: relative;
 }
 
+.ns-date-field > .form-control {
+    padding-right: 2.65rem;
+}
+
+.ns-date-field__button {
+    position: absolute;
+    top: 50%;
+    right: 0.45rem;
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--bs-secondary-color);
+    line-height: 1;
+    transform: translateY(-50%);
+    transition:
+        background-color 0.12s ease-in-out,
+        color 0.12s ease-in-out;
+}
+
+.ns-date-field__button:hover,
+.ns-date-field__button:focus {
+    background: rgba(255, 217, 102, 0.18);
+    color: var(--ns-color-main);
+    outline: 0;
+}
+
+.ns-date-field__button:focus-visible {
+    box-shadow: 0 0 0 0.2rem rgba(255, 217, 102, 0.28);
+}
+
+.ns-date-field__button .ti {
+    font-size: 1.08rem;
+}
+
 .ns-date-picker {
     position: absolute;
     z-index: 1055;
