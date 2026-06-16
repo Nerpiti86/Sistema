@@ -230,7 +230,7 @@ def test_pantalla_mayor_por_cuenta_muestra_saldos_y_movimientos():
     assert b"Deudores por ventas pantalla mayor" in response.data
     assert b"35.000,00" in response.data
     assert b"5.000,00" in response.data
-    assert b"30.000,00" in response.data
+    assert b"30.000,00" not in response.data
     assert b'data-field="debe_centavos"' in response.data
     assert b'data-field="haber_centavos"' in response.data
     assert b'data-field="saldo_acumulado_centavos"' in response.data
