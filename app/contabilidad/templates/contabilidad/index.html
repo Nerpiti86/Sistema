@@ -51,6 +51,13 @@
                 >
                     {{ secondary_link("Libro mayor por cuenta", url_for("contabilidad.ver_mayor_por_cuenta")) }}
                 </span>
+                <span
+                    id="lmg-acceso"
+                    data-table="asientos_contables_detalle"
+                    data-action="ver_mayor_general"
+                >
+                    {{ secondary_link("Libro mayor general", url_for("contabilidad.ver_mayor_general")) }}
+                </span>
                 {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
             </div>
         {% endcall %}

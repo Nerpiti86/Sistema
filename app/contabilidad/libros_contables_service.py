@@ -600,6 +600,66 @@ def obtener_contexto_mayor_general(
     }
 
 
+def obtener_contexto_pantalla_mayor_general(
+    filtros: Any | None = None,
+) -> dict[str, Any]:
+    """
+    Devuelve contexto de pantalla para Libro Mayor General.
+
+    Resuelve ejercicio activo y filtros visibles. La lectura y calculo del mayor
+    general queda delegada a obtener_contexto_mayor_general.
+    """
+    filtros_dict = dict(filtros or {})
+    ejercicio_id_filtro = _normalizar_entero_positivo_opcional(
+        filtros_dict.get("ejercicio_id")
+    )
+
+    if ejercicio_id_filtro is None:
+        ejercicio = obtener_ejercicio_contable_activo()
+    else:
+        ejercicio = obtener_ejercicio_contable_por_id(ejercicio_id_filtro)
+        if ejercicio is None:
+            raise ValueError("No existe el ejercicio contable seleccionado.")
+
+    fecha_desde = _normalizar_fecha_filtro_libro_a_iso(
+        filtros_dict.get("fecha_desde"),
+        ejercicio["fecha_desde"],
+        "La fecha desde debe tener formato DD/MM/YYYY.",
+    )
+    fecha_hasta = _normalizar_fecha_filtro_libro_a_iso(
+        filtros_dict.get("fecha_hasta"),
+        ejercicio["fecha_hasta"],
+        "La fecha hasta debe tener formato DD/MM/YYYY.",
+    )
+    estado = _normalizar_estado_pantalla(filtros_dict.get("estado"))
+
+    contexto = obtener_contexto_mayor_general(
+        ejercicio["id"],
+        fecha_desde,
+        fecha_hasta,
+        estado,
+    )
+    contexto["ejercicio_contable"] = _preparar_ejercicio_para_pantalla_libro_diario(
+        ejercicio
+    )
+    contexto["estados_mayor_general"] = list(_ESTADOS_PANTALLA_LIBRO_DIARIO)
+    contexto["filtros"] = {
+        "ejercicio_id": str(ejercicio["id"]),
+        "fecha_desde": fecha_desde,
+        "fecha_hasta": fecha_hasta,
+        "fecha_desde_argentina": formatear_fecha_iso_a_argentina(fecha_desde),
+        "fecha_hasta_argentina": formatear_fecha_iso_a_argentina(fecha_hasta),
+        "estado": estado,
+    }
+    contexto["mensaje_contexto_mayor_general"] = (
+        ""
+        if contexto["mayor_general_cuentas"]
+        else "No hay saldos para el periodo seleccionado."
+    )
+
+    return contexto
+
+
 def obtener_contexto_pantalla_mayor_por_cuenta(
     filtros: Any | None = None,
 ) -> dict[str, Any]:
