@@ -120,7 +120,11 @@ def test_select_respeta_contrato_visual_global():
         encoding="utf-8"
     )
 
-    assert "border: 1px solid var(--ns-color-card-border);" in contenido
+    assert "border: 1px solid var(--ns-border-color);" in contenido
+    tema = Path("app/static/css/nerisoft_theme.css").read_text(
+        encoding="utf-8"
+    )
+    assert "--ns-border-color:" in tema
     assert "background: var(--ns-color-card-bg);" in contenido
     assert "box-shadow: var(--ns-shadow-floating);" in contenido
     assert "border-color: var(--ns-color-accent);" in contenido
