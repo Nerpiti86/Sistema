@@ -196,11 +196,12 @@ def test_pantalla_mayor_por_cuenta_responde_ok_sin_cuenta_seleccionada():
 
     assert response.status_code == 200
     assert b"Libro mayor por cuenta" in response.data
-    assert b"Seleccione una cuenta contable" in response.data
     assert b'id="lmc-listado"' in response.data
     assert b'id="lmc-filtros"' in response.data
-    assert b'id="lmc-resumen"' in response.data
+    assert b'id="lmc-resumen"' not in response.data
     assert b'id="lmc-tabla"' in response.data
+    assert b'id="lmc-mensaje-sin-datos"' in response.data
+    assert b"No hay movimientos para el Mayor por Cuenta." in response.data
     assert CUENTA_MAYOR.encode() in response.data
     assert b'data-query="obtener_contexto_pantalla_mayor_por_cuenta"' in response.data
 
@@ -227,20 +228,20 @@ def test_pantalla_mayor_por_cuenta_muestra_saldos_y_movimientos():
     assert response.status_code == 200
     assert b"Libro mayor por cuenta" in response.data
     assert b"Deudores por ventas pantalla mayor" in response.data
-    assert b"Saldo habitual DEBE" in response.data
-    assert b"10.000,00" in response.data
     assert b"35.000,00" in response.data
     assert b"5.000,00" in response.data
     assert b"30.000,00" in response.data
-    assert b"40.000,00" in response.data
-    assert b"45.000,00" in response.data
+    assert b'data-field="debe_centavos"' in response.data
+    assert b'data-field="haber_centavos"' in response.data
+    assert b'data-field="saldo_acumulado_centavos"' in response.data
     assert b"FC C 0001-00000001" in response.data
     assert b"NC C 0001-00000001" in response.data
     assert b"Cliente mayor" in response.data
     assert b"EJ2026-0000002" in response.data
     assert b"EJ2026-0000003" in response.data
-    assert b'id="lmc-saldo-inicial"' in response.data
-    assert b'id="lmc-saldo-final"' in response.data
+    assert b'id="lmc-resumen"' not in response.data
+    assert b'id="lmc-saldo-inicial"' not in response.data
+    assert b'id="lmc-saldo-final"' not in response.data
 
     html = response.data.decode("utf-8")
     assert re.search(r">\\s*3500000\\s*<", html) is None

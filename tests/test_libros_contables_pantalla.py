@@ -145,7 +145,7 @@ def test_pantalla_libro_diario_responde_ok_sin_movimientos():
     assert b"No hay movimientos para el Libro Diario." in response.data
     assert b'id="ld-listado"' in response.data
     assert b'id="ld-filtros"' in response.data
-    assert b'id="ld-resumen"' in response.data
+    assert b'id="ld-resumen"' not in response.data
     assert b'id="ld-mensaje-sin-datos"' in response.data
     assert b'data-table="asientos_contables"' in response.data
     assert b'data-query="obtener_contexto_pantalla_libro_diario"' in response.data
@@ -178,9 +178,12 @@ def test_pantalla_libro_diario_muestra_asiento_comprobante_sujeto_y_totales():
     assert CUENTA_INGRESOS.encode() in response.data
     assert b"Ingresos por servicios pantalla LD" in response.data
     assert b"35.000,00" in response.data
-    assert b"id=\"ld-total-debe\"" in response.data
-    assert b"id=\"ld-total-haber\"" in response.data
-    assert b"id=\"ld-diferencia\"" in response.data
+    assert b'id="ld-resumen"' not in response.data
+    assert b'id="ld-total-debe"' not in response.data
+    assert b'id="ld-total-haber"' not in response.data
+    assert b'id="ld-diferencia"' not in response.data
+    assert b'data-field="debe_centavos"' in response.data
+    assert b'data-field="haber_centavos"' in response.data
     assert f'id="ld-asiento-{asiento["id"]}"'.encode() in response.data
     assert f'data-row-id="{asiento["id"]}"'.encode() in response.data
 

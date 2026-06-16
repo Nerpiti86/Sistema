@@ -87,7 +87,7 @@ def test_pantalla_ejercicios_contables_muestra_ejercicio_activo_con_ids_cortos()
     assert b"2026-12-31" not in response.data
     assert b'data-field="es_primer_ejercicio"' in response.data
     assert b"Es primer ejercicio" in response.data
-    assert b'id="ec-activo-resumen"' in response.data
+    assert b'id="ec-activo-resumen"' not in response.data
 
 
 def test_pantalla_contabilidad_tiene_acceso_corto_a_ejercicios_contables():

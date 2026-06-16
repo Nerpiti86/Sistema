@@ -163,11 +163,12 @@ def test_pantalla_mayor_general_responde_ok_sin_saldos():
 
     assert response.status_code == 200
     assert b"Libro mayor general" in response.data
-    assert b"No hay saldos para el periodo seleccionado." in response.data
+    assert b"No hay saldos para el Libro Mayor General." in response.data
     assert b'id="lmg-listado"' in response.data
     assert b'id="lmg-filtros"' in response.data
-    assert b'id="lmg-resumen"' in response.data
+    assert b'id="lmg-resumen"' not in response.data
     assert b'id="lmg-tabla"' in response.data
+    assert b'id="lmg-mensaje-sin-datos"' in response.data
     assert b'data-query="obtener_contexto_pantalla_mayor_general"' in response.data
 
 
@@ -199,14 +200,16 @@ def test_pantalla_mayor_general_muestra_saldos_por_cuenta():
     assert b"HABER" in response.data
 
     assert b"10.000,00" in response.data
-    assert b"20.000,00" in response.data
     assert b"35.000,00" in response.data
     assert b"45.000,00" in response.data
-    assert b"70.000,00" in response.data
-    assert b"90.000,00" in response.data
     assert b"0,00" in response.data
-    assert b'id="lmg-total-saldo-final"' in response.data
-    assert b'id="lmg-diferencia-periodo"' in response.data
+    assert b'id="lmg-resumen"' not in response.data
+    assert b'id="lmg-total-saldo-final"' not in response.data
+    assert b'id="lmg-diferencia-periodo"' not in response.data
+    assert b'data-field="saldo_inicial_centavos"' in response.data
+    assert b'data-field="total_debe_periodo_centavos"' in response.data
+    assert b'data-field="total_haber_periodo_centavos"' in response.data
+    assert b'data-field="saldo_final_centavos"' in response.data
 
     html = response.data.decode("utf-8")
     assert re.search(r">\s*3500000\s*<", html) is None
