@@ -1095,6 +1095,26 @@ def _obtener_cliente_activo(cliente_id: int) -> dict[str, Any]:
     return cliente
 
 
+def _resolver_fecha_vencimiento_comprobante_venta(
+    fecha_comprobante: str,
+    fecha_vencimiento: Any,
+) -> str:
+    """
+    Devuelve la fecha de vencimiento del comprobante.
+
+    Si no viene informada, aplica regla de dominio: fecha del comprobante + 30 dias.
+    """
+    fecha_vencimiento_validada = _validar_fecha_iso_opcional(
+        fecha_vencimiento,
+        "La fecha de vencimiento debe tener formato YYYY-MM-DD.",
+    )
+
+    if fecha_vencimiento_validada:
+        return fecha_vencimiento_validada
+
+    return (date.fromisoformat(fecha_comprobante) + timedelta(days=30)).isoformat()
+
+
 def _normalizar_datos_base_comprobante(
     datos_comprobante: dict[str, Any],
 ) -> dict[str, Any]:
@@ -1107,19 +1127,20 @@ def _normalizar_datos_base_comprobante(
         datos_comprobante.get("tipo_comprobante_codigo")
         or datos_comprobante.get("tipo_comprobante")
     )
+    fecha_comprobante = _validar_fecha_iso(
+        datos_comprobante.get("fecha"),
+        "La fecha del comprobante es obligatoria.",
+    )
 
     return {
         "cliente_id": _validar_entero_positivo(
             datos_comprobante.get("cliente_id"),
             "El cliente es obligatorio.",
         ),
-        "fecha": _validar_fecha_iso(
-            datos_comprobante.get("fecha"),
-            "La fecha del comprobante es obligatoria.",
-        ),
-        "fecha_vencimiento": _validar_fecha_iso_opcional(
+        "fecha": fecha_comprobante,
+        "fecha_vencimiento": _resolver_fecha_vencimiento_comprobante_venta(
+            fecha_comprobante,
             datos_comprobante.get("fecha_vencimiento"),
-            "La fecha de vencimiento debe tener formato YYYY-MM-DD.",
         ),
         "tipo_comprobante": tipo_comprobante,
         "tipo_comprobante_codigo": tipo_comprobante_codigo,

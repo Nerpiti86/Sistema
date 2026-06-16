@@ -273,6 +273,66 @@ def test_crear_borrador_comprobante_venta_copia_datos_del_articulo():
     assert comprobante["detalles"][0]["cuenta_ingreso_codigo"] == cuenta_ingreso
 
 
+
+def test_crear_borrador_comprobante_venta_default_vencimiento_fecha_mas_30():
+    """
+    Contrato de dominio: si no se informa vencimiento, se guarda fecha + 30 dias.
+
+    Esta regla no debe depender del JS ni del formulario visual.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.998",
+            "Ingresos por servicios vencimiento test",
+        )
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        datos = _datos_comprobante(cliente_id)
+        datos.pop("fecha_vencimiento")
+
+        comprobante = crear_borrador_comprobante_venta(
+            datos,
+            [_detalle(articulo_id)],
+        )
+
+    assert comprobante["fecha"] == "2026-01-15"
+    assert comprobante["fecha_vencimiento"] == "2026-02-14"
+
+
+def test_crear_borrador_comprobante_venta_respeta_vencimiento_informado():
+    """
+    Contrato de dominio: si el vencimiento viene informado, no se pisa.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        cliente_id = _crear_cliente(db)
+        cuenta_ingreso = _crear_cuenta_contable(
+            db,
+            "4.1.01.01.998",
+            "Ingresos por servicios vencimiento test",
+        )
+        articulo_id = _crear_articulo_venta(db, cuenta_ingreso)
+
+        comprobante = crear_borrador_comprobante_venta(
+            {
+                **_datos_comprobante(cliente_id),
+                "fecha_vencimiento": "2026-03-20",
+            },
+            [_detalle(articulo_id)],
+        )
+
+    assert comprobante["fecha"] == "2026-01-15"
+    assert comprobante["fecha_vencimiento"] == "2026-03-20"
+
 def test_crear_borrador_comprobante_venta_permite_descripcion_y_precio_manual():
     """El service permite precio manual pero conserva cuenta del articulo."""
     app = create_app(TestConfig)
