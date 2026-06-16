@@ -19,16 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="vc-resumen" data-table="ventas_comprobantes" data-query="obtener_contexto_listado_comprobantes_venta">
-            {% call card("Resumen", "Gestión") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="vc-cantidad" data-field="cantidad_comprobantes_venta" class="col-sm-9 mb-0">{{ cantidad_comprobantes_venta }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="vc-contenedor-tabla" data-table="ventas_comprobantes" data-query="listar_ventas_comprobantes">

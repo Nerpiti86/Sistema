@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="psv-resumen" data-table="articulos_venta" data-query="obtener_contexto_listado_articulos_venta">
-            {% call card("Resumen", "Gestión") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="psv-cantidad" data-field="cantidad_articulos_venta" class="col-sm-9">{{ cantidad_articulos_venta }}</dd>
-                    <dt class="col-sm-3">Activos</dt>
-                    <dd id="psv-cantidad-activos" data-field="cantidad_articulos_venta_activos" class="col-sm-9 mb-0">{{ cantidad_articulos_venta_activos }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="psv-contenedor-tabla" data-table="articulos_venta" data-query="listar_articulos_venta">

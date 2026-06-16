@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="mope-resumen" data-table="medios_operativos" data-query="obtener_contexto_listado_medios_operativos">
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="mope-cantidad" data-field="cantidad_medios_operativos" class="col-sm-9">{{ cantidad_medios_operativos }}</dd>
-                    <dt class="col-sm-3">Activos</dt>
-                    <dd id="mope-cantidad-activos" data-field="cantidad_medios_operativos_activos" class="col-sm-9 mb-0">{{ cantidad_medios_operativos_activos }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="mope-contenedor-tabla" data-table="medios_operativos" data-query="listar_medios_operativos">

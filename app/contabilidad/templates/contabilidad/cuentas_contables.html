@@ -34,28 +34,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div
-            id="cc-resumen"
-            data-table="cuentas_contables"
-            data-query="obtener_contexto_listado_cuentas_contables"
-        >
-            {% call card("Resumen", "Contexto contable") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd
-                        id="cc-cantidad"
-                        data-table="cuentas_contables"
-                        data-query="obtener_contexto_listado_cuentas_contables"
-                        data-field="cantidad_cuentas_contables"
-                        class="col-sm-9"
-                    >
-                        {{ cantidad_cuentas_contables }}
-                    </dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div

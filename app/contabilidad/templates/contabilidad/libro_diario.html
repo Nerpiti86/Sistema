@@ -113,66 +113,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div
-            id="ld-resumen"
-            data-table="asientos_contables"
-            data-query="obtener_contexto_pantalla_libro_diario"
-        >
-            {% call card("Resumen", "Totales del libro") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Ejercicio</dt>
-                    <dd
-                        id="ld-ejercicio"
-                        data-table="ejercicios_contables"
-                        data-field="ejercicio_id"
-                        class="col-sm-9"
-                    >
-                        {{ ejercicio_contable.codigo }}
-                        - {{ ejercicio_contable.nombre }}
-                        ({{ ejercicio_contable.fecha_desde_argentina }}
-                        a {{ ejercicio_contable.fecha_hasta_argentina }})
-                    </dd>
-
-                    <dt class="col-sm-3">Cantidad de asientos</dt>
-                    <dd
-                        id="ld-cantidad-asientos"
-                        data-field="cantidad_asientos"
-                        class="col-sm-9"
-                    >
-                        {{ cantidad_asientos }}
-                    </dd>
-
-                    <dt class="col-sm-3">Total debe</dt>
-                    <dd
-                        id="ld-total-debe"
-                        data-field="total_debe_centavos"
-                        class="col-sm-9 text-end fw-semibold"
-                    >
-                        {{ total_debe_argentina }}
-                    </dd>
-
-                    <dt class="col-sm-3">Total haber</dt>
-                    <dd
-                        id="ld-total-haber"
-                        data-field="total_haber_centavos"
-                        class="col-sm-9 text-end fw-semibold"
-                    >
-                        {{ total_haber_argentina }}
-                    </dd>
-
-                    <dt class="col-sm-3">Diferencia</dt>
-                    <dd
-                        id="ld-diferencia"
-                        data-field="diferencia_centavos"
-                        class="col-sm-9 text-end fw-semibold mb-0"
-                    >
-                        {{ diferencia_argentina }}
-                    </dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div

@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="pv-resumen" data-table="provincias" data-query="obtener_contexto_listado_provincias">
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="pv-cantidad" data-field="cantidad_provincias" class="col-sm-9">{{ cantidad_provincias }}</dd>
-                    <dt class="col-sm-3">Activas</dt>
-                    <dd id="pv-cantidad-activas" data-field="cantidad_provincias_activas" class="col-sm-9 mb-0">{{ cantidad_provincias_activas }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="pv-contenedor-tabla" data-table="provincias" data-query="listar_provincias">

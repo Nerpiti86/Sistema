@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="tdoc-resumen" data-table="tipos_documento" data-query="obtener_contexto_listado_tipos_documento">
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="tdoc-cantidad" data-field="cantidad_tipos_documento" class="col-sm-9">{{ cantidad_tipos_documento }}</dd>
-                    <dt class="col-sm-3">Activos</dt>
-                    <dd id="tdoc-cantidad-activos" data-field="cantidad_tipos_documento_activos" class="col-sm-9 mb-0">{{ cantidad_tipos_documento_activos }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="tdoc-contenedor-tabla" data-table="tipos_documento" data-query="listar_tipos_documento">

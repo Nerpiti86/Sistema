@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="civa-resumen" data-table="condiciones_iva" data-query="obtener_contexto_listado_condiciones_iva">
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="civa-cantidad" data-field="cantidad_condiciones_iva" class="col-sm-9">{{ cantidad_condiciones_iva }}</dd>
-                    <dt class="col-sm-3">Activas</dt>
-                    <dd id="civa-cantidad-activas" data-field="cantidad_condiciones_iva_activas" class="col-sm-9 mb-0">{{ cantidad_condiciones_iva_activas }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="civa-contenedor-tabla" data-table="condiciones_iva" data-query="listar_condiciones_iva">

@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="pa-resumen" data-table="paises" data-query="obtener_contexto_listado_paises">
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="pa-cantidad" data-field="cantidad_paises" class="col-sm-9">{{ cantidad_paises }}</dd>
-                    <dt class="col-sm-3">Activos</dt>
-                    <dd id="pa-cantidad-activos" data-field="cantidad_paises_activos" class="col-sm-9 mb-0">{{ cantidad_paises_activos }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="pa-contenedor-tabla" data-table="paises" data-query="listar_paises">

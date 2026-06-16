@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="umed-resumen" data-table="unidades_medida" data-query="obtener_contexto_listado_unidades_medida">
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="umed-cantidad" data-field="cantidad_unidades_medida" class="col-sm-9">{{ cantidad_unidades_medida }}</dd>
-                    <dt class="col-sm-3">Activas</dt>
-                    <dd id="umed-cantidad-activas" data-field="cantidad_unidades_medida_activas" class="col-sm-9 mb-0">{{ cantidad_unidades_medida_activas }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="umed-contenedor-tabla" data-table="unidades_medida" data-query="listar_unidades_medida">

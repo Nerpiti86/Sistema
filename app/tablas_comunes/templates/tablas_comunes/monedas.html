@@ -25,39 +25,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div
-            id="mo-resumen"
-            data-table="monedas"
-            data-query="obtener_contexto_listado_monedas"
-        >
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd
-                        id="mo-cantidad"
-                        data-table="monedas"
-                        data-query="obtener_contexto_listado_monedas"
-                        data-field="cantidad_monedas"
-                        class="col-sm-9"
-                    >
-                        {{ cantidad_monedas }}
-                    </dd>
-
-                    <dt class="col-sm-3">Activas</dt>
-                    <dd
-                        id="mo-cantidad-activas"
-                        data-table="monedas"
-                        data-query="obtener_contexto_listado_monedas"
-                        data-field="cantidad_monedas_activas"
-                        class="col-sm-9 mb-0"
-                    >
-                        {{ cantidad_monedas_activas }}
-                    </dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div

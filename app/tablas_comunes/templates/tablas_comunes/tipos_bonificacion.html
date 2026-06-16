@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="tbon-resumen" data-table="tipos_bonificacion" data-query="obtener_contexto_listado_tipos_bonificacion">
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="tbon-cantidad" data-field="cantidad_tipos_bonificacion" class="col-sm-9">{{ cantidad_tipos_bonificacion }}</dd>
-                    <dt class="col-sm-3">Activos</dt>
-                    <dd id="tbon-cantidad-activos" data-field="cantidad_tipos_bonificacion_activos" class="col-sm-9 mb-0">{{ cantidad_tipos_bonificacion_activos }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="tbon-contenedor-tabla" data-table="tipos_bonificacion" data-query="listar_tipos_bonificacion">

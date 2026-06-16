@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="gc-resumen" data-table="grupos_clientes" data-query="obtener_contexto_listado_grupos_clientes">
-            {% call card("Resumen", "Gestión") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="gc-cantidad" data-field="cantidad_grupos_clientes" class="col-sm-9">{{ cantidad_grupos_clientes }}</dd>
-                    <dt class="col-sm-3">Activos</dt>
-                    <dd id="gc-cantidad-activos" data-field="cantidad_grupos_clientes_activos" class="col-sm-9 mb-0">{{ cantidad_grupos_clientes_activos }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="gc-contenedor-tabla" data-table="grupos_clientes" data-query="listar_grupos_clientes">

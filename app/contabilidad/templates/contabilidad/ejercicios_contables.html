@@ -34,44 +34,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div
-            id="ec-resumen"
-            data-table="ejercicios_contables"
-            data-query="obtener_contexto_listado_ejercicios_contables"
-        >
-            {% call card("Resumen", "Contexto contable") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd
-                        id="ec-cantidad"
-                        data-table="ejercicios_contables"
-                        data-query="obtener_contexto_listado_ejercicios_contables"
-                        data-field="cantidad_ejercicios_contables"
-                        class="col-sm-9"
-                    >
-                        {{ cantidad_ejercicios_contables }}
-                    </dd>
-
-                    <dt class="col-sm-3">Activo</dt>
-                    <dd
-                        id="ec-activo-resumen"
-                        data-table="ejercicios_contables"
-                        data-query="obtener_contexto_listado_ejercicios_contables"
-                        data-field="ejercicio_contable_activo"
-                        class="col-sm-9"
-                    >
-                        {% if ejercicio_contable_activo %}
-                            {{ ejercicio_contable_activo.codigo }}
-                            - {{ ejercicio_contable_activo.nombre }}
-                        {% else %}
-                            Sin ejercicio activo
-                        {% endif %}
-                    </dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div

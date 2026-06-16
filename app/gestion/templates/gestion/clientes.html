@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="cl-resumen" data-table="clientes" data-query="obtener_contexto_listado_clientes">
-            {% call card("Resumen", "Gestión") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="cl-cantidad" data-field="cantidad_clientes" class="col-sm-9">{{ cantidad_clientes }}</dd>
-                    <dt class="col-sm-3">Activos</dt>
-                    <dd id="cl-cantidad-activos" data-field="cantidad_clientes_activos" class="col-sm-9 mb-0">{{ cantidad_clientes_activos }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="cl-contenedor-tabla" data-table="clientes" data-query="listar_clientes">

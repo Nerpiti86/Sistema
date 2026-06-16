@@ -19,18 +19,6 @@
         </div>
     </div>
 
-    <div class="col-12">
-        <div id="ba-resumen" data-table="bancos" data-query="obtener_contexto_listado_bancos">
-            {% call card("Resumen", "Tablas comunes") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-3">Cantidad</dt>
-                    <dd id="ba-cantidad" data-field="cantidad_bancos" class="col-sm-9">{{ cantidad_bancos }}</dd>
-                    <dt class="col-sm-3">Activos</dt>
-                    <dd id="ba-cantidad-activos" data-field="cantidad_bancos_activos" class="col-sm-9 mb-0">{{ cantidad_bancos_activos }}</dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
 
     <div class="col-12">
         <div id="ba-contenedor-tabla" data-table="bancos" data-query="listar_bancos">
