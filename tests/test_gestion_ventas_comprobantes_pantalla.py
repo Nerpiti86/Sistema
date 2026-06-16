@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from pathlib import Path
 
 from app import create_app
@@ -371,6 +372,18 @@ def test_confirmar_venta_desde_pantalla_muestra_error_funcional():
     assert b'id="vc-confirmar"' in response.data
 
 
+
+def test_js_ventas_comprobantes_actualiza_cabecera_por_tipo():
+    """Contrato: al cambiar Tipo se actualizan letra, punto venta, numero y moneda."""
+    contenido = Path("app/static/js/ventas_comprobantes_form.js").read_text(encoding="utf-8")
+
+    assert "sincronizarCabeceraPorTipoComprobante" in contenido
+    assert "opcion.dataset.letra" in contenido
+    assert "opcion.dataset.puntoVenta" in contenido
+    assert "opcion.dataset.proximoNumero" in contenido
+    assert "opcion.dataset.monedaCodigo" in contenido
+    assert "sincronizarCabeceraPorTipoComprobante();" in contenido
+
 def test_formulario_nuevo_comprobante_venta_responde_ok():
     """Valida pantalla de alta minima de comprobante de venta."""
     app = create_app(TestConfig)
@@ -418,6 +431,14 @@ def test_formulario_nuevo_comprobante_venta_responde_ok():
     assert b'id="vc-numero"' in response.data
     assert b'value="1"' in response.data
     assert b'name="tipo_comprobante"' in response.data
+    hoy = date.today()
+    vencimiento = hoy + timedelta(days=30)
+    assert f'value="{hoy.strftime("%d/%m/%Y")}"'.encode() in response.data
+    assert f'value="{vencimiento.strftime("%d/%m/%Y")}"'.encode() in response.data
+    assert b'data-letra="C"' in response.data
+    assert b'data-punto-venta="1"' in response.data
+    assert b'data-proximo-numero="1"' in response.data
+    assert b'data-moneda-codigo="ARS"' in response.data
     assert b'id="vc-comprobante-asociado-contenedor"' in response.data
     assert b'id="vc-comprobante-asociado"' in response.data
     assert b'name="comprobante_asociado_id"' in response.data
@@ -454,6 +475,14 @@ def test_formulario_nuevo_comprobante_venta_lista_fc_confirmadas_para_asociar():
     assert f'data-cliente-id="{comprobante["cliente_id"]}"'.encode() in response.data
     assert comprobante["numero_formateado"].encode() in response.data
     assert b"FC C " in response.data
+    html = response.data.decode("utf-8")
+    posicion_factura = html.index('value="011"')
+    posicion_nota_debito = html.index('value="012"')
+    posicion_nota_credito = html.index('value="013"')
+    assert 'data-proximo-numero="2"' in html[posicion_factura:posicion_nota_debito]
+    assert 'data-proximo-numero="1"' in html[posicion_nota_debito:posicion_nota_credito]
+    assert 'data-proximo-numero="1"' in html[posicion_nota_credito:]
+    assert 'data-letra="C"' in html[posicion_factura:posicion_nota_debito]
 
 
 def test_listado_ventas_comprobantes_muestra_boton_nuevo():

@@ -1,4 +1,5 @@
 import re
+from datetime import date, timedelta
 from typing import Any
 
 from app.shared.transacciones_repository import ejecutar_en_transaccion
@@ -449,11 +450,26 @@ def obtener_contexto_formulario_comprobante_venta(
     articulos_venta = [
         articulo for articulo in listar_articulos_venta() if articulo["esta_activo"]
     ]
-    tipos_comprobante_venta = [
-        tipo
-        for tipo in listar_catalogo_fiscal_activo("tipos_comprobante")
-        if tipo["codigo"] in _TIPOS_COMPROBANTE_FISCALES_VENTA
-    ]
+    tipos_comprobante_venta = []
+    for tipo in listar_catalogo_fiscal_activo("tipos_comprobante"):
+        codigo_tipo = tipo["codigo"]
+        if codigo_tipo not in _TIPOS_COMPROBANTE_FISCALES_VENTA:
+            continue
+
+        tipo_operativo = _TIPOS_COMPROBANTE_FISCALES_VENTA[codigo_tipo]
+        letra_default = _resolver_letra_comprobante_venta(codigo_tipo)
+        tipo_pantalla = dict(tipo)
+        tipo_pantalla["letra_default"] = letra_default
+        tipo_pantalla["punto_venta_default"] = str(_PUNTO_VENTA_DEFAULT)
+        tipo_pantalla["proximo_numero"] = str(
+            obtener_proximo_numero_venta_comprobante(
+                tipo_operativo,
+                letra_default,
+                _PUNTO_VENTA_DEFAULT,
+            )
+        )
+        tipo_pantalla["moneda_codigo_default"] = _MONEDA_CONTABLE
+        tipos_comprobante_venta.append(tipo_pantalla)
     unidades_medida = listar_catalogo_fiscal_activo("unidades_medida")
     tipos_bonificacion = listar_catalogo_fiscal_activo("tipos_bonificacion")
     comprobantes_confirmados_asociables = _listar_comprobantes_confirmados_para_asociacion()
@@ -526,8 +542,10 @@ def _preparar_comprobante_venta_formulario(
     comprobante_form: dict[str, Any],
 ) -> dict[str, Any]:
     formulario = dict(comprobante_form)
-    formulario.setdefault("fecha", "")
-    formulario.setdefault("fecha_vencimiento", "")
+    fecha_hoy = date.today()
+    fecha_vencimiento_default = fecha_hoy + timedelta(days=30)
+    formulario.setdefault("fecha", fecha_hoy.isoformat())
+    formulario.setdefault("fecha_vencimiento", fecha_vencimiento_default.isoformat())
     formulario["fecha"] = _formatear_fecha_formulario_para_pantalla(
         formulario.get("fecha")
     )

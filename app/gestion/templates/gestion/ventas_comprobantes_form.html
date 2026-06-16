@@ -30,7 +30,16 @@
                             <label for="vc-tipo-comprobante" class="form-label">Tipo</label>
                             <select id="vc-tipo-comprobante" name="tipo_comprobante" class="form-select" data-ns-select="normal" data-ns-select-placeholder="Seleccionar tipo..." required>
                                 {% for tipo in tipos_comprobante_venta %}
-                                    <option value="{{ tipo.codigo }}" {% if comprobante_form.tipo_comprobante == tipo.codigo %}selected{% endif %}>{{ tipo.codigo }} - {{ tipo.descripcion }}</option>
+                                    <option
+                                        value="{{ tipo.codigo }}"
+                                        data-letra="{{ tipo.letra_default }}"
+                                        data-punto-venta="{{ tipo.punto_venta_default }}"
+                                        data-proximo-numero="{{ tipo.proximo_numero }}"
+                                        data-moneda-codigo="{{ tipo.moneda_codigo_default }}"
+                                        {% if comprobante_form.tipo_comprobante == tipo.codigo %}selected{% endif %}
+                                    >
+                                        {{ tipo.codigo }} - {{ tipo.descripcion }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </div>

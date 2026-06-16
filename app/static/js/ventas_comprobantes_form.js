@@ -395,6 +395,36 @@
         }
     };
 
+    const sincronizarCabeceraPorTipoComprobante = () => {
+        const tipoComprobante = document.getElementById("vc-tipo-comprobante");
+        const opcion = obtenerOpcionSeleccionada(tipoComprobante);
+
+        if (!opcion) {
+            return;
+        }
+
+        const letra = document.getElementById("vc-letra");
+        const puntoVenta = document.getElementById("vc-punto-venta");
+        const numero = document.getElementById("vc-numero");
+        const moneda = document.getElementById("vc-moneda");
+
+        if (letra && opcion.dataset.letra) {
+            letra.value = opcion.dataset.letra;
+        }
+
+        if (puntoVenta && opcion.dataset.puntoVenta) {
+            puntoVenta.value = opcion.dataset.puntoVenta;
+        }
+
+        if (numero && opcion.dataset.proximoNumero) {
+            numero.value = opcion.dataset.proximoNumero;
+        }
+
+        if (moneda && opcion.dataset.monedaCodigo) {
+            moneda.value = opcion.dataset.monedaCodigo;
+        }
+    };
+
     const obtenerElementoAsociacion = () => ({
         cliente: document.getElementById("vc-cliente"),
         tipoComprobante: document.getElementById("vc-tipo-comprobante"),
@@ -638,7 +668,10 @@
         }
 
         if (tipoComprobante) {
-            tipoComprobante.addEventListener("change", sincronizarSelectorComprobanteAsociado);
+            tipoComprobante.addEventListener("change", () => {
+                sincronizarCabeceraPorTipoComprobante();
+                sincronizarSelectorComprobanteAsociado();
+            });
         }
 
         const formulario = document.querySelector(SELECTORES.formulario);
@@ -646,6 +679,7 @@
             formulario.addEventListener("submit", validarArticuloAntesDeEnviar);
         }
 
+        sincronizarCabeceraPorTipoComprobante();
         sincronizarSelectorComprobanteAsociado();
         actualizarSubtotalLinea();
     });
