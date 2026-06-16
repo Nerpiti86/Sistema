@@ -26,9 +26,46 @@
             <div id="vc-cabecera" class="col-12">
                 {% call card("Cabecera", "Comprobante") %}
                     <div id="vc-datos-principales" class="row g-3">
+                        <div class="col-12 col-lg-4">
+                            <label for="vc-tipo-comprobante" class="form-label">Tipo</label>
+                            <select id="vc-tipo-comprobante" name="tipo_comprobante" class="form-select" data-ns-select="normal" data-ns-select-placeholder="Seleccionar tipo..." required>
+                                {% for tipo in tipos_comprobante_venta %}
+                                    <option value="{{ tipo.codigo }}" {% if comprobante_form.tipo_comprobante == tipo.codigo %}selected{% endif %}>{{ tipo.codigo }} - {{ tipo.descripcion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="vc-letra" class="form-label">Letra</label>
+                            <input id="vc-letra" name="letra" type="text" class="form-control" value="{{ comprobante_form.letra }}" maxlength="10" readonly>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="vc-punto-venta" class="form-label">Punto venta</label>
+                            <input id="vc-punto-venta" name="punto_venta" type="number" min="1" step="1" class="form-control text-end" value="{{ comprobante_form.punto_venta }}" readonly required>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="vc-numero" class="form-label">Número</label>
+                            <input id="vc-numero" name="numero" type="number" min="1" step="1" class="form-control text-end" value="{{ comprobante_form.numero }}" readonly required>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="vc-moneda" class="form-label">Moneda</label>
+                            <input id="vc-moneda" name="moneda_codigo" type="text" class="form-control" value="{{ comprobante_form.moneda_codigo }}" readonly>
+                        </div>
+
                         <div class="col-12">
                             <label for="vc-cliente" class="form-label">Cliente</label>
-                            <select id="vc-cliente" name="cliente_id" class="form-select" data-ns-select="normal" required>
+                            <select
+                                id="vc-cliente"
+                                name="cliente_id"
+                                class="form-select"
+                                data-ns-select="search"
+                                data-ns-select-placeholder="Seleccionar cliente..."
+                                data-ns-select-search-placeholder="Buscar cliente..."
+                                required
+                            >
                                 <option value="">Seleccionar cliente...</option>
                                 {% for cliente in clientes %}
                                     <option value="{{ cliente.id }}" {% if comprobante_form.cliente_id|string == cliente.id|string %}selected{% endif %}>
@@ -38,23 +75,14 @@
                             </select>
                         </div>
 
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-6">
                             <label for="vc-fecha-form" class="form-label">Fecha</label>
                             <input id="vc-fecha-form" name="fecha" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ comprobante_form.fecha }}" placeholder="dd/mm/aaaa" autocomplete="off" required>
                         </div>
 
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-6">
                             <label for="vc-fecha-vencimiento-form" class="form-label">Vencimiento</label>
                             <input id="vc-fecha-vencimiento-form" name="fecha_vencimiento" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ comprobante_form.fecha_vencimiento }}" placeholder="dd/mm/aaaa" autocomplete="off">
-                        </div>
-
-                        <div class="col-12 col-md-4">
-                            <label for="vc-tipo-comprobante" class="form-label">Tipo</label>
-                            <select id="vc-tipo-comprobante" name="tipo_comprobante" class="form-select" data-ns-select="normal" data-ns-select-placeholder="Seleccionar tipo..." required>
-                                {% for tipo in tipos_comprobante_venta %}
-                                    <option value="{{ tipo.codigo }}" {% if comprobante_form.tipo_comprobante == tipo.codigo %}selected{% endif %}>{{ tipo.codigo }} - {{ tipo.descripcion }}</option>
-                                {% endfor %}
-                            </select>
                         </div>
 
                         {% set requiere_comprobante_asociado = comprobante_form.tipo_comprobante in ["012", "013", "NOTA_DEBITO", "NOTA_CREDITO"] %}
@@ -89,26 +117,6 @@
                             <div id="vc-comprobante-asociado-ayuda" class="form-text">
                                 Para NC, seleccioná una FC o ND confirmada con saldo disponible. Para ND, seleccioná una FC confirmada.
                             </div>
-                        </div>
-
-                        <div class="col-12 col-md-3">
-                            <label for="vc-letra" class="form-label">Letra</label>
-                            <input id="vc-letra" name="letra" type="text" class="form-control" value="{{ comprobante_form.letra }}" maxlength="10" readonly>
-                        </div>
-
-                        <div class="col-12 col-md-3">
-                            <label for="vc-punto-venta" class="form-label">Punto venta</label>
-                            <input id="vc-punto-venta" name="punto_venta" type="number" min="1" step="1" class="form-control text-end" value="{{ comprobante_form.punto_venta }}" readonly required>
-                        </div>
-
-                        <div class="col-12 col-md-3">
-                            <label for="vc-numero" class="form-label">Número</label>
-                            <input id="vc-numero" name="numero" type="number" min="1" step="1" class="form-control text-end" value="{{ comprobante_form.numero }}" readonly required>
-                        </div>
-
-                        <div class="col-12 col-md-3">
-                            <label for="vc-moneda" class="form-label">Moneda</label>
-                            <input id="vc-moneda" name="moneda_codigo" type="text" class="form-control" value="{{ comprobante_form.moneda_codigo }}" readonly>
                         </div>
                     </div>
                 {% endcall %}

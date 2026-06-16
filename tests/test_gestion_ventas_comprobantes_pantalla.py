@@ -404,6 +404,7 @@ def test_formulario_nuevo_comprobante_venta_responde_ok():
     assert b"Nuevo comprobante de venta" in response.data
     assert b'id="vc-form"' in response.data
     assert b'id="vc-cliente"' in response.data
+    assert b'data-ns-select-search-placeholder="Buscar cliente..."' in response.data
     assert b'id="vc-articulo"' in response.data
     assert b'id="vc-cantidad"' in response.data
     assert b'id="vc-unidad-medida"' in response.data
@@ -424,6 +425,13 @@ def test_formulario_nuevo_comprobante_venta_responde_ok():
     assert b'readonly' in response.data
     assert b"Cliente pantalla venta" in response.data
     assert b'data-lookup="ventas-articulos-activos"' in response.data
+    html = response.data.decode("utf-8")
+    assert html.index('id="vc-tipo-comprobante"') < html.index('id="vc-cliente"')
+    assert html.index('id="vc-letra"') < html.index('id="vc-cliente"')
+    assert html.index('id="vc-punto-venta"') < html.index('id="vc-cliente"')
+    assert html.index('id="vc-numero"') < html.index('id="vc-cliente"')
+    assert html.index('id="vc-moneda"') < html.index('id="vc-cliente"')
+    assert html.index('id="vc-cliente"') < html.index('id="vc-fecha-form"')
     assert b"Confirmar comprobante" in response.data
 
 
