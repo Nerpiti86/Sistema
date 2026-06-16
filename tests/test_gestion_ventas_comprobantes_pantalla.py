@@ -496,7 +496,12 @@ def test_formulario_nuevo_comprobante_venta_lista_fc_confirmadas_para_asociar():
     posicion_factura = html.index('value="011"')
     posicion_nota_debito = html.index('value="012"')
     posicion_nota_credito = html.index('value="013"')
-    assert 'data-proximo-numero="2"' in html[posicion_factura:posicion_nota_debito]
+    proximo_numero_factura = int(comprobante["numero"]) + 1
+
+    assert (
+        f'data-proximo-numero="{proximo_numero_factura}"'
+        in html[posicion_factura:posicion_nota_debito]
+    )
     assert 'data-proximo-numero="1"' in html[posicion_nota_debito:posicion_nota_credito]
     assert 'data-proximo-numero="1"' in html[posicion_nota_credito:]
     assert 'data-letra="C"' in html[posicion_factura:posicion_nota_debito]
