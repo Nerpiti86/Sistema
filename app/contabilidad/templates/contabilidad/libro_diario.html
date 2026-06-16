@@ -50,10 +50,11 @@
                         <input
                             id="ld-fecha-desde"
                             data-field="fecha_desde"
+                            data-ui-control="date"
                             type="date"
                             name="fecha_desde"
                             value="{{ filtros.fecha_desde }}"
-                            class="form-control"
+                            class="form-control form-control-sm"
                         >
                     </div>
 
@@ -62,10 +63,11 @@
                         <input
                             id="ld-fecha-hasta"
                             data-field="fecha_hasta"
+                            data-ui-control="date"
                             type="date"
                             name="fecha_hasta"
                             value="{{ filtros.fecha_hasta }}"
-                            class="form-control"
+                            class="form-control form-control-sm"
                         >
                     </div>
 
@@ -74,8 +76,9 @@
                         <select
                             id="ld-estado"
                             data-field="estado"
+                            data-ui-control="select"
                             name="estado"
-                            class="form-select"
+                            class="form-select form-select-sm"
                         >
                             {% for estado_libro in estados_libro_diario %}
                                 <option
@@ -93,7 +96,7 @@
                             id="ld-aplicar-filtros"
                             data-action="ver_libro_diario"
                             type="submit"
-                            class="btn btn-primary"
+                            class="btn btn-primary btn-sm"
                         >
                             Aplicar filtros
                         </button>
@@ -177,9 +180,11 @@
                     data-row-id="{{ asiento.asiento_id }}"
                     class="mb-3"
                 >
-                    {% call card("Asiento " ~ asiento.numero_asiento_mostrar, asiento.fecha_argentina) %}
+                    {% set asiento_titulo = asiento.comprobante if asiento.comprobante else "Asiento sin comprobante" %}
+                    {% set asiento_subtitulo = asiento.sujeto if asiento.sujeto else "Sin sujeto" %}
+                    {% call card(asiento_titulo, asiento_subtitulo) %}
                         <div class="row g-2 mb-3">
-                            <div class="col-12 col-md-3">
+                            <div class="col-12 col-md-6">
                                 <div class="text-muted small">Número de asiento</div>
                                 <div
                                     id="ld-asiento-numero-{{ asiento.asiento_id }}"
@@ -190,7 +195,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-12 col-md-3">
+                            <div class="col-12 col-md-6">
                                 <div class="text-muted small">Fecha</div>
                                 <div
                                     id="ld-asiento-fecha-{{ asiento.asiento_id }}"
@@ -198,36 +203,6 @@
                                     class="fw-semibold"
                                 >
                                     {{ asiento.fecha_argentina }}
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-3">
-                                <div class="text-muted small">Comprobante</div>
-                                <div
-                                    id="ld-asiento-comprobante-{{ asiento.asiento_id }}"
-                                    data-field="comprobante"
-                                    class="fw-semibold"
-                                >
-                                    {% if asiento.comprobante %}
-                                        {{ asiento.comprobante }}
-                                    {% else %}
-                                        <span class="text-muted">Sin comprobante</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-3">
-                                <div class="text-muted small">Sujeto</div>
-                                <div
-                                    id="ld-asiento-sujeto-{{ asiento.asiento_id }}"
-                                    data-field="sujeto"
-                                    class="fw-semibold"
-                                >
-                                    {% if asiento.sujeto %}
-                                        {{ asiento.sujeto }}
-                                    {% else %}
-                                        <span class="text-muted">Sin sujeto</span>
-                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -269,7 +244,7 @@
                                     {% endfor %}
                                 </tbody>
                                 <tfoot>
-                                    <tr>
+                                    <tr class="table-light border-top border-2">
                                         <th colspan="2" class="text-end">Total asiento</th>
                                         <th
                                             id="ld-asiento-total-debe-{{ asiento.asiento_id }}"

@@ -201,3 +201,67 @@ def test_pantalla_contabilidad_tiene_acceso_a_libro_diario():
     assert b'id="ld-acceso"' in response.data
     assert b'data-table="asientos_contables"' in response.data
     assert b'data-action="ver_libro_diario"' in response.data
+
+
+
+def test_pantalla_libro_diario_ui_ux_sin_repeticiones_y_totales_destacados():
+    """
+    Valida ajuste UI/UX del Libro Diario.
+
+    La cabecera de cada asiento no debe repetir "Asiento EJ..." porque el
+    numero ya esta en el bloque de datos. Los controles quedan marcados para el
+    contrato UI y la fila de totales queda destacada.
+    """
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+        ejercicio_id = _insertar_ejercicio_contable_pantalla_para_asientos(db)
+        cuenta_debe = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "1.1.01.01.995",
+        )
+        cuenta_haber = _insertar_cuenta_contable_pantalla_para_asientos(
+            db,
+            "1.1.01.01.994",
+        )
+
+        crear_asiento_contable_automatico_confirmado(
+            {
+                "ejercicio_id": ejercicio_id,
+                "fecha": "2026-06-10",
+                "descripcion": (
+                    "Comprobante: FC C 0001-00000001 | "
+                    "Sujeto: Nerpiti Nicolas Neri"
+                ),
+            },
+            [
+                {
+                    "cuenta_contable_codigo": cuenta_debe,
+                    "nominal_debe_centavos": 100000,
+                    "debe_centavos": 100000,
+                },
+                {
+                    "cuenta_contable_codigo": cuenta_haber,
+                    "nominal_haber_centavos": 100000,
+                    "haber_centavos": 100000,
+                },
+            ],
+        )
+
+        response = client.get("/contabilidad/libros/diario/")
+
+    assert response.status_code == 200
+    html = response.data.decode("utf-8")
+
+    assert "Asiento EJ2026-0000001" not in html
+    assert "FC C 0001-00000001" in html
+    assert "Nerpiti Nicolas Neri" in html
+    assert "data-ui-control=\"date\"" in html
+    assert "data-ui-control=\"select\"" in html
+    assert "form-control form-control-sm" in html
+    assert "form-select form-select-sm" in html
+    assert "btn btn-primary btn-sm" in html
+    assert "table-light border-top border-2" in html
