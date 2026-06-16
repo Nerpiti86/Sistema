@@ -839,7 +839,7 @@ def _descripcion_confirmacion_venta(comprobante: dict[str, Any]) -> str:
 def _descripcion_movimiento_cuenta_corriente_confirmacion(
     comprobante: dict[str, Any],
 ) -> str:
-    return _descripcion_comprobante_sujeto(comprobante)
+    return str(comprobante["numero_formateado"])
 
 
 def _descripcion_linea_deudores_confirmacion(comprobante: dict[str, Any]) -> str:

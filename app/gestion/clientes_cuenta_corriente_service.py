@@ -309,6 +309,11 @@ def _mostrar_detalle_movimiento(movimiento: dict[str, Any]) -> str:
     tipo = str(movimiento.get("tipo_movimiento") or "").strip().upper()
     prefijo_corto = _mostrar_tipo_movimiento(tipo)
 
+    if tipo in {"FACTURA", "NOTA_DEBITO", "NOTA_CREDITO"}:
+        comprobante = _extraer_comprobante_desde_descripcion(descripcion)
+        if comprobante:
+            return comprobante
+
     prefijos = [
         f"Venta {tipo} ",
         f"Venta {prefijo_corto} ",
@@ -332,6 +337,18 @@ def _mostrar_detalle_movimiento(movimiento: dict[str, Any]) -> str:
 
     return detalle
 
+
+def _extraer_comprobante_desde_descripcion(descripcion: str) -> str:
+    texto = str(descripcion or "").strip()
+
+    if not texto.startswith("Comprobante:"):
+        return ""
+
+    comprobante = texto[len("Comprobante:"):].strip()
+    if "|" in comprobante:
+        comprobante = comprobante.split("|", 1)[0].strip()
+
+    return comprobante
 
 def _mostrar_lado_saldo(saldo_centavos: int) -> str:
     if int(saldo_centavos) < 0:

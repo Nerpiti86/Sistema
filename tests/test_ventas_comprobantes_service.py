@@ -732,7 +732,7 @@ def test_confirmar_comprobante_venta_factura_genera_asiento_y_cuenta_corriente()
     assert asiento["descripcion"] == "Comprobante: FC C 0001-00000025 | Sujeto: Cliente Venta"
     assert movimiento["estado"] == "CONFIRMADO"
     assert movimiento["tipo_movimiento"] == "FACTURA"
-    assert movimiento["descripcion"] == "Comprobante: FC C 0001-00000025 | Sujeto: Cliente Venta"
+    assert movimiento["descripcion"] == "FC C 0001-00000025"
     assert movimiento["debe_centavos"] == 100000
     assert movimiento["haber_centavos"] == 0
     assert movimiento["origen_tipo"] == "VENTA_COMPROBANTE"
@@ -1074,9 +1074,7 @@ def test_confirmar_nota_debito_asociada_describe_comprobante_y_sujeto():
     assert asiento["descripcion"] == (
         "Comprobante: ND C 0001-00000001 | Sujeto: Cliente Venta"
     )
-    assert movimiento["descripcion"] == (
-        "Comprobante: ND C 0001-00000001 | Sujeto: Cliente Venta"
-    )
+    assert movimiento["descripcion"] == "ND C 0001-00000001"
     assert detalles_asiento[0]["descripcion"] == (
         "Comprobante: ND C 0001-00000001 | Sujeto: Cliente Venta"
     )

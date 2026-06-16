@@ -91,7 +91,6 @@
                         <thead>
                             <tr>
                                 <th data-field="fecha">Fecha</th>
-                                <th data-field="tipo_movimiento">Movimiento</th>
                                 <th data-field="detalle">Detalle</th>
                                 <th data-field="debe_centavos" class="text-end">Debe</th>
                                 <th data-field="haber_centavos" class="text-end">Haber</th>
@@ -101,7 +100,7 @@
                         </thead>
                         <tbody id="cl-cc-tbody">
                             <tr id="cl-cc-saldo-inicial" class="table-light">
-                                <td colspan="5" class="fw-semibold">{{ saldo_inicial_etiqueta }}</td>
+                                <td colspan="4" class="fw-semibold">{{ saldo_inicial_etiqueta }}</td>
                                 <td data-field="saldo_inicial_centavos" class="text-end fw-semibold">
                                     {{ saldo_inicial.saldo_argentina }}
                                 </td>
@@ -110,7 +109,6 @@
                             {% for movimiento in movimientos %}
                                 <tr id="cl-cc-row-{{ movimiento.id }}" data-row-id="{{ movimiento.id }}">
                                     <td data-field="fecha">{{ movimiento.fecha_argentina }}</td>
-                                    <td data-field="tipo_movimiento">{{ movimiento.movimiento_mostrar }}</td>
                                     <td data-field="detalle">{{ movimiento.detalle_mostrar }}</td>
                                     <td data-field="debe_centavos" class="text-end">{{ movimiento.debe_argentina }}</td>
                                     <td data-field="haber_centavos" class="text-end">{{ movimiento.haber_argentina }}</td>
@@ -127,11 +125,11 @@
                                 </tr>
                             {% else %}
                                 <tr id="cl-cc-row-sin-datos">
-                                    <td colspan="7" class="text-center text-muted py-4">No hay movimientos de cuenta corriente para este cliente.</td>
+                                    <td colspan="6" class="text-center text-muted py-4">No hay movimientos de cuenta corriente para este cliente.</td>
                                 </tr>
                             {% endfor %}
                             <tr id="cl-cc-saldo-final" class="table-light">
-                                <td colspan="5" class="fw-semibold">Saldo final</td>
+                                <td colspan="4" class="fw-semibold">Saldo final</td>
                                 <td data-field="saldo_final_centavos" class="text-end fw-semibold">
                                     {{ saldo_final.saldo_argentina }}
                                 </td>

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from app import create_app
@@ -232,12 +234,14 @@ def test_obtener_contexto_cuenta_corriente_cliente_devuelve_movimientos_y_lectur
 
     assert contexto["cliente"]["id"] == cliente_id
     assert contexto["cantidad_movimientos"] == 2
-    assert contexto["lectura_saldo"] == {
-        "cliente_id": cliente_id,
-        "total_debe_centavos": 150000,
-        "total_haber_centavos": 50000,
-        "saldo_centavos": 100000,
-    }
+    assert contexto["lectura_saldo"]["cliente_id"] == cliente_id
+    assert contexto["lectura_saldo"]["total_debe_centavos"] == 150000
+    assert contexto["lectura_saldo"]["total_haber_centavos"] == 50000
+    assert contexto["lectura_saldo"]["saldo_centavos"] == 100000
+    assert contexto["lectura_saldo"]["total_debe_argentina"] == "1.500,00"
+    assert contexto["lectura_saldo"]["total_haber_argentina"] == "500,00"
+    assert contexto["lectura_saldo"]["saldo_argentina"] == "1.000,00"
+    assert contexto["lectura_saldo"]["saldo_lado"] == "DEUDOR"
 
 
 def test_obtener_contexto_cuenta_corriente_cliente_filtra_estado():
@@ -308,3 +312,46 @@ def test_normalizar_id_cliente_cuenta_corriente_rechaza_invalido():
 
     with pytest.raises(ValueError, match="positivo"):
         normalizar_id_cliente_cuenta_corriente("0")
+
+
+def test_cuenta_corriente_cliente_muestra_solo_comprobante_en_detalle_de_venta():
+    """
+    Contrato: la cuenta corriente de cliente muestra solo el comprobante.
+
+    Aunque el movimiento persista una descripcion larga de asiento heredada,
+    la pantalla de mayor debe leer solamente FC/ND/NC C punto-numero.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        cliente_id = _crear_cliente(get_db())
+
+        crear_movimiento_debe_cliente(
+            {
+                "cliente_id": cliente_id,
+                "fecha": "2026-01-15",
+                "tipo_movimiento": "FACTURA",
+                "descripcion": "Comprobante: FC C 0001-00000001 | Sujeto: Cliente Cuenta Corriente",
+                "importe_centavos": 150000,
+                "estado": "CONFIRMADO",
+                "origen_tipo": "VENTA_COMPROBANTE",
+                "origen_id": 1,
+            }
+        )
+
+        contexto = obtener_contexto_cuenta_corriente_cliente(cliente_id)
+
+    assert contexto["movimientos"][0]["detalle_mostrar"] == "FC C 0001-00000001"
+
+
+def test_template_cuenta_corriente_cliente_oculta_columna_movimiento():
+    """Contrato: el mayor de cliente no muestra la columna Movimiento."""
+    contenido = Path(
+        "app/gestion/templates/gestion/clientes_cuenta_corriente.html"
+    ).read_text(encoding="utf-8")
+
+    assert '<th data-field="tipo_movimiento">Movimiento</th>' not in contenido
+    assert "{{ movimiento.movimiento_mostrar }}" not in contenido
+    assert '<th data-field="detalle">Detalle</th>' in contenido
+    assert 'colspan="6" class="text-center text-muted py-4"' in contenido
