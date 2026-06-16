@@ -244,7 +244,7 @@ def _preparar_comprobante_venta_para_pantalla(
         comprobante.get("numero", 0),
         8,
     )
-    comprobante_pantalla["condicion_venta_mostrar"] = "Venta a crédito"
+    comprobante_pantalla["condicion_venta_mostrar"] = "Cuenta corriente cliente"
     _agregar_asiento_contable_para_pantalla(comprobante_pantalla)
 
     return comprobante_pantalla

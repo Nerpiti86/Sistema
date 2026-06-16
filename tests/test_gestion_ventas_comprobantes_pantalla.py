@@ -280,7 +280,7 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
     assert b"Sin asiento" in response.data
     assert b'id="vc-detalle-comprobante"' in response.data
     assert b"Comprobante completo" in response.data
-    assert b"Venta a crÃ©dito" in response.data
+    assert b"Cuenta corriente cliente" in response.data
     assert b'id="vc-detalle-cuenta-corriente"' not in response.data
     assert b"Sin movimiento de cuenta corriente asociado." not in response.data
     assert b"Cuenta ingreso" not in response.data
