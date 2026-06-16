@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section
+    id="ld-listado"
+    data-table="asientos_contables"
+    data-query="obtener_contexto_pantalla_libro_diario"
+    class="row g-3"
+>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="ld-titulo" class="h3 mb-1">
+                    Libro diario
+                </h1>
+                <p id="ld-descripcion" class="text-muted mb-0">
+                    Asientos contables agrupados por fecha, número de asiento, comprobante y sujeto.
+                </p>
+            </div>
+            <div id="ld-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver a contabilidad", url_for("contabilidad.index")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="ld-filtros"
+            data-table="asientos_contables"
+            data-query="obtener_contexto_pantalla_libro_diario"
+        >
+            {% call card("Filtros", "Libro diario") %}
+                <form
+                    id="ld-form-filtros"
+                    method="get"
+                    action="{{ url_for('contabilidad.ver_libro_diario') }}"
+                    class="row g-3 align-items-end mb-0"
+                >
+                    <input
+                        id="ld-ejercicio-id"
+                        type="hidden"
+                        name="ejercicio_id"
+                        value="{{ filtros.ejercicio_id }}"
+                    >
+
+                    <div class="col-12 col-md-3">
+                        <label for="ld-fecha-desde" class="form-label">Desde</label>
+                        <input
+                            id="ld-fecha-desde"
+                            data-field="fecha_desde"
+                            type="date"
+                            name="fecha_desde"
+                            value="{{ filtros.fecha_desde }}"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="ld-fecha-hasta" class="form-label">Hasta</label>
+                        <input
+                            id="ld-fecha-hasta"
+                            data-field="fecha_hasta"
+                            type="date"
+                            name="fecha_hasta"
+                            value="{{ filtros.fecha_hasta }}"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="col-12 col-md-3">
+                        <label for="ld-estado" class="form-label">Estado</label>
+                        <select
+                            id="ld-estado"
+                            data-field="estado"
+                            name="estado"
+                            class="form-select"
+                        >
+                            {% for estado_libro in estados_libro_diario %}
+                                <option
+                                    value="{{ estado_libro.codigo }}"
+                                    {% if filtros.estado == estado_libro.codigo %}selected{% endif %}
+                                >
+                                    {{ estado_libro.descripcion }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-3 text-md-end">
+                        <button
+                            id="ld-aplicar-filtros"
+                            data-action="ver_libro_diario"
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Aplicar filtros
+                        </button>
+                    </div>
+                </form>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="ld-resumen"
+            data-table="asientos_contables"
+            data-query="obtener_contexto_pantalla_libro_diario"
+        >
+            {% call card("Resumen", "Totales del libro") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Ejercicio</dt>
+                    <dd
+                        id="ld-ejercicio"
+                        data-table="ejercicios_contables"
+                        data-field="ejercicio_id"
+                        class="col-sm-9"
+                    >
+                        {{ ejercicio_contable.codigo }}
+                        - {{ ejercicio_contable.nombre }}
+                        ({{ ejercicio_contable.fecha_desde_argentina }}
+                        a {{ ejercicio_contable.fecha_hasta_argentina }})
+                    </dd>
+
+                    <dt class="col-sm-3">Cantidad de asientos</dt>
+                    <dd
+                        id="ld-cantidad-asientos"
+                        data-field="cantidad_asientos"
+                        class="col-sm-9"
+                    >
+                        {{ cantidad_asientos }}
+                    </dd>
+
+                    <dt class="col-sm-3">Total debe</dt>
+                    <dd
+                        id="ld-total-debe"
+                        data-field="total_debe_centavos"
+                        class="col-sm-9 text-end fw-semibold"
+                    >
+                        {{ total_debe_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Total haber</dt>
+                    <dd
+                        id="ld-total-haber"
+                        data-field="total_haber_centavos"
+                        class="col-sm-9 text-end fw-semibold"
+                    >
+                        {{ total_haber_argentina }}
+                    </dd>
+
+                    <dt class="col-sm-3">Diferencia</dt>
+                    <dd
+                        id="ld-diferencia"
+                        data-field="diferencia_centavos"
+                        class="col-sm-9 text-end fw-semibold mb-0"
+                    >
+                        {{ diferencia_argentina }}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div
+            id="ld-asientos"
+            data-table="asientos_contables"
+            data-query="obtener_contexto_libro_diario"
+        >
+            {% for asiento in libro_diario_asientos %}
+                <div
+                    id="ld-asiento-{{ asiento.asiento_id }}"
+                    data-table="asientos_contables"
+                    data-row-id="{{ asiento.asiento_id }}"
+                    class="mb-3"
+                >
+                    {% call card("Asiento " ~ asiento.numero_asiento_mostrar, asiento.fecha_argentina) %}
+                        <div class="row g-2 mb-3">
+                            <div class="col-12 col-md-3">
+                                <div class="text-muted small">Número de asiento</div>
+                                <div
+                                    id="ld-asiento-numero-{{ asiento.asiento_id }}"
+                                    data-field="numero_asiento"
+                                    class="fw-semibold"
+                                >
+                                    {{ asiento.numero_asiento_mostrar }}
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-3">
+                                <div class="text-muted small">Fecha</div>
+                                <div
+                                    id="ld-asiento-fecha-{{ asiento.asiento_id }}"
+                                    data-field="fecha"
+                                    class="fw-semibold"
+                                >
+                                    {{ asiento.fecha_argentina }}
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-3">
+                                <div class="text-muted small">Comprobante</div>
+                                <div
+                                    id="ld-asiento-comprobante-{{ asiento.asiento_id }}"
+                                    data-field="comprobante"
+                                    class="fw-semibold"
+                                >
+                                    {% if asiento.comprobante %}
+                                        {{ asiento.comprobante }}
+                                    {% else %}
+                                        <span class="text-muted">Sin comprobante</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-3">
+                                <div class="text-muted small">Sujeto</div>
+                                <div
+                                    id="ld-asiento-sujeto-{{ asiento.asiento_id }}"
+                                    data-field="sujeto"
+                                    class="fw-semibold"
+                                >
+                                    {% if asiento.sujeto %}
+                                        {{ asiento.sujeto }}
+                                    {% else %}
+                                        <span class="text-muted">Sin sujeto</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table
+                                id="ld-tabla-{{ asiento.asiento_id }}"
+                                data-table="asientos_contables_detalle"
+                                class="table table-sm align-middle mb-0"
+                            >
+                                <thead>
+                                    <tr>
+                                        <th data-field="cuenta_contable_codigo">Cuenta</th>
+                                        <th data-field="cuenta_nombre">Nombre cuenta</th>
+                                        <th data-field="debe_centavos" class="text-end">Debe</th>
+                                        <th data-field="haber_centavos" class="text-end">Haber</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for renglon in asiento.renglones %}
+                                        <tr
+                                            id="ld-row-{{ renglon.detalle_id }}"
+                                            data-table="asientos_contables_detalle"
+                                            data-row-id="{{ renglon.detalle_id }}"
+                                        >
+                                            <td data-field="cuenta_contable_codigo">
+                                                {{ renglon.cuenta }}
+                                            </td>
+                                            <td data-field="cuenta_nombre">
+                                                {{ renglon.cuenta_nombre }}
+                                            </td>
+                                            <td data-field="debe_centavos" class="text-end">
+                                                {{ renglon.debe_argentina }}
+                                            </td>
+                                            <td data-field="haber_centavos" class="text-end">
+                                                {{ renglon.haber_argentina }}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="2" class="text-end">Total asiento</th>
+                                        <th
+                                            id="ld-asiento-total-debe-{{ asiento.asiento_id }}"
+                                            data-field="total_debe_centavos"
+                                            class="text-end"
+                                        >
+                                            {{ asiento.total_debe_argentina }}
+                                        </th>
+                                        <th
+                                            id="ld-asiento-total-haber-{{ asiento.asiento_id }}"
+                                            data-field="total_haber_centavos"
+                                            class="text-end"
+                                        >
+                                            {{ asiento.total_haber_argentina }}
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% endcall %}
+                </div>
+            {% else %}
+                {% call card("Libro diario", "Sin movimientos") %}
+                    <p
+                        id="ld-mensaje-sin-datos"
+                        data-table="asientos_contables"
+                        data-query="obtener_contexto_libro_diario"
+                        class="text-muted mb-0"
+                    >
+                        No hay movimientos para el Libro Diario.
+                    </p>
+                {% endcall %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

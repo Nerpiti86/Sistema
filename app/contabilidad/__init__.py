@@ -3,6 +3,7 @@ from app.contabilidad import routes_asientos
 from app.contabilidad import routes_cuentas
 from app.contabilidad import routes_ejercicios
 from app.contabilidad import routes_indices
+from app.contabilidad import routes_libros
 
 
 def register(app):

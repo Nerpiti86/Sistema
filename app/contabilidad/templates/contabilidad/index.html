@@ -37,6 +37,13 @@
                 >
                     {{ secondary_link("Asientos contables", url_for("contabilidad.ver_listado_asientos_contables")) }}
                 </span>
+                <span
+                    id="ld-acceso"
+                    data-table="asientos_contables"
+                    data-action="ver_libro_diario"
+                >
+                    {{ secondary_link("Libro diario", url_for("contabilidad.ver_libro_diario")) }}
+                </span>
                 {{ secondary_link("Volver al inicio", url_for("ui.dashboard")) }}
             </div>
         {% endcall %}

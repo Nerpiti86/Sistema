@@ -1,5 +1,9 @@
 from typing import Any
 
+from app.contabilidad.ejercicios_contables_repository import (
+    obtener_ejercicio_contable_activo,
+    obtener_ejercicio_contable_por_id,
+)
 from app.contabilidad.libros_contables_repository import (
     listar_movimientos_libro_diario,
 )
@@ -167,3 +171,109 @@ def _formatear_fecha(fecha: Any) -> str:
 
 def _formatear_centavos(valor: Any) -> str:
     return formatear_entero_escala_a_decimal_argentino(int(valor or 0), 2)
+
+
+_ESTADOS_PANTALLA_LIBRO_DIARIO = [
+    {"codigo": "CONFIRMADO", "descripcion": "Confirmados"},
+    {"codigo": "BORRADOR", "descripcion": "Borradores"},
+    {"codigo": "ANULADO", "descripcion": "Anulados"},
+]
+
+
+def obtener_contexto_pantalla_libro_diario(filtros: Any | None = None) -> dict[str, Any]:
+    """
+    Devuelve contexto de pantalla para Libro Diario.
+
+    Resuelve ejercicio activo y filtros visibles. La lectura contable queda
+    delegada a obtener_contexto_libro_diario.
+    """
+    filtros_dict = dict(filtros or {})
+    ejercicio_id_filtro = _normalizar_entero_positivo_opcional(
+        filtros_dict.get("ejercicio_id")
+    )
+
+    if ejercicio_id_filtro is None:
+        ejercicio = obtener_ejercicio_contable_activo()
+    else:
+        ejercicio = obtener_ejercicio_contable_por_id(ejercicio_id_filtro)
+        if ejercicio is None:
+            raise ValueError("No existe el ejercicio contable seleccionado.")
+
+    fecha_desde = (
+        _normalizar_texto_opcional(filtros_dict.get("fecha_desde"))
+        or ejercicio["fecha_desde"]
+    )
+    fecha_hasta = (
+        _normalizar_texto_opcional(filtros_dict.get("fecha_hasta"))
+        or ejercicio["fecha_hasta"]
+    )
+    estado = _normalizar_estado_pantalla(filtros_dict.get("estado"))
+
+    contexto = obtener_contexto_libro_diario(
+        ejercicio["id"],
+        fecha_desde,
+        fecha_hasta,
+        estado,
+    )
+    contexto["ejercicio_contable"] = _preparar_ejercicio_para_pantalla_libro_diario(
+        ejercicio
+    )
+    contexto["estados_libro_diario"] = list(_ESTADOS_PANTALLA_LIBRO_DIARIO)
+    contexto["filtros"] = {
+        "ejercicio_id": str(ejercicio["id"]),
+        "fecha_desde": fecha_desde,
+        "fecha_hasta": fecha_hasta,
+        "estado": estado,
+    }
+
+    return contexto
+
+
+def _preparar_ejercicio_para_pantalla_libro_diario(
+    ejercicio: dict[str, Any],
+) -> dict[str, Any]:
+    ejercicio_pantalla = dict(ejercicio)
+    ejercicio_pantalla["fecha_desde_argentina"] = formatear_fecha_iso_a_argentina(
+        ejercicio["fecha_desde"]
+    )
+    ejercicio_pantalla["fecha_hasta_argentina"] = formatear_fecha_iso_a_argentina(
+        ejercicio["fecha_hasta"]
+    )
+    return ejercicio_pantalla
+
+
+def _normalizar_estado_pantalla(valor: Any) -> str:
+    estado = str(valor or "CONFIRMADO").strip().upper()
+
+    if not estado:
+        return "CONFIRMADO"
+
+    estados_validos = {
+        estado_libro["codigo"] for estado_libro in _ESTADOS_PANTALLA_LIBRO_DIARIO
+    }
+    if estado not in estados_validos:
+        raise ValueError("El estado del asiento es invalido.")
+
+    return estado
+
+
+def _normalizar_entero_positivo_opcional(valor: Any) -> int | None:
+    valor_normalizado = str(valor or "").strip()
+
+    if not valor_normalizado:
+        return None
+
+    try:
+        valor_entero = int(valor_normalizado)
+    except ValueError as exc:
+        raise ValueError("El id del ejercicio contable es obligatorio.") from exc
+
+    if valor_entero <= 0:
+        raise ValueError("El id del ejercicio contable es obligatorio.")
+
+    return valor_entero
+
+
+def _normalizar_texto_opcional(valor: Any) -> str | None:
+    valor_normalizado = str(valor or "").strip()
+    return valor_normalizado or None
