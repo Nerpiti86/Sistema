@@ -249,7 +249,7 @@ def obtener_contexto_detalle_comprobante_venta(
     )
     comprobante_pantalla.update(info_cobranza)
     mostrar_columna_bonificacion = any(
-        detalle["mostrar_bonificacion"] for detalle in detalles_pantalla
+        detalle.get("mostrar_bonificacion", False) for detalle in detalles_pantalla
     )
 
     return {
@@ -522,6 +522,10 @@ def _preparar_detalle_comprobante_venta_para_pantalla(
     )
     detalle_pantalla["total_linea_argentina"] = _formatear_centavos(
         detalle.get("total_linea_centavos", 0)
+    )
+    detalle_pantalla["mostrar_bonificacion"] = (
+        int(detalle.get("descuento_centavos") or 0) != 0
+        or int(detalle.get("bonificacion_valor_10000") or 0) != 0
     )
 
     return detalle_pantalla
