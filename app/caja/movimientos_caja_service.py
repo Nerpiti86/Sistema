@@ -6,9 +6,14 @@ from app.caja.intenciones_caja_repository import (
     marcar_intencion_caja_confirmada,
     obtener_intencion_caja_por_id,
 )
+from app.caja.movimientos_caja_repository import (
+    listar_movimientos_caja,
+    obtener_movimiento_caja_por_id,
+)
 from app.gestion.clientes_cobranzas_service import crear_cobranza_aplicada_confirmada
 from app.shared.formatos import (
     formatear_entero_escala_a_decimal_argentino,
+    formatear_fecha_iso_a_argentina,
     normalizar_decimal_argentino_a_entero_escala,
     normalizar_fecha_argentina_a_iso,
 )
@@ -168,6 +173,133 @@ def confirmar_movimiento_caja_desde_formulario(formulario: Any) -> dict[str, Any
         }
 
     return ejecutar_en_transaccion(_operacion)
+
+
+
+def obtener_contexto_listado_movimientos_caja(limite: int = 100) -> dict[str, Any]:
+    """Devuelve contexto de pantalla para listado de movimientos de caja."""
+    movimientos = [
+        _preparar_movimiento_caja_para_pantalla(movimiento)
+        for movimiento in listar_movimientos_caja(limite)
+    ]
+
+    return {
+        "movimientos_caja": movimientos,
+        "cantidad_movimientos_caja": len(movimientos),
+    }
+
+
+def obtener_contexto_detalle_movimiento_caja(movimiento_id: Any) -> dict[str, Any]:
+    """Devuelve contexto de pantalla para detalle de movimiento de caja."""
+    movimiento = obtener_movimiento_caja_por_id(movimiento_id)
+
+    if movimiento is None:
+        raise ValueError("No existe el movimiento de caja informado.")
+
+    movimiento_pantalla = _preparar_movimiento_caja_para_pantalla(movimiento)
+    lineas_pantalla = [
+        _preparar_linea_movimiento_caja_para_pantalla(linea)
+        for linea in movimiento["lineas"]
+    ]
+
+    return {
+        "movimiento_caja": movimiento_pantalla,
+        "lineas_movimiento_caja": lineas_pantalla,
+        "cantidad_lineas_movimiento_caja": len(lineas_pantalla),
+    }
+
+
+def _preparar_movimiento_caja_para_pantalla(
+    movimiento: dict[str, Any],
+) -> dict[str, Any]:
+    movimiento_pantalla = dict(movimiento)
+    movimiento_pantalla["fecha_argentina"] = _formatear_fecha_iso(movimiento["fecha"])
+    movimiento_pantalla["total_contable_argentina"] = _formatear_centavos(
+        movimiento["total_contable_centavos"]
+    )
+    movimiento_pantalla["tipo_movimiento_mostrar"] = movimiento["tipo_movimiento"]
+    movimiento_pantalla["estado_mostrar"] = movimiento["estado"].title()
+    movimiento_pantalla["estado_badge"] = _badge_estado_movimiento(movimiento["estado"])
+    movimiento_pantalla["origen_tipo_mostrar"] = movimiento.get("origen_tipo") or "MANUAL"
+    movimiento_pantalla["origen_mostrar"] = _formatear_origen_movimiento(movimiento)
+    movimiento_pantalla["asiento_mostrar"] = (
+        f"Asiento {movimiento['asiento_id']}"
+        if movimiento.get("asiento_id")
+        else ""
+    )
+    movimiento_pantalla["observaciones_mostrar"] = movimiento.get("observaciones") or ""
+
+    return movimiento_pantalla
+
+
+def _preparar_linea_movimiento_caja_para_pantalla(
+    linea: dict[str, Any],
+) -> dict[str, Any]:
+    linea_pantalla = dict(linea)
+    linea_pantalla["medio_operativo_mostrar"] = _unir_codigo_descripcion(
+        linea["medio_operativo_codigo"],
+        linea.get("medio_operativo_nombre"),
+    )
+    linea_pantalla["cuenta_contable_mostrar"] = _unir_codigo_descripcion(
+        linea["cuenta_contable_codigo"],
+        linea.get("cuenta_contable_descripcion"),
+    )
+    linea_pantalla["fecha_valor_argentina"] = (
+        _formatear_fecha_iso(linea["fecha_valor"])
+        if linea.get("fecha_valor")
+        else ""
+    )
+    linea_pantalla["referencia_mostrar"] = linea.get("referencia") or ""
+    linea_pantalla["detalle_mostrar"] = linea.get("detalle") or ""
+    linea_pantalla["importe_nominal_argentina"] = _formatear_centavos(
+        linea["importe_nominal_centavos"]
+    )
+    linea_pantalla["importe_contable_argentina"] = _formatear_centavos(
+        linea["importe_contable_centavos"]
+    )
+    linea_pantalla["cotizacion_mostrar"] = formatear_entero_escala_a_decimal_argentino(
+        int(linea["cotizacion_1000000"]),
+        6,
+    )
+
+    return linea_pantalla
+
+
+def _formatear_origen_movimiento(movimiento: dict[str, Any]) -> str:
+    origen_tipo = movimiento.get("origen_tipo")
+    origen_id = movimiento.get("origen_id")
+
+    if origen_tipo and origen_id:
+        return f"{origen_tipo} #{origen_id}"
+
+    return "Sin origen"
+
+
+def _unir_codigo_descripcion(codigo: Any, descripcion: Any) -> str:
+    codigo_normalizado = str(codigo or "").strip()
+    descripcion_normalizada = str(descripcion or "").strip()
+
+    if codigo_normalizado and descripcion_normalizada:
+        return f"{codigo_normalizado} - {descripcion_normalizada}"
+
+    return codigo_normalizado or descripcion_normalizada
+
+
+def _badge_estado_movimiento(estado: str) -> str:
+    if estado == "CONFIRMADO":
+        return "text-bg-success"
+
+    if estado == "BORRADOR":
+        return "text-bg-warning"
+
+    if estado == "ANULADO":
+        return "text-bg-danger"
+
+    return "text-bg-secondary"
+
+
+def _formatear_fecha_iso(fecha_iso: str) -> str:
+    return formatear_fecha_iso_a_argentina(fecha_iso)
 
 
 def _extraer_lineas_caja_desde_formulario(formulario: Any, fecha_default_iso: str) -> list[dict[str, Any]]:

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section id="mc-detalle" data-table="movimientos_caja" data-row-id="{{ movimiento_caja.id }}" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="mc-detalle-titulo" class="h3 mb-1">Detalle movimiento de caja</h1>
+                <p id="mc-detalle-descripcion" class="text-muted mb-0">
+                    Movimiento #{{ movimiento_caja.id }} - {{ movimiento_caja.origen_mostrar }}
+                </p>
+            </div>
+            <div id="mc-detalle-acciones" class="d-flex gap-2">
+                {{ secondary_link("Volver al listado", url_for("caja.ver_listado_movimientos_caja")) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div id="mc-detalle-cabecera">
+            {% call card("Cabecera", "Datos generales") %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Fecha</dt>
+                    <dd id="mc-fecha" data-field="fecha" class="col-sm-8">{{ movimiento_caja.fecha_argentina }}</dd>
+
+                    <dt class="col-sm-4">Tipo</dt>
+                    <dd id="mc-tipo" data-field="tipo_movimiento" class="col-sm-8">
+                        {{ movimiento_caja.tipo_movimiento_mostrar }}
+                    </dd>
+
+                    <dt class="col-sm-4">Origen</dt>
+                    <dd id="mc-origen" data-field="origen" class="col-sm-8">{{ movimiento_caja.origen_mostrar }}</dd>
+
+                    <dt class="col-sm-4">Estado</dt>
+                    <dd id="mc-estado" data-field="estado" class="col-sm-8">
+                        <span class="badge {{ movimiento_caja.estado_badge }}">{{ movimiento_caja.estado_mostrar }}</span>
+                    </dd>
+
+                    <dt class="col-sm-4">Asiento</dt>
+                    <dd id="mc-asiento" data-field="asiento" class="col-sm-8 mb-0">
+                        {% if movimiento_caja.asiento_id %}
+                            <a id="mc-asiento-link" href="{{ url_for('contabilidad.ver_detalle_asiento_contable', asiento_id=movimiento_caja.asiento_id) }}">
+                                {{ movimiento_caja.asiento_mostrar }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">Sin asiento</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div id="mc-detalle-total">
+            {% call card("Total", "Importe contable") %}
+                <div class="d-flex justify-content-between align-items-center border rounded bg-light p-3 mb-3">
+                    <div class="fw-semibold fs-5">Total</div>
+                    <div id="mc-total" data-field="total_contable" class="fw-bold fs-4 text-end">
+                        {{ movimiento_caja.total_contable_argentina }}
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-muted small mb-1">Observaciones</div>
+                    <div id="mc-observaciones" data-field="observaciones">
+                        {% if movimiento_caja.observaciones_mostrar %}
+                            {{ movimiento_caja.observaciones_mostrar }}
+                        {% else %}
+                            <span class="text-muted">Sin observaciones</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div id="mc-detalle-lineas" data-table="movimientos_caja_lineas">
+            {% call card("Líneas de caja", "Medios operativos aplicados") %}
+                <div id="mc-detalle-cantidad-lineas" class="form-text mb-2">
+                    Líneas: {{ cantidad_lineas_movimiento_caja }}
+                </div>
+
+                <div class="table-responsive">
+                    <table id="mc-detalle-tabla" class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-field="orden">Orden</th>
+                                <th data-field="medio_operativo">Medio operativo</th>
+                                <th data-field="cuenta_contable">Cuenta contable</th>
+                                <th data-field="moneda">Moneda</th>
+                                <th data-field="fecha_valor">Fecha valor</th>
+                                <th data-field="referencia">Referencia</th>
+                                <th data-field="importe_nominal" class="text-end">Importe nominal</th>
+                                <th data-field="cotizacion" class="text-end">Cotización</th>
+                                <th data-field="importe_contable" class="text-end">Importe contable</th>
+                                <th data-field="detalle">Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mc-detalle-tbody">
+                            {% for linea in lineas_movimiento_caja %}
+                                <tr id="mc-detalle-linea-{{ linea.id }}" data-row-id="{{ linea.id }}">
+                                    <td data-field="orden">{{ linea.orden }}</td>
+                                    <td data-field="medio_operativo">{{ linea.medio_operativo_mostrar }}</td>
+                                    <td data-field="cuenta_contable">{{ linea.cuenta_contable_mostrar }}</td>
+                                    <td data-field="moneda">{{ linea.moneda_codigo }}</td>
+                                    <td data-field="fecha_valor">
+                                        {% if linea.fecha_valor_argentina %}
+                                            {{ linea.fecha_valor_argentina }}
+                                        {% else %}
+                                            <span class="text-muted">Sin fecha valor</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="referencia">
+                                        {% if linea.referencia_mostrar %}
+                                            {{ linea.referencia_mostrar }}
+                                        {% else %}
+                                            <span class="text-muted">Sin referencia</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-field="importe_nominal" class="text-end">
+                                        {{ linea.importe_nominal_argentina }}
+                                    </td>
+                                    <td data-field="cotizacion" class="text-end">
+                                        {{ linea.cotizacion_mostrar }}
+                                    </td>
+                                    <td data-field="importe_contable" class="text-end fw-semibold">
+                                        {{ linea.importe_contable_argentina }}
+                                    </td>
+                                    <td data-field="detalle">
+                                        {% if linea.detalle_mostrar %}
+                                            {{ linea.detalle_mostrar }}
+                                        {% else %}
+                                            <span class="text-muted">Sin detalle</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr id="mc-detalle-linea-sin-datos">
+                                    <td colspan="10" class="text-center text-muted py-4">
+                                        No hay líneas de caja para este movimiento.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endcall %}
+        </div>
+    </div>
+</section>
+{% endblock %}

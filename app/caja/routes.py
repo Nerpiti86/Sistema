@@ -2,7 +2,9 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.caja.movimientos_caja_service import (
     confirmar_movimiento_caja_desde_formulario,
+    obtener_contexto_detalle_movimiento_caja,
     obtener_contexto_formulario_movimiento_caja,
+    obtener_contexto_listado_movimientos_caja,
 )
 
 bp = Blueprint(
@@ -11,6 +13,36 @@ bp = Blueprint(
     url_prefix="/caja",
     template_folder="templates",
 )
+
+
+@bp.get("/movimientos/")
+def ver_listado_movimientos_caja():
+    """Muestra listado de movimientos de caja en solo lectura."""
+    contexto = obtener_contexto_listado_movimientos_caja()
+
+    return render_template(
+        "caja/movimientos_caja.html",
+        page_title="Movimientos de caja",
+        **contexto,
+    )
+
+
+@bp.get("/movimientos/<int:movimiento_id>/")
+def ver_detalle_movimiento_caja(movimiento_id):
+    """Muestra detalle de movimiento de caja en solo lectura."""
+    try:
+        contexto = obtener_contexto_detalle_movimiento_caja(movimiento_id)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(url_for("caja.ver_listado_movimientos_caja"))
+
+    movimiento = contexto["movimiento_caja"]
+
+    return render_template(
+        "caja/movimientos_caja_detalle.html",
+        page_title=f"Movimiento de caja {movimiento['id']}",
+        **contexto,
+    )
 
 
 @bp.get("/movimientos/nuevo/")

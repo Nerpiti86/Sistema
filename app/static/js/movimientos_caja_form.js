@@ -363,13 +363,6 @@
             agregar.addEventListener("click", agregarLinea);
         }
 
-        const confirmar = document.querySelector("#mc-confirmar");
-        if (confirmar) {
-            confirmar.addEventListener("click", () => {
-                window.alert("WIP: movimiento de caja validado visualmente. Persistencia pendiente.");
-            });
-        }
-
         inicializarPrimerMedioDisponible();
         actualizarResumen();
     }
