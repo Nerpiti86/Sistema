@@ -300,12 +300,16 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
     assert b"Sin asiento" in response.data
     assert b'id="vc-detalle-comprobante"' in response.data
     assert b"Datos contables y t\xc3\xa9cnicos" in response.data
+    assert b"grid-template-columns: max-content minmax(0, 1fr)" in response.data
+    assert b"white-space: nowrap" in response.data
+    assert b'id="vc-comprobante-condicion"' in response.data
     html = response.data.decode("utf-8")
     acciones_inicio = html.index('id="vc-detalle-acciones"')
     acciones_fin = html.index('</div>', acciones_inicio)
     acciones_detalle = html[acciones_inicio:acciones_fin]
     assert "Nuevo comprobante" not in acciones_detalle
     assert "/gestion/ventas/comprobantes/nuevo/" not in acciones_detalle
+    assert "vc-comprobante-tipo-abreviado" not in html
     assert b"CAE" not in response.data
     assert b"Vto. CAE" not in response.data
     assert b'id="vc-detalle-cuenta-corriente"' not in response.data
