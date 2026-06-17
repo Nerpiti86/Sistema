@@ -1,0 +1,345 @@
+{
+"version": "4.0",
+"archivo": "BASH.json",
+"ambito": "NeriSoft/Sistema",
+"descripcion": "Contrato operativo para generar y ejecutar scripts Bash del proyecto NeriSoft/Sistema.",
+"estado": {
+"activo": true,
+"pendiente_integracion_con_otros_contratos": true,
+"observacion": "Por ahora este contrato regula la ejecucion Bash. Mas adelante se revisara su integracion con README_IMPORTANT.md y otros contratos del proyecto."
+},
+"entorno": {
+  "sistema_operativo": "Windows",
+  "terminal": "Bash integrado en Visual Studio Code",
+  "modo_ejecucion_usuario": "pegado_directo_en_terminal",
+  "repo_local_windows": "D:\\NeriSoft\\Sistema",
+  "repo_local_bash": "/d/NeriSoft/Sistema",
+  "repo_remoto": "https://github.com/Nerpiti86/Sistema",
+  "rama_unica": "main"
+},
+"principios_generales": {
+"nunca_cerrar_terminal": true,
+"nunca_exit_final_en_scripts_pegados_directo": true,
+"nunca_read_final_obligatorio": true,
+"nunca_exec_bash_interactivo": true,
+"devolver_prompt_normal_de_vscode": true,
+"preferir_scripts_autocontenidos": true,
+"no_depender_de_herramientas_externas_no_basicas": true,
+"no_usar_jq_como_dependencia_obligatoria": true,
+"no_usar_clip_exe": true,
+"no_usar_tmp": true
+},
+"nombres_y_mensajes": {
+"etiquetas_permitidas": [
+"[EXITO]",
+"[ERROR]",
+"[INFORMAR]",
+"[SEGURO]",
+"[LOG ARCHIVO]"
+],
+"uso_etiquetas": {
+"[EXITO]": "Paso completado o resultado final correcto.",
+"[ERROR]": "Falla real que requiere revision.",
+"[INFORMAR]": "Aviso, advertencia o dato relevante no bloqueante.",
+"[SEGURO]": "Validacion confirmada o dato verificado por el script.",
+"[LOG ARCHIVO]": "Ruta del archivo de log generado."
+}
+},
+"colores_pantalla": {
+"usar_colores": true,
+"solo_pantalla": true,
+"no_ensuciar_log_con_ansi": true,
+"si_no_hay_color_continuar_sin_color": true,
+"colores": {
+"log_archivo": "azul",
+"exito": "verde",
+"error": "rojo",
+"informar": "amarillo"
+},
+"regla": "Los colores son opcionales, simples y solo para mejorar la lectura del resumen final en pantalla."
+},
+"logs": {
+"directorio": "logs",
+"crear_directorio_si_no_existe": true,
+"agregar_logs_a_git_info_exclude": true,
+"un_log_general_por_script": true,
+"formato_nombre": "AAAA MM DD - HH MM SS - Titulo representativo.log",
+"ejemplo": "logs/2026 06 17 - 18 42 10 - Crear caja transversal.log",
+"contenido": {
+"guardar_salida_completa": true,
+"guardar_stderr": true,
+"usar_tee": true,
+"log_limpio_sin_colores": true,
+"resumen_final_repetido_en_pantalla": true
+},
+"diagnosticos": {
+"solo_pueden_crear": [
+"logs/*.log"
+],
+"no_crear_backups": true,
+"no_crear_txt_auxiliares": true
+}
+},
+"backups": {
+"directorio": "logs/backup",
+"crear_directorio_si_no_existe": true,
+"aplica_a_scripts_write": true,
+"backup_de_cada_archivo_existente_modificado": true,
+"formato_nombre": "AAAA MM DD - HH MM SS - Titulo representativo - ruta archivo.bak",
+"ejemplo": "logs/backup/2026 06 17 - 18 42 10 - Crear caja transversal - app caja routes.py.bak",
+"archivos_nuevos": {
+"crear_manifest": true,
+"no_crear_backup_vacio": true,
+"formato_manifest": "AAAA MM DD - HH MM SS - Titulo representativo - ARCHIVOS NUEVOS.txt",
+"ejemplo_manifest": "logs/backup/2026 06 17 - 18 42 10 - Crear caja transversal - ARCHIVOS NUEVOS.txt"
+}
+},
+"modos": {
+"diagnostic": {
+"descripcion": "Modo solo lectura para relevamientos, inspecciones y diagnosticos.",
+"usa_set_euo_pipefail": false,
+"solo_lectura": true,
+"puede_escribir": [
+"logs/*.log"
+],
+"no_modificar_app": true,
+"validar_repo_sin_frenar": true,
+"si_dirty_local": "informar_y_continuar",
+"si_ahead_behind": "informar_y_continuar",
+"si_consulta_python_sql_falla": "mostrar_error_acumular_continuar_y_marcar_error_final",
+"python_permitido": true,
+"python_debe_ser_solo_lectura": true,
+"consultas_criticas_con_try_except": true,
+"resultado_con_advertencias_sin_error": "EXITO_con_INFORMAR"
+},
+"write": {
+"descripcion": "Modo de modificacion de codigo, migraciones, tests, commits y push.",
+"usa_set_euo_pipefail": true,
+"cortar_ante_error_critico": true,
+"validar_repo_estricto": true,
+"si_dirty_local": "frenar_salvo_script_explicitamente_para_reparar_dirty",
+"si_behind": "frenar",
+"si_ahead_inesperado": "frenar",
+"declarar_archivos_a_modificar": true,
+"declarar_archivos_a_crear": true,
+"backup_previo_obligatorio": true,
+"git_add_selectivo": true,
+"si_aparece_archivo_no_declarado_modificado": "ERROR_no_commit_no_push",
+"commit_obligatorio_si_estado_coherente": true,
+"push_obligatorio_si_estado_coherente": true,
+"post_push_obligatorio": true
+}
+},
+"archivos_declarados": {
+"listas_obligatorias_en_write": [
+"ARCHIVOS_A_MODIFICAR",
+"ARCHIVOS_A_CREAR"
+],
+"ARCHIVOS_A_MODIFICAR": {
+"deben_existir_antes": true,
+"requieren_backup": true,
+"se_agregan_al_commit_selectivamente": true
+},
+"ARCHIVOS_A_CREAR": {
+"no_deben_existir_antes_por_defecto": true,
+"si_existen": "frenar_salvo_permiso_explicitamente_declarado",
+"si_se_permite_sobrescribir": "tratar_como_archivo_existente_y_hacer_backup",
+"requieren_manifest": true,
+"se_agregan_al_commit_selectivamente": true
+},
+"sobrescritura_archivos_a_crear": {
+"permitida_por_defecto": false,
+"variable_recomendada": "PERMITE_SOBRESCRIBIR_ARCHIVOS_A_CREAR"
+}
+},
+"restricciones_operativas": {
+"prohibido_siempre": [
+"clip.exe",
+"/tmp",
+"exit final en scripts pegados directo",
+"read final obligatorio",
+"exec bash -i al final",
+"crear ramas",
+"commitear archivos no declarados en scripts write",
+"pushear codigo que no pasa py_compile"
+],
+"permitido_solo_si_declara": [
+"rm",
+"mv",
+"sed -i",
+"find con delete",
+"redirecciones destructivas >",
+"sobrescritura de archivos",
+"borrado de archivos",
+"operaciones masivas",
+"reemplazos masivos"
+],
+"comandos_sensibles": {
+"permitidos_si_hacen_falta": true,
+"deben_declararse_arriba": true,
+"deben_acotarse_a_archivos_declarados_o_logs": true,
+"deben_mostrar_que_van_a_tocar": true,
+"deben_tener_backup_previo_si_afectan_existente": true,
+"prohibir_rm_rf_amplio": true
+}
+},
+"git": {
+"rama_unica": "main",
+"crear_branches": false,
+"validacion_inicial_write": [
+"git branch --show-current debe ser main",
+"git fetch origin main",
+"git rev-list --left-right --count origin/main...HEAD debe ser 0 0",
+"git status --short debe estar limpio salvo excepcion explicita"
+],
+"validacion_inicial_diagnostic": [
+"mostrar rama actual",
+"git fetch origin main",
+"mostrar git rev-list --left-right --count origin/main...HEAD",
+"mostrar git status --short",
+"no frenar por dirty/ahead/behind, solo informar"
+],
+"commit": {
+"scripts_write_hacen_commit": true,
+"git_add_selectivo": true,
+"mensaje_con_prefijo": true,
+"prefijos": [
+"feat",
+"fix",
+"test",
+"refactor",
+"wip"
+],
+"si_todo_pasa": "commit_normal",
+"si_py_compile_pasa_y_tests_fallan": "commit_wip"
+},
+"push": {
+"scripts_write_hacen_push": true,
+"post_push_fetch": true,
+"post_push_validar_origin_main_head": "0 0",
+"post_push_validar_git_status": true,
+"mostrar_commit_sha": true
+}
+},
+"validaciones_write": {
+"py_compile": {
+"obligatorio": true,
+"orden": [
+"compilar_py_tocados",
+"compilar_repo_completo"
+],
+"si_falla": "ERROR_no_commit_no_push",
+"si_pasa": "continuar_a_tests"
+},
+"tests": {
+"tests_dirigidos": "siempre",
+"suite_completa": "siempre",
+"si_fallan_y_py_compile_paso": "commit_wip_y_push",
+"si_pasan": "commit_normal_y_push",
+"registrar_fallas_en_log_principal": true,
+"no_crear_log_separado": true
+},
+"estado_coherente_para_commit_wip": {
+"py_compile_ok": true,
+"sin_archivos_no_declarados": true,
+"modificacion_completada_en_estado_rastreable": true
+}
+},
+"finalizacion": {
+"no_usar_exit_final": true,
+"capturar_codigo_en_variable": true,
+"mostrar_resumen_final": true,
+"devolver_prompt": true,
+"no_depender_de_enter": true,
+"resumen_final_obligatorio": {
+"formato": [
+"========================================",
+"[EXITO|ERROR|INFORMAR] TITULO DEL RESULTADO",
+"[LOG ARCHIVO] logs/AAAA MM DD - HH MM SS - Titulo.log",
+"[SEGURO] Repo: limpio / dirty informado",
+"[SEGURO] Commit: SHA o no aplica",
+"[SEGURO] Push: OK / no aplica / fallo",
+"[INFORMAR] Observaciones",
+"========================================"
+],
+"log_archivo_en_azul_si_color_disponible": true,
+"exito_en_verde_si_color_disponible": true,
+"error_en_rojo_si_color_disponible": true,
+"informar_en_amarillo_si_color_disponible": true
+}
+},
+"estructura_recomendada_script": {
+"diagnostic": [
+"definir titulo representativo",
+"crear logs",
+"configurar log con timestamp",
+"validar repo informativo",
+"ejecutar diagnostico sin set -e global",
+"capturar errores sin cortar todo",
+"mostrar resumen final",
+"no usar exit final"
+],
+"write": [
+"definir titulo representativo",
+"declarar ARCHIVOS_A_MODIFICAR",
+"declarar ARCHIVOS_A_CREAR",
+"declarar comandos sensibles si aplica",
+"crear logs y logs/backup",
+"validar repo estricto",
+"validar archivos declarados",
+"hacer backups",
+"crear manifest de archivos nuevos si aplica",
+"modificar archivos",
+"validar que no haya archivos no declarados modificados",
+"py_compile tocados",
+"py_compile repo completo",
+"tests dirigidos",
+"suite completa",
+"commit normal o wip segun resultado",
+"push",
+"post-push fetch y validacion",
+"mostrar resumen final",
+"no usar exit final"
+]
+},
+"checklist_obligatorio": {
+"antes_de_generar_script": [
+"Definir si el script es diagnostic o write.",
+"Definir titulo representativo para log.",
+"Confirmar que el script esta pensado para pegado directo en VS Code Bash.",
+"Evitar exit final, read final y exec bash -i.",
+"Definir resumen final obligatorio."
+],
+"diagnostic": [
+"No usar set -e global.",
+"No modificar archivos de app.",
+"Escribir solo logs/*.log.",
+"Validar repo sin frenar por dirty/ahead/behind.",
+"Usar try/except en consultas Python/SQL criticas.",
+"Seguir relevando aunque una consulta falle.",
+"Marcar ERROR final si hubo errores reales."
+],
+"write": [
+"Usar set -euo pipefail.",
+"Validar rama main.",
+"Validar origin/main...HEAD = 0 0.",
+"Frenar si hay dirty inesperado.",
+"Declarar ARCHIVOS_A_MODIFICAR.",
+"Declarar ARCHIVOS_A_CREAR.",
+"Hacer backup de archivos existentes.",
+"Crear manifest para archivos nuevos.",
+"Declarar comandos sensibles si aplica.",
+"Validar que no haya cambios fuera de archivos declarados.",
+"Compilar .py tocados.",
+"Compilar repo completo.",
+"Correr tests dirigidos.",
+"Correr suite completa.",
+"No commit ni push si falla py_compile.",
+"Commit WIP y push si py_compile pasa pero tests fallan.",
+"Commit normal y push si todo pasa.",
+"Post-push fetch y origin/main...HEAD = 0 0.",
+"Mostrar SHA de commit.",
+"Mostrar resumen final."
+]
+}
+}
