@@ -12,6 +12,8 @@ from app.contabilidad.ejercicios_contables_repository import (
 from app.gestion.clientes_cobranzas_repository import (
     crear_cobranza_cliente,
     obtener_cobranza_cliente_por_id,
+    obtener_proximo_numero_cobranza,
+    obtener_total_confirmado_aplicado_a_movimiento,
     vincular_linea_cobranza_movimiento_ctacte_generado,
 )
 from app.gestion.clientes_cuenta_corriente_repository import (
@@ -57,6 +59,8 @@ def crear_cobranza_aplicada_confirmada(
         cliente = _obtener_cliente_activo(datos["cliente_id"])
         cuenta_deudores_codigo = _obtener_cuenta_deudores_cliente(cliente)
         ejercicio = _obtener_ejercicio_para_cobranza(datos["fecha"])
+
+        _validar_numero_recibo_vigente(datos)
 
         linea_aplicada = _normalizar_linea_cobranza_aplicada(
             datos,
@@ -299,8 +303,16 @@ def _validar_movimiento_cancelable(
     if comprobante["moneda_codigo"] != _MONEDA_CONTABLE:
         raise ValueError("Este service solo cancela comprobantes en ARS.")
 
-    if int(movimiento["importe_centavos"]) != importe_centavos:
-        raise ValueError("El primer corte solo permite cancelacion total del movimiento.")
+    saldo_abierto_centavos = (
+        int(movimiento["importe_centavos"])
+        - obtener_total_confirmado_aplicado_a_movimiento(movimiento["id"])
+    )
+
+    if saldo_abierto_centavos <= 0:
+        raise ValueError("El movimiento de cuenta corriente ya fue cancelado por una cobranza confirmada.")
+
+    if saldo_abierto_centavos != importe_centavos:
+        raise ValueError("El primer corte solo permite cancelacion total del saldo abierto del movimiento.")
 
     if int(comprobante["total_centavos"]) != importe_centavos:
         raise ValueError("El importe aplicado debe coincidir con el total del comprobante.")
@@ -368,6 +380,20 @@ def _normalizar_lineas_caja(
         )
 
     return lineas_normalizadas
+
+
+def _validar_numero_recibo_vigente(datos_cobranza: dict[str, Any]) -> None:
+    proximo_numero = obtener_proximo_numero_cobranza(
+        _TIPO_COMPROBANTE_RECIBO,
+        datos_cobranza["letra"],
+        datos_cobranza["punto_venta"],
+    )
+
+    if int(datos_cobranza["numero"]) != proximo_numero:
+        raise ValueError(
+            "El numero de recibo ya no esta vigente. "
+            "Vuelva a iniciar la cobranza para obtener un numero disponible."
+        )
 
 
 def _validar_totales(

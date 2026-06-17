@@ -219,7 +219,7 @@ def ver_cuenta_corriente_cliente(cliente_id):
 
 @bp.get("/clientes/<int:cliente_id>/cobros/nuevo/")
 def ver_formulario_nuevo_cobro_cliente(cliente_id):
-    """Muestra formulario WIP de cobro de cliente."""
+    """Muestra formulario de cobro de cliente."""
     try:
         contexto = obtener_contexto_formulario_cobro_cliente(cliente_id)
     except ValueError as exc:

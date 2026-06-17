@@ -158,6 +158,64 @@ def crear_cobranza_cliente(
     return cobranza
 
 
+def obtener_total_confirmado_aplicado_a_movimiento(
+    movimiento_ctacte_cancelado_id: Any,
+) -> int:
+    """Devuelve cuanto de un movimiento DEBE ya fue aplicado por cobranzas confirmadas."""
+    movimiento_id_validado = _validar_entero_positivo(
+        movimiento_ctacte_cancelado_id,
+        "El movimiento de cuenta corriente cancelado es obligatorio.",
+    )
+
+    fila = get_db().execute(
+        """
+        SELECT COALESCE(SUM(clientes_cobranzas_lineas.importe_centavos), 0) AS total
+        FROM clientes_cobranzas_lineas
+        JOIN clientes_cobranzas
+          ON clientes_cobranzas.id = clientes_cobranzas_lineas.cobranza_cliente_id
+        WHERE clientes_cobranzas_lineas.movimiento_ctacte_cancelado_id = ?
+          AND clientes_cobranzas.estado = 'CONFIRMADO'
+        """,
+        (movimiento_id_validado,),
+    ).fetchone()
+
+    return int(fila["total"] or 0)
+
+
+def obtener_proximo_numero_cobranza(
+    tipo_comprobante: Any = "RECIBO",
+    letra: Any = "C",
+    punto_venta: Any = 1,
+) -> int:
+    """Devuelve el proximo numero disponible para el talonario de recibos."""
+    tipo_validado = _validar_opcion(
+        tipo_comprobante,
+        {"RECIBO"},
+        "El tipo de comprobante de cobranza es invalido.",
+    )
+    letra_validada = _validar_texto_obligatorio(
+        letra,
+        "La letra del recibo es obligatoria.",
+    ).upper()
+    punto_venta_validado = _validar_entero_positivo(
+        punto_venta,
+        "El punto de venta del recibo debe ser positivo.",
+    )
+
+    fila = get_db().execute(
+        """
+        SELECT COALESCE(MAX(numero), 0) + 1 AS proximo_numero
+        FROM clientes_cobranzas
+        WHERE tipo_comprobante = ?
+          AND letra = ?
+          AND punto_venta = ?
+        """,
+        (tipo_validado, letra_validada, punto_venta_validado),
+    ).fetchone()
+
+    return int(fila["proximo_numero"] or 1)
+
+
 def obtener_cobranza_cliente_por_id(cobranza_id: Any) -> dict[str, Any] | None:
     cobranza_id_validada = _validar_entero_positivo(
         cobranza_id,

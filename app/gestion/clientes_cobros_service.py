@@ -2,6 +2,10 @@ from datetime import date
 from typing import Any
 
 from app.caja.intenciones_caja_repository import crear_intencion_caja
+from app.gestion.clientes_cobranzas_repository import (
+    obtener_proximo_numero_cobranza,
+    obtener_total_confirmado_aplicado_a_movimiento,
+)
 from app.gestion.clientes_cuenta_corriente_repository import (
     listar_movimientos_cliente_cuenta_corriente,
 )
@@ -17,7 +21,6 @@ _TIPOS_COBRABLES = {"FACTURA", "NOTA_DEBITO"}
 _TIPO_RECIBO = "RC"
 _LETRA_RECIBO = "C"
 _PUNTO_VENTA_DEFAULT = 1
-_NUMERO_PREVIEW_WIP = 1
 _MONEDA_CONTABLE = "ARS"
 _ORIGEN_RECIBO_CLIENTE = "RECIBO_CLIENTE"
 
@@ -44,11 +47,16 @@ def obtener_contexto_formulario_cobro_cliente(cliente_id: Any) -> dict[str, Any]
         for comprobante in comprobantes_cobrables
     )
 
+    proximo_numero = obtener_proximo_numero_cobranza(
+        "RECIBO",
+        _LETRA_RECIBO,
+        _PUNTO_VENTA_DEFAULT,
+    )
     numero_preview = _formatear_numero_recibo(
         _TIPO_RECIBO,
         _LETRA_RECIBO,
         _PUNTO_VENTA_DEFAULT,
-        _NUMERO_PREVIEW_WIP,
+        proximo_numero,
     )
 
     return {
@@ -58,7 +66,7 @@ def obtener_contexto_formulario_cobro_cliente(cliente_id: Any) -> dict[str, Any]
             "tipo_comprobante": _TIPO_RECIBO,
             "letra": _LETRA_RECIBO,
             "punto_venta": str(_PUNTO_VENTA_DEFAULT),
-            "numero": str(_NUMERO_PREVIEW_WIP),
+            "numero": str(proximo_numero),
             "numero_preview": numero_preview,
             "moneda_codigo": _MONEDA_CONTABLE,
             "fecha": date.today().strftime("%d/%m/%Y"),
@@ -129,13 +137,27 @@ def crear_intencion_cobro_cliente_desde_formulario(
         _obtener_valor_formulario(formulario, "punto_venta", _PUNTO_VENTA_DEFAULT),
         "El punto de venta debe ser no negativo.",
     )
-    numero = _normalizar_entero_no_negativo(
-        _obtener_valor_formulario(formulario, "numero", _NUMERO_PREVIEW_WIP),
-        "El numero de recibo debe ser no negativo.",
-    )
+    numero = obtener_proximo_numero_cobranza("RECIBO", letra, punto_venta)
     observaciones = _normalizar_texto_opcional(
         _obtener_valor_formulario(formulario, "observaciones", "")
     )
+
+    comprobante_cobrable = _obtener_comprobante_cobrable_por_movimiento_id(
+        cliente_id_normalizado,
+        movimiento_id,
+    )
+    if comprobante_cobrable is None:
+        raise ValueError("El comprobante seleccionado no tiene saldo abierto para cobrar.")
+
+    if int(comprobante_cobrable["venta_comprobante_id"] or 0) != venta_comprobante_id:
+        raise ValueError("El comprobante seleccionado no coincide con la cuenta corriente.")
+
+    if comprobante_cobrable["tipo_movimiento"] != tipo_movimiento:
+        raise ValueError("El tipo de movimiento seleccionado no coincide con el comprobante.")
+
+    saldo_abierto_centavos = int(comprobante_cobrable["saldo_comprobante_centavos"])
+    if importe_centavos != saldo_abierto_centavos:
+        raise ValueError("El primer corte solo permite cobrar el saldo total abierto del comprobante.")
 
     return crear_intencion_caja(
         {
@@ -192,6 +214,14 @@ def _listar_comprobantes_cobrables(cliente_id: int) -> list[dict[str, Any]]:
         if debe_centavos <= 0:
             continue
 
+        total_aplicado_centavos = obtener_total_confirmado_aplicado_a_movimiento(
+            movimiento["id"],
+        )
+        saldo_abierto_centavos = debe_centavos - total_aplicado_centavos
+
+        if saldo_abierto_centavos <= 0:
+            continue
+
         comprobantes.append(
             {
                 "movimiento_id": movimiento["id"],
@@ -201,13 +231,26 @@ def _listar_comprobantes_cobrables(cliente_id: int) -> list[dict[str, Any]]:
                 "comprobante_mostrar": _mostrar_detalle_comprobante(movimiento),
                 "fecha_argentina": _formatear_fecha(movimiento.get("fecha")),
                 "vencimiento_argentina": "",
-                "saldo_comprobante_centavos": debe_centavos,
-                "saldo_comprobante_argentina": _formatear_centavos(debe_centavos),
-                "importe_sugerido_argentina": _formatear_centavos(debe_centavos),
+                "saldo_comprobante_centavos": saldo_abierto_centavos,
+                "saldo_comprobante_argentina": _formatear_centavos(saldo_abierto_centavos),
+                "importe_sugerido_argentina": _formatear_centavos(saldo_abierto_centavos),
             }
         )
 
     return comprobantes
+
+
+def _obtener_comprobante_cobrable_por_movimiento_id(
+    cliente_id: int,
+    movimiento_id: Any,
+) -> dict[str, Any] | None:
+    movimiento_id_normalizado = _normalizar_id(movimiento_id)
+
+    for comprobante in _listar_comprobantes_cobrables(cliente_id):
+        if int(comprobante["movimiento_id"]) == movimiento_id_normalizado:
+            return comprobante
+
+    return None
 
 
 def _obtener_unico_movimiento_seleccionado(formulario: Any) -> int:
