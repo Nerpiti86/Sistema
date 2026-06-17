@@ -383,13 +383,22 @@ def _normalizar_lineas_caja(
 
 
 def _validar_numero_recibo_vigente(datos_cobranza: dict[str, Any]) -> None:
+    punto_venta = int(datos_cobranza["punto_venta"])
+    numero = int(datos_cobranza["numero"])
+
+    if punto_venta == 0 and numero == 0:
+        return
+
+    if punto_venta <= 0 or numero <= 0:
+        raise ValueError("El recibo debe tener punto de venta y numero positivos.")
+
     proximo_numero = obtener_proximo_numero_cobranza(
         _TIPO_COMPROBANTE_RECIBO,
         datos_cobranza["letra"],
-        datos_cobranza["punto_venta"],
+        punto_venta,
     )
 
-    if int(datos_cobranza["numero"]) != proximo_numero:
+    if numero != proximo_numero:
         raise ValueError(
             "El numero de recibo ya no esta vigente. "
             "Vuelva a iniciar la cobranza para obtener un numero disponible."
