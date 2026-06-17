@@ -99,6 +99,21 @@ def obtener_contexto_formulario_movimiento_caja(args: Any) -> dict[str, Any]:
             "total_esperado_argentina": _formatear_centavos(total_esperado_centavos),
             "moneda_codigo": _MONEDA_DEFAULT,
             "concepto": _armar_concepto(origen_descripcion),
+            "titulo_pantalla": _titulo_formulario_caja(tipo_movimiento, origen_tipo),
+            "descripcion_pantalla": _descripcion_formulario_caja(tipo_movimiento, origen_tipo),
+            "resumen_operacion": _resumen_operacion_formulario_caja(
+                tipo_movimiento,
+                origen_tipo,
+                origen_descripcion,
+            ),
+            "total_label": _total_label_formulario_caja(tipo_movimiento, origen_tipo),
+            "medios_titulo": _medios_titulo_formulario_caja(tipo_movimiento),
+            "medios_subtitulo": _medios_subtitulo_formulario_caja(tipo_movimiento),
+            "confirmar_label": _confirmar_label_formulario_caja(tipo_movimiento, origen_tipo),
+            "tipo_movimiento_mostrar": _tipo_movimiento_mostrar(tipo_movimiento),
+            "estado_mostrar": _estado_formulario_mostrar(_ESTADO_PENDIENTE if intencion else "BORRADOR"),
+            "origen_tipo_mostrar": _origen_tipo_formulario_mostrar(origen_tipo),
+            "ayuda_confirmacion": _ayuda_confirmacion_formulario_caja(tipo_movimiento, origen_tipo),
         },
         "medios_operativos": medios_operativos,
         "cantidad_medios_operativos": len(medios_operativos),
@@ -374,6 +389,134 @@ def _preparar_medio_operativo_para_formulario(medio: dict[str, Any]) -> dict[str
         "cuit": medio.get("cuit") or "",
     }
 
+
+
+def _titulo_formulario_caja(tipo_movimiento: str, origen_tipo: str | None) -> str:
+    if _es_cobro_cliente(tipo_movimiento, origen_tipo):
+        return "Confirmar cobro"
+
+    if tipo_movimiento == "INGRESO":
+        return "Registrar ingreso de dinero"
+
+    if tipo_movimiento == "EGRESO":
+        return "Registrar salida de dinero"
+
+    return "Registrar movimiento de caja"
+
+
+def _descripcion_formulario_caja(tipo_movimiento: str, origen_tipo: str | None) -> str:
+    if _es_cobro_cliente(tipo_movimiento, origen_tipo):
+        return "Completá cómo se recibió el dinero. Al confirmar se registra el cobro."
+
+    if tipo_movimiento == "INGRESO":
+        return "Completá cómo ingresó el dinero y confirmá el registro."
+
+    if tipo_movimiento == "EGRESO":
+        return "Completá cómo salió el dinero y confirmá el registro."
+
+    return "Completá los datos de caja y confirmá el registro."
+
+
+def _resumen_operacion_formulario_caja(
+    tipo_movimiento: str,
+    origen_tipo: str | None,
+    origen_descripcion: str | None,
+) -> str:
+    origen_mostrar = origen_descripcion or "sin origen informado"
+
+    if _es_cobro_cliente(tipo_movimiento, origen_tipo):
+        return f"Vas a registrar un cobro generado desde {origen_mostrar}."
+
+    if tipo_movimiento == "INGRESO":
+        return f"Vas a registrar una entrada de dinero desde {origen_mostrar}."
+
+    if tipo_movimiento == "EGRESO":
+        return f"Vas a registrar una salida de dinero desde {origen_mostrar}."
+
+    return f"Vas a registrar un movimiento de caja desde {origen_mostrar}."
+
+
+def _total_label_formulario_caja(tipo_movimiento: str, origen_tipo: str | None) -> str:
+    if _es_cobro_cliente(tipo_movimiento, origen_tipo):
+        return "Importe a cobrar"
+
+    if tipo_movimiento == "INGRESO":
+        return "Importe a ingresar"
+
+    if tipo_movimiento == "EGRESO":
+        return "Importe a pagar"
+
+    return "Importe a registrar"
+
+
+def _medios_titulo_formulario_caja(tipo_movimiento: str) -> str:
+    if tipo_movimiento == "EGRESO":
+        return "Medios de pago"
+
+    return "Medios de cobro"
+
+
+def _medios_subtitulo_formulario_caja(tipo_movimiento: str) -> str:
+    if tipo_movimiento == "EGRESO":
+        return "Indicá con qué medio se pagó."
+
+    return "Indicá cómo se recibió el dinero."
+
+
+def _confirmar_label_formulario_caja(tipo_movimiento: str, origen_tipo: str | None) -> str:
+    if _es_cobro_cliente(tipo_movimiento, origen_tipo):
+        return "Confirmar cobro"
+
+    if tipo_movimiento == "EGRESO":
+        return "Confirmar pago"
+
+    return "Confirmar ingreso"
+
+
+def _tipo_movimiento_mostrar(tipo_movimiento: str) -> str:
+    if tipo_movimiento == "INGRESO":
+        return "Ingreso de dinero"
+
+    if tipo_movimiento == "EGRESO":
+        return "Salida de dinero"
+
+    return tipo_movimiento.title()
+
+
+def _estado_formulario_mostrar(estado: str) -> str:
+    if estado == _ESTADO_PENDIENTE:
+        return "Pendiente de confirmar"
+
+    if estado == "BORRADOR":
+        return "Sin confirmar"
+
+    return estado.title()
+
+
+def _origen_tipo_formulario_mostrar(origen_tipo: str | None) -> str:
+    origen_normalizado = str(origen_tipo or "").strip().upper()
+
+    if origen_normalizado == _ORIGEN_RECIBO_CLIENTE:
+        return "Cobro de cliente"
+
+    if origen_normalizado:
+        return origen_normalizado.replace("_", " ").title()
+
+    return "Manual"
+
+
+def _ayuda_confirmacion_formulario_caja(tipo_movimiento: str, origen_tipo: str | None) -> str:
+    if _es_cobro_cliente(tipo_movimiento, origen_tipo):
+        return "Al confirmar se registra el cobro, el movimiento de caja, la cuenta corriente y el asiento contable."
+
+    return "Al confirmar se registra el movimiento de caja y sus impactos asociados."
+
+
+def _es_cobro_cliente(tipo_movimiento: str, origen_tipo: str | None) -> bool:
+    return (
+        tipo_movimiento == "INGRESO"
+        and str(origen_tipo or "").strip().upper() == _ORIGEN_RECIBO_CLIENTE
+    )
 
 def _armar_concepto(origen_descripcion: str | None) -> str:
     if origen_descripcion:

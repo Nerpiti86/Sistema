@@ -227,8 +227,8 @@
             validacion.classList.toggle("text-success", totalEsperado > 0 && diferencia === 0);
             validacion.classList.toggle("text-danger", diferencia !== 0 || totalEsperado <= 0);
             validacion.textContent = totalEsperado > 0 && diferencia === 0
-                ? "Totales coincidentes. Listo para confirmar el movimiento."
-                : "El total de lineas debe coincidir con el total esperado.";
+                ? "Totales coincidentes. Listo para confirmar."
+                : "El total cargado debe coincidir con el importe a registrar.";
         }
     }
 

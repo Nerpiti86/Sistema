@@ -1,3 +1,4 @@
+from pathlib import Path
 from werkzeug.datastructures import MultiDict
 
 from app import create_app
@@ -346,6 +347,15 @@ def test_caja_transversal_confirma_intencion_recibo_cliente():
     assert response_caja_get.status_code == 200
     assert b'data-form="movimiento-caja"' in response_caja_get.data
     assert b"RECIBO_CLIENTE" in response_caja_get.data
+    assert b"Confirmar cobro" in response_caja_get.data
+    assert b"Cobro a registrar" in response_caja_get.data
+    assert b"Medios de cobro" in response_caja_get.data
+    assert b"Medio de cobro" in response_caja_get.data
+    assert b"Total cargado" in response_caja_get.data
+    assert b"Importe a cobrar" in response_caja_get.data
+    assert b"Agregar otro medio" in response_caja_get.data
+    assert b"Datos t\xc3\xa9cnicos del medio seleccionado" in response_caja_get.data
+    assert b"Carga transversal de medios operativos" not in response_caja_get.data
     assert response_confirmar.status_code == 302
     assert f"/gestion/clientes/{base['cliente_id']}/cuenta-corriente/".encode() in response_confirmar.headers["Location"].encode()
 
@@ -657,3 +667,12 @@ def test_cobro_cliente_permite_cobrar_varios_comprobantes_en_un_recibo():
 
     assert f"cl-cobro-comprobante-row-{base['movimiento_id']}".encode() not in response_form_despues.data
     assert f"cl-cobro-comprobante-row-{segundo_movimiento['id']}".encode() not in response_form_despues.data
+
+
+def test_js_movimientos_caja_formulario_mensajes_humanos():
+    """Valida textos de control de importes en pantalla de caja."""
+    contenido = Path("app/static/js/movimientos_caja_form.js").read_text(encoding="utf-8")
+
+    assert "El total cargado debe coincidir con el importe a registrar." in contenido
+    assert "Totales coincidentes. Listo para confirmar." in contenido
+    assert "El total de lineas debe coincidir con el total esperado." not in contenido
