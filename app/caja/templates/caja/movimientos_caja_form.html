@@ -5,7 +5,7 @@
 {% block content %}
 <section
     id="mc-form"
-    data-form="movimiento-caja-wip"
+    data-form="movimiento-caja"
     data-total-esperado-centavos="{{ movimiento_form.total_esperado_centavos }}"
     class="row g-3"
 >
@@ -14,7 +14,7 @@
             <div>
                 <h1 id="mc-titulo" class="h3 mb-1">Nuevo movimiento de caja</h1>
                 <p id="mc-descripcion" class="text-muted mb-0">
-                    WIP: líneas por código de medio operativo. No persiste ni genera asiento todavía.
+                    Carga transversal de medios operativos. Al confirmar se genera el impacto definitivo del origen.
                 </p>
             </div>
             <div id="mc-acciones-superiores" class="d-flex gap-2">
@@ -23,178 +23,183 @@
         </div>
     </div>
 
-    <div class="col-12 col-xl-8">
-        {% call card("Cabecera", "Movimiento") %}
-            <div class="row g-3">
-                <div class="col-12 col-md-4 col-lg-3">
-                    <label for="mc-tipo-movimiento" class="form-label">Tipo movimiento</label>
-                    <select id="mc-tipo-movimiento" name="tipo_movimiento" class="form-select" data-ns-select="normal">
-                        <option value="INGRESO" {% if movimiento_form.tipo_movimiento == "INGRESO" %}selected{% endif %}>Ingreso</option>
-                        <option value="EGRESO" {% if movimiento_form.tipo_movimiento == "EGRESO" %}selected{% endif %}>Egreso</option>
-                    </select>
-                </div>
+    <form id="mc-formulario" class="col-12" method="post" action="{{ action_url }}" novalidate>
+        <input id="mc-intencion-id" name="intencion_id" type="hidden" value="{{ movimiento_form.intencion_id }}">
+        <div class="row g-3">
+            <div class="col-12 col-xl-8">
+                {% call card("Cabecera", "Movimiento") %}
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <label for="mc-tipo-movimiento" class="form-label">Tipo movimiento</label>
+                            <select id="mc-tipo-movimiento" name="tipo_movimiento" class="form-select" data-ns-select="normal">
+                                <option value="INGRESO" {% if movimiento_form.tipo_movimiento == "INGRESO" %}selected{% endif %}>Ingreso</option>
+                                <option value="EGRESO" {% if movimiento_form.tipo_movimiento == "EGRESO" %}selected{% endif %}>Egreso</option>
+                            </select>
+                        </div>
 
-                <div class="col-6 col-md-4 col-lg-2">
-                    <label for="mc-numero" class="form-label">Número</label>
-                    <input id="mc-numero" name="numero" type="text" class="form-control text-end" value="{{ movimiento_form.numero_preview }}" readonly>
-                </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label for="mc-numero" class="form-label">Número</label>
+                            <input id="mc-numero" name="numero" type="text" class="form-control text-end" value="{{ movimiento_form.numero_preview }}" readonly>
+                        </div>
 
-                <div class="col-6 col-md-4 col-lg-2">
-                    <label for="mc-fecha" class="form-label">Fecha</label>
-                    <input id="mc-fecha" name="fecha" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ movimiento_form.fecha }}" placeholder="dd/mm/aaaa" autocomplete="off">
-                </div>
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <label for="mc-fecha" class="form-label">Fecha</label>
+                            <input id="mc-fecha" name="fecha" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ movimiento_form.fecha }}" placeholder="dd/mm/aaaa" autocomplete="off">
+                        </div>
 
-                <div class="col-12 col-md-4 col-lg-2">
-                    <label for="mc-estado" class="form-label">Estado</label>
-                    <input id="mc-estado" name="estado" type="text" class="form-control" value="{{ movimiento_form.estado }}" readonly>
-                </div>
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label for="mc-estado" class="form-label">Estado origen</label>
+                            <input id="mc-estado" name="estado" type="text" class="form-control" value="{{ movimiento_form.estado }}" readonly>
+                        </div>
 
-                <div class="col-12 col-md-4 col-lg-3">
-                    <label for="mc-total-esperado" class="form-label">Total esperado</label>
-                    <input id="mc-total-esperado" name="total_esperado" type="text" data-money-ar="centavos" class="form-control text-end fw-semibold" value="{{ movimiento_form.total_esperado_argentina }}" readonly>
-                </div>
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <label for="mc-total-esperado" class="form-label">Total esperado</label>
+                            <input id="mc-total-esperado" name="total_esperado" type="text" data-money-ar="centavos" class="form-control text-end fw-semibold" value="{{ movimiento_form.total_esperado_argentina }}" readonly>
+                            <input name="total_esperado_centavos" type="hidden" value="{{ movimiento_form.total_esperado_centavos }}">
+                        </div>
 
-                <div class="col-12 col-md-6">
-                    <label for="mc-tipo-motivo" class="form-label">Tipo / motivo</label>
-                    <input id="mc-tipo-motivo" name="tipo_motivo" type="text" class="form-control" value="{{ movimiento_form.tipo_motivo }}" readonly>
-                </div>
+                        <div class="col-12 col-md-6">
+                            <label for="mc-tipo-motivo" class="form-label">Tipo / motivo</label>
+                            <input id="mc-tipo-motivo" name="tipo_motivo" type="text" class="form-control" value="{{ movimiento_form.tipo_motivo }}" readonly>
+                        </div>
 
-                <div class="col-12 col-md-6">
-                    <label for="mc-origen" class="form-label">Origen</label>
-                    <input id="mc-origen" name="origen" type="text" class="form-control" value="{{ movimiento_form.origen_descripcion or 'Manual / sin origen' }}" readonly>
-                    <input id="mc-origen-tipo" name="origen_tipo" type="hidden" value="{{ movimiento_form.origen_tipo }}">
-                    <input id="mc-origen-id" name="origen_id" type="hidden" value="{{ movimiento_form.origen_id }}">
-                    <input id="mc-cliente-id" name="cliente_id" type="hidden" value="{{ movimiento_form.cliente_id }}">
-                </div>
+                        <div class="col-12 col-md-6">
+                            <label for="mc-origen" class="form-label">Origen</label>
+                            <input id="mc-origen" name="origen" type="text" class="form-control" value="{{ movimiento_form.origen_descripcion or 'Manual / sin origen' }}" readonly>
+                            <input id="mc-origen-tipo" name="origen_tipo" type="hidden" value="{{ movimiento_form.origen_tipo }}">
+                            <input id="mc-origen-id" name="origen_id" type="hidden" value="{{ movimiento_form.origen_id }}">
+                            <input id="mc-cliente-id" name="cliente_id" type="hidden" value="{{ movimiento_form.cliente_id }}">
+                        </div>
 
-                <div class="col-12">
-                    <label for="mc-concepto" class="form-label">Concepto</label>
-                    <textarea id="mc-concepto" name="concepto" class="form-control" rows="3">{{ movimiento_form.concepto }}</textarea>
-                </div>
-            </div>
-        {% endcall %}
-    </div>
-
-    <div class="col-12 col-xl-4">
-        {% call card("Totales", "Control") %}
-            <div class="row g-3">
-                <div class="col-12 col-md-4 col-xl-12">
-                    <label for="mc-res-total-esperado" class="form-label">Total esperado</label>
-                    <input id="mc-res-total-esperado" type="text" data-money-ar="centavos" class="form-control text-end" value="{{ movimiento_form.total_esperado_argentina }}" readonly>
-                </div>
-
-                <div class="col-12 col-md-4 col-xl-12">
-                    <label for="mc-res-total-lineas" class="form-label">Total líneas</label>
-                    <input id="mc-res-total-lineas" type="text" data-money-ar="centavos" class="form-control text-end" value="0,00" readonly>
-                </div>
-
-                <div class="col-12 col-md-4 col-xl-12">
-                    <label for="mc-res-diferencia" class="form-label">Diferencia</label>
-                    <input id="mc-res-diferencia" type="text" data-money-ar="centavos" class="form-control text-end fw-semibold is-invalid" value="{{ movimiento_form.total_esperado_argentina }}" readonly>
-                </div>
-
-                <div class="col-12">
-                    <div id="mc-validacion-resumen" class="form-text text-muted">
-                        El total de líneas debe coincidir con el total esperado.
+                        <div class="col-12">
+                            <label for="mc-concepto" class="form-label">Concepto</label>
+                            <textarea id="mc-concepto" name="concepto" class="form-control" rows="3">{{ movimiento_form.concepto }}</textarea>
+                        </div>
                     </div>
-                </div>
-            </div>
-        {% endcall %}
-    </div>
-
-    <div class="col-12">
-        {% call card("Líneas", "Pago / cobro por medio operativo") %}
-            <div class="table-responsive">
-                <table id="mc-lineas-tabla" class="table table-sm table-hover align-middle mb-2">
-                    <thead>
-                        <tr>
-                            <th style="width: 7rem;">Código</th>
-                            <th style="width: 18rem;">Medio operativo</th>
-                            <th style="width: 11rem;">Tipo</th>
-                            <th style="width: 7rem;">Moneda</th>
-                            <th style="width: 9rem;">Fecha valor</th>
-                            <th style="width: 12rem;">Referencia</th>
-                            <th style="width: 11rem;" class="text-end">Importe</th>
-                            <th style="width: 10rem;" class="text-end">Cotización</th>
-                            <th style="min-width: 14rem;">Detalle</th>
-                            <th class="text-end" style="width: 7rem;">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mc-lineas-tbody">
-                        <tr data-role="mc-linea" data-row-index="0">
-                            <td>
-                                <input name="lineas[0][medio_operativo_codigo]" type="text" class="form-control form-control-sm mc-medio-codigo" value="">
-                            </td>
-                            <td>
-                                <select name="lineas[0][medio_operativo_codigo_select]" class="form-select form-select-sm mc-medio-select" data-ns-select="normal" data-ns-select-placeholder="Seleccionar medio...">
-                                    <option value="">Seleccionar medio...</option>
-                                    {% for medio in medios_operativos %}
-                                        <option value="{{ medio.codigo }}">{{ medio.descripcion_select }}</option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                            <td>
-                                <input name="lineas[0][tipo_medio]" type="text" class="form-control form-control-sm mc-medio-tipo" value="" readonly>
-                            </td>
-                            <td>
-                                <input name="lineas[0][moneda_codigo]" type="text" class="form-control form-control-sm mc-medio-moneda" value="" readonly>
-                            </td>
-                            <td>
-                                <input name="lineas[0][fecha_valor]" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control form-control-sm" value="{{ movimiento_form.fecha }}" placeholder="dd/mm/aaaa">
-                            </td>
-                            <td>
-                                <input name="lineas[0][referencia]" type="text" class="form-control form-control-sm" value="" placeholder="Referencia">
-                            </td>
-                            <td>
-                                <input name="lineas[0][importe]" type="text" inputmode="decimal" data-money-ar="centavos" class="form-control form-control-sm text-end mc-linea-importe" value="" placeholder="0,00">
-                            </td>
-                            <td>
-                                <input name="lineas[0][cotizacion]" type="text" inputmode="decimal" data-cotizacion-ar="1000000" class="form-control form-control-sm text-end mc-linea-cotizacion" value="" placeholder="-" readonly>
-                            </td>
-                            <td>
-                                <input name="lineas[0][detalle]" type="text" class="form-control form-control-sm" value="" placeholder="Detalle">
-                            </td>
-                            <td class="text-end">
-                                <button type="button" class="btn btn-sm btn-outline-danger mc-linea-quitar">Quitar</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                {% endcall %}
             </div>
 
-            <div id="mc-medio-info" class="row g-2 mt-3">
-                <div class="col-12 col-md-3">
-                    <label for="mc-info-cuenta" class="form-label">Cuenta contable</label>
-                    <input id="mc-info-cuenta" type="text" class="form-control form-control-sm" value="" readonly>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label for="mc-info-banco" class="form-label">Banco</label>
-                    <input id="mc-info-banco" type="text" class="form-control form-control-sm" value="" readonly>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label for="mc-info-plaza-sucursal" class="form-label">Plaza / sucursal</label>
-                    <input id="mc-info-plaza-sucursal" type="text" class="form-control form-control-sm" value="" readonly>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label for="mc-info-cuenta-cuit" class="form-label">Cuenta / CUIT</label>
-                    <input id="mc-info-cuenta-cuit" type="text" class="form-control form-control-sm" value="" readonly>
-                </div>
+            <div class="col-12 col-xl-4">
+                {% call card("Totales", "Control") %}
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4 col-xl-12">
+                            <label for="mc-res-total-esperado" class="form-label">Total esperado</label>
+                            <input id="mc-res-total-esperado" type="text" data-money-ar="centavos" class="form-control text-end" value="{{ movimiento_form.total_esperado_argentina }}" readonly>
+                        </div>
+
+                        <div class="col-12 col-md-4 col-xl-12">
+                            <label for="mc-res-total-lineas" class="form-label">Total líneas</label>
+                            <input id="mc-res-total-lineas" type="text" data-money-ar="centavos" class="form-control text-end" value="0,00" readonly>
+                        </div>
+
+                        <div class="col-12 col-md-4 col-xl-12">
+                            <label for="mc-res-diferencia" class="form-label">Diferencia</label>
+                            <input id="mc-res-diferencia" type="text" data-money-ar="centavos" class="form-control text-end fw-semibold is-invalid" value="{{ movimiento_form.total_esperado_argentina }}" readonly>
+                        </div>
+
+                        <div class="col-12">
+                            <div id="mc-validacion-resumen" class="form-text text-muted">
+                                El total de líneas debe coincidir con el total esperado.
+                            </div>
+                        </div>
+                    </div>
+                {% endcall %}
             </div>
 
-            <div class="form-text mt-2">
-                La línea guarda el código del medio operativo y los datos variables del movimiento. Banco, moneda, cuenta contable y datos fijos se resuelven desde el medio.
-            </div>
+            <div class="col-12">
+                {% call card("Líneas", "Pago / cobro por medio operativo") %}
+                    <div class="table-responsive">
+                        <table id="mc-lineas-tabla" class="table table-sm table-hover align-middle mb-2">
+                            <thead>
+                                <tr>
+                                    <th style="width: 7rem;">Código</th>
+                                    <th style="width: 18rem;">Medio operativo</th>
+                                    <th style="width: 11rem;">Tipo</th>
+                                    <th style="width: 7rem;">Moneda</th>
+                                    <th style="width: 9rem;">Fecha valor</th>
+                                    <th style="width: 12rem;">Referencia</th>
+                                    <th style="width: 11rem;" class="text-end">Importe</th>
+                                    <th style="width: 10rem;" class="text-end">Cotización</th>
+                                    <th style="min-width: 14rem;">Detalle</th>
+                                    <th class="text-end" style="width: 7rem;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mc-lineas-tbody">
+                                <tr data-role="mc-linea" data-row-index="0">
+                                    <td>
+                                        <input name="lineas[0][medio_operativo_codigo]" type="text" class="form-control form-control-sm mc-medio-codigo" value="">
+                                    </td>
+                                    <td>
+                                        <select name="lineas[0][medio_operativo_codigo_select]" class="form-select form-select-sm mc-medio-select" data-ns-select="normal" data-ns-select-placeholder="Seleccionar medio...">
+                                            <option value="">Seleccionar medio...</option>
+                                            {% for medio in medios_operativos %}
+                                                <option value="{{ medio.codigo }}">{{ medio.descripcion_select }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input name="lineas[0][tipo_medio]" type="text" class="form-control form-control-sm mc-medio-tipo" value="" readonly>
+                                    </td>
+                                    <td>
+                                        <input name="lineas[0][moneda_codigo]" type="text" class="form-control form-control-sm mc-medio-moneda" value="" readonly>
+                                    </td>
+                                    <td>
+                                        <input name="lineas[0][fecha_valor]" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control form-control-sm" value="{{ movimiento_form.fecha }}" placeholder="dd/mm/aaaa">
+                                    </td>
+                                    <td>
+                                        <input name="lineas[0][referencia]" type="text" class="form-control form-control-sm" value="" placeholder="Referencia">
+                                    </td>
+                                    <td>
+                                        <input name="lineas[0][importe]" type="text" inputmode="decimal" data-money-ar="centavos" class="form-control form-control-sm text-end mc-linea-importe" value="" placeholder="0,00">
+                                    </td>
+                                    <td>
+                                        <input name="lineas[0][cotizacion]" type="text" inputmode="decimal" data-cotizacion-ar="1000000" class="form-control form-control-sm text-end mc-linea-cotizacion" value="" placeholder="-" readonly>
+                                    </td>
+                                    <td>
+                                        <input name="lineas[0][detalle]" type="text" class="form-control form-control-sm" value="" placeholder="Detalle">
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-danger mc-linea-quitar">Quitar</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-            <div class="d-flex justify-content-between gap-2 mt-3 flex-wrap">
-                <button id="mc-agregar-linea" type="button" class="btn btn-outline-primary">Agregar línea</button>
+                    <div id="mc-medio-info" class="row g-2 mt-3">
+                        <div class="col-12 col-md-3">
+                            <label for="mc-info-cuenta" class="form-label">Cuenta contable</label>
+                            <input id="mc-info-cuenta" type="text" class="form-control form-control-sm" value="" readonly>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label for="mc-info-banco" class="form-label">Banco</label>
+                            <input id="mc-info-banco" type="text" class="form-control form-control-sm" value="" readonly>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label for="mc-info-plaza-sucursal" class="form-label">Plaza / sucursal</label>
+                            <input id="mc-info-plaza-sucursal" type="text" class="form-control form-control-sm" value="" readonly>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label for="mc-info-cuenta-cuit" class="form-label">Cuenta / CUIT</label>
+                            <input id="mc-info-cuenta-cuit" type="text" class="form-control form-control-sm" value="" readonly>
+                        </div>
+                    </div>
 
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary">Guardar borrador WIP</button>
-                    <button id="mc-confirmar-wip" type="button" class="btn btn-primary" disabled>Confirmar movimiento WIP</button>
-                </div>
+                    <div class="form-text mt-2">
+                        Al confirmar se genera el impacto completo del origen: caja, asiento, cuenta corriente y comprobante funcional.
+                    </div>
+
+                    <div class="d-flex justify-content-between gap-2 mt-3 flex-wrap">
+                        <button id="mc-agregar-linea" type="button" class="btn btn-outline-primary">Agregar línea</button>
+
+                        <div class="d-flex gap-2">
+                            <button id="mc-confirmar" type="submit" class="btn btn-primary" disabled>Confirmar movimiento</button>
+                        </div>
+                    </div>
+                {% endcall %}
             </div>
-        {% endcall %}
-    </div>
+        </div>
+    </form>
 </section>
 
 <script id="mc-medios-operativos-data" type="application/json">{{ medios_operativos | tojson }}</script>

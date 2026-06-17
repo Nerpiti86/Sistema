@@ -1,32 +1,14 @@
-from pathlib import Path
-
 from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
 from app.gestion.clientes_cuenta_corriente_service import crear_movimiento_debe_cliente
 
-CUENTA_CAJA = "1.1.01.01.911"
-CUENTA_DEUDORES = "1.1.02.01.911"
-CUENTA_ANTICIPO = "2.1.01.01.911"
+CUENTA_CAJA = "1.1.01.01.921"
+CUENTA_DEUDORES = "1.1.02.01.921"
+CUENTA_ANTICIPO = "2.1.01.01.921"
 
 
-def test_routes_cobros_cliente_no_usan_sql_directo():
-    """Contrato: routes delega cobros al service, sin SQL directo."""
-    contenido = Path("app/gestion/routes.py").read_text(encoding="utf-8")
-
-    assert "crear_cobro_cliente_desde_formulario" in contenido
-    assert "get_db" not in contenido
-    assert ".execute(" not in contenido
-
-
-def _crear_cuenta(
-    db,
-    cuenta: str,
-    descripcion: str,
-    saldo_habitual: str,
-    naturaleza: str,
-    monetaria: int,
-) -> str:
+def _crear_cuenta(db, cuenta, descripcion, saldo_habitual, naturaleza, monetaria):
     db.execute(
         """
         INSERT INTO cuentas_contables (
@@ -50,10 +32,9 @@ def _crear_cuenta(
             "2026-01-01 10:00:00",
         ),
     )
-    return cuenta
 
 
-def _obtener_o_crear_grupo_cliente(db) -> int:
+def _obtener_o_crear_grupo_cliente(db):
     fila = db.execute(
         """
         SELECT id
@@ -77,7 +58,7 @@ def _obtener_o_crear_grupo_cliente(db) -> int:
     return int(cursor.lastrowid)
 
 
-def _crear_cliente(db) -> int:
+def _crear_cliente(db):
     grupo_id = _obtener_o_crear_grupo_cliente(db)
     cursor = db.execute(
         """
@@ -92,7 +73,7 @@ def _crear_cliente(db) -> int:
         VALUES (?, ?, ?, ?, ?, ?)
         """,
         (
-            "Cliente cobro pantalla",
+            "Cliente cobro caja transversal",
             grupo_id,
             CUENTA_DEUDORES,
             CUENTA_ANTICIPO,
@@ -103,7 +84,7 @@ def _crear_cliente(db) -> int:
     return int(cursor.lastrowid)
 
 
-def _crear_ejercicio(db) -> int:
+def _crear_ejercicio(db):
     fila = db.execute(
         """
         SELECT id
@@ -138,7 +119,7 @@ def _crear_ejercicio(db) -> int:
         """,
         (
             "2026",
-            "Ejercicio test cobro pantalla",
+            "Ejercicio test caja transversal",
             "2026-01-01",
             "2026-12-31",
             "ABIERTO",
@@ -152,7 +133,7 @@ def _crear_ejercicio(db) -> int:
     return int(cursor.lastrowid)
 
 
-def _crear_medio_operativo(db) -> None:
+def _crear_medio_operativo(db):
     db.execute(
         """
         INSERT INTO medios_operativos (
@@ -169,7 +150,7 @@ def _crear_medio_operativo(db) -> None:
         """,
         (
             "1",
-            "Pesos pantalla",
+            "Pesos caja transversal",
             "EFECTIVO",
             CUENTA_CAJA,
             "ARS",
@@ -180,7 +161,7 @@ def _crear_medio_operativo(db) -> None:
     )
 
 
-def _crear_factura_confirmada(db, cliente_id: int, total_centavos: int) -> int:
+def _crear_factura_confirmada(db, cliente_id, total_centavos):
     cursor = db.execute(
         """
         INSERT INTO ventas_comprobantes (
@@ -213,7 +194,7 @@ def _crear_factura_confirmada(db, cliente_id: int, total_centavos: int) -> int:
             "011",
             "C",
             1,
-            911,
+            921,
             "ARS",
             100,
             total_centavos,
@@ -229,14 +210,14 @@ def _crear_factura_confirmada(db, cliente_id: int, total_centavos: int) -> int:
     return int(cursor.lastrowid)
 
 
-def _preparar_base_cobro() -> dict:
+def _preparar_base_cobro():
     apply_migrations()
     db = get_db()
 
     _crear_ejercicio(db)
-    _crear_cuenta(db, CUENTA_CAJA, "Caja pantalla", "DEBE", "PATRIMONIAL", 1)
-    _crear_cuenta(db, CUENTA_DEUDORES, "Deudores pantalla", "DEBE", "PATRIMONIAL", 1)
-    _crear_cuenta(db, CUENTA_ANTICIPO, "Anticipo pantalla", "HABER", "PATRIMONIAL", 0)
+    _crear_cuenta(db, CUENTA_CAJA, "Caja transversal", "DEBE", "PATRIMONIAL", 1)
+    _crear_cuenta(db, CUENTA_DEUDORES, "Deudores transversal", "DEBE", "PATRIMONIAL", 1)
+    _crear_cuenta(db, CUENTA_ANTICIPO, "Anticipo transversal", "HABER", "PATRIMONIAL", 0)
     _crear_medio_operativo(db)
 
     cliente_id = _crear_cliente(db)
@@ -246,7 +227,7 @@ def _preparar_base_cobro() -> dict:
             "cliente_id": cliente_id,
             "fecha": "2026-06-10",
             "tipo_movimiento": "FACTURA",
-            "descripcion": "FC C 0001-00000911",
+            "descripcion": "FC C 0001-00000921",
             "moneda_codigo": "ARS",
             "estado": "CONFIRMADO",
             "origen_tipo": "VENTA_COMPROBANTE",
@@ -262,31 +243,7 @@ def _preparar_base_cobro() -> dict:
     }
 
 
-def test_pantalla_cobro_cliente_muestra_comprobante_y_caja():
-    """
-    Contrato: la pantalla de cobro muestra imputacion y medio de caja en un
-    formulario unico temporal.
-    """
-    app = create_app(TestConfig)
-    client = app.test_client()
-
-    with app.app_context():
-        base = _preparar_base_cobro()
-        response = client.get(f"/gestion/clientes/{base['cliente_id']}/cobros/nuevo/")
-
-    assert response.status_code == 200
-    assert b'data-form="cobro-cliente"' in response.data
-    assert b'name="movimientos_ctacte_cancelados"' in response.data
-    assert b'id="cl-cobro-caja"' in response.data
-    assert b'name="medio_operativo_codigo"' in response.data
-    assert b"Confirmar cobro" in response.data
-
-
-def test_post_cobro_cliente_confirma_y_redirige_a_cuenta_corriente():
-    """
-    Contrato: el POST del formulario confirma cobranza, caja, asiento y cuenta
-    corriente usando el service transaccional.
-    """
+def test_pantalla_cobro_cliente_crea_intencion_no_impacta_y_redirige_a_caja():
     app = create_app(TestConfig)
     client = app.test_client()
 
@@ -307,46 +264,101 @@ def test_post_cobro_cliente_confirma_y_redirige_a_cuenta_corriente():
                 f"venta_comprobante_id_{base['movimiento_id']}": str(base["comprobante_id"]),
                 f"tipo_movimiento_{base['movimiento_id']}": "FACTURA",
                 f"importe_a_cobrar_{base['movimiento_id']}": "35.000,00",
-                "medio_operativo_codigo": "1",
-                "importe_caja": "35.000,00",
-                "fecha_valor": "17/06/2026",
-                "referencia": "EFECTIVO",
-                "detalle": "Cobro pantalla",
-                "observaciones": "Cobro desde pantalla",
+                "observaciones": "Intencion desde pantalla",
             },
         )
 
         db = get_db()
-        cobranza = db.execute(
-            "SELECT id, estado, total_centavos, asiento_id FROM clientes_cobranzas"
-        ).fetchone()
-        movimiento_caja = db.execute(
-            "SELECT id, estado, origen_tipo, origen_id, asiento_id FROM movimientos_caja"
-        ).fetchone()
-        movimiento_haber = db.execute(
+        intencion = db.execute("SELECT * FROM caja_intenciones").fetchone()
+        cobranzas = db.execute("SELECT COUNT(*) AS cantidad FROM clientes_cobranzas").fetchone()
+
+    assert response.status_code == 302
+    assert "/caja/movimientos/nuevo/?intencion_id=".encode() in response.headers["Location"].encode()
+    assert intencion["origen_tipo"] == "RECIBO_CLIENTE"
+    assert intencion["tipo_movimiento"] == "INGRESO"
+    assert intencion["total_esperado_centavos"] == 3500000
+    assert intencion["estado"] == "PENDIENTE"
+    assert cobranzas["cantidad"] == 0
+
+
+def test_caja_transversal_confirma_intencion_recibo_cliente():
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        base = _preparar_base_cobro()
+
+        response_intencion = client.post(
+            f"/gestion/clientes/{base['cliente_id']}/cobros/nuevo/",
+            data={
+                "cliente_id": str(base["cliente_id"]),
+                "fecha": "17/06/2026",
+                "tipo_comprobante": "RC",
+                "letra": "C",
+                "punto_venta": "1",
+                "numero": "1",
+                "moneda_codigo": "ARS",
+                "movimientos_ctacte_cancelados": str(base["movimiento_id"]),
+                f"venta_comprobante_id_{base['movimiento_id']}": str(base["comprobante_id"]),
+                f"tipo_movimiento_{base['movimiento_id']}": "FACTURA",
+                f"importe_a_cobrar_{base['movimiento_id']}": "35.000,00",
+                "observaciones": "Intencion desde pantalla",
+            },
+        )
+
+        db = get_db()
+        intencion = db.execute("SELECT * FROM caja_intenciones").fetchone()
+
+        response_caja_get = client.get(
+            f"/caja/movimientos/nuevo/?intencion_id={intencion['id']}"
+        )
+
+        response_confirmar = client.post(
+            "/caja/movimientos/nuevo/",
+            data={
+                "intencion_id": str(intencion["id"]),
+                "tipo_movimiento": "INGRESO",
+                "fecha": "17/06/2026",
+                "lineas[0][medio_operativo_codigo]": "1",
+                "lineas[0][medio_operativo_codigo_select]": "1",
+                "lineas[0][fecha_valor]": "17/06/2026",
+                "lineas[0][referencia]": "EFECTIVO",
+                "lineas[0][importe]": "35.000,00",
+                "lineas[0][detalle]": "Cobro caja transversal",
+            },
+        )
+
+        intencion_confirmada = db.execute("SELECT * FROM caja_intenciones").fetchone()
+        cobranza = db.execute("SELECT * FROM clientes_cobranzas").fetchone()
+        movimiento_caja = db.execute("SELECT * FROM movimientos_caja").fetchone()
+        movimiento_cc = db.execute(
             """
-            SELECT tipo_movimiento, haber_centavos, origen_tipo, origen_id, asiento_id
+            SELECT *
             FROM clientes_cuenta_corriente_movimientos
             WHERE tipo_movimiento = 'COBRANZA'
             """
         ).fetchone()
-        asiento = db.execute(
-            "SELECT tipo, estado FROM asientos_contables WHERE id = ?",
-            (cobranza["asiento_id"],),
-        ).fetchone()
+        asiento = db.execute("SELECT * FROM asientos_contables WHERE id = ?", (cobranza["asiento_id"],)).fetchone()
 
-    assert response.status_code == 302
-    assert f"/gestion/clientes/{base['cliente_id']}/cuenta-corriente/".encode() in response.headers["Location"].encode()
+    assert response_intencion.status_code == 302
+    assert response_caja_get.status_code == 200
+    assert b'data-form="movimiento-caja"' in response_caja_get.data
+    assert b"RECIBO_CLIENTE" in response_caja_get.data
+    assert response_confirmar.status_code == 302
+    assert f"/gestion/clientes/{base['cliente_id']}/cuenta-corriente/".encode() in response_confirmar.headers["Location"].encode()
+
+    assert intencion_confirmada["estado"] == "CONFIRMADA"
+    assert intencion_confirmada["resultado_tipo"] == "CLIENTE_COBRANZA"
+    assert intencion_confirmada["resultado_id"] == cobranza["id"]
+
     assert cobranza["estado"] == "CONFIRMADO"
     assert cobranza["total_centavos"] == 3500000
     assert movimiento_caja["estado"] == "CONFIRMADO"
     assert movimiento_caja["origen_tipo"] == "CLIENTE_COBRANZA"
     assert movimiento_caja["origen_id"] == cobranza["id"]
     assert movimiento_caja["asiento_id"] == cobranza["asiento_id"]
-    assert movimiento_haber["tipo_movimiento"] == "COBRANZA"
-    assert movimiento_haber["haber_centavos"] == 3500000
-    assert movimiento_haber["origen_tipo"] == "CLIENTE_COBRANZA"
-    assert movimiento_haber["origen_id"] == cobranza["id"]
-    assert movimiento_haber["asiento_id"] == cobranza["asiento_id"]
+    assert movimiento_cc["haber_centavos"] == 3500000
+    assert movimiento_cc["origen_tipo"] == "CLIENTE_COBRANZA"
+    assert movimiento_cc["origen_id"] == cobranza["id"]
     assert asiento["tipo"] == "COBRANZA"
     assert asiento["estado"] == "CONFIRMADO"

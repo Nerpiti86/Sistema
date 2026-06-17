@@ -94,16 +94,6 @@
         return total;
     }
 
-    function sincronizarCajaConTotal(total) {
-        const inputCaja = document.querySelector("#cl-cobro-importe-caja");
-
-        if (!inputCaja) {
-            return;
-        }
-
-        setearCentavosEnInput(inputCaja, total);
-    }
-
     function validarCancelacionTotalSeleccionada() {
         const seleccionados = obtenerChecksSeleccionados();
 
@@ -124,15 +114,10 @@
         return saldo > 0 && importe === saldo;
     }
 
-    function validarMedioCajaSeleccionado() {
-        const medio = document.querySelector("#cl-cobro-medio-caja");
-        return Boolean(medio && medio.value);
-    }
-
     function actualizarResumenCobro(normalizar) {
         const form = document.querySelector("#cl-cobro-formulario");
         const totalInput = document.querySelector("#cl-cobro-total");
-        const confirmar = document.querySelector("#cl-cobro-continuar-caja");
+        const continuar = document.querySelector("#cl-cobro-continuar-caja");
         const total = obtenerTotalCobroCentavos(Boolean(normalizar));
 
         if (form) {
@@ -143,14 +128,8 @@
             setearCentavosEnInput(totalInput, total);
         }
 
-        sincronizarCajaConTotal(total);
-
-        if (confirmar) {
-            confirmar.disabled = (
-                total <= 0
-                || !validarCancelacionTotalSeleccionada()
-                || !validarMedioCajaSeleccionado()
-            );
+        if (continuar) {
+            continuar.disabled = total <= 0 || !validarCancelacionTotalSeleccionada();
         }
     }
 
@@ -220,11 +199,6 @@
                 actualizarResumenCobro(false);
             });
         });
-
-        const medioCaja = document.querySelector("#cl-cobro-medio-caja");
-        if (medioCaja) {
-            medioCaja.addEventListener("change", () => actualizarResumenCobro(true));
-        }
 
         const formulario = document.querySelector("#cl-cobro-formulario");
         if (formulario) {

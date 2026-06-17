@@ -202,7 +202,7 @@
         const totalEsperadoInput = document.querySelector("#mc-res-total-esperado");
         const totalLineasInput = document.querySelector("#mc-res-total-lineas");
         const diferenciaInput = document.querySelector("#mc-res-diferencia");
-        const confirmar = document.querySelector("#mc-confirmar-wip");
+        const confirmar = document.querySelector("#mc-confirmar");
         const validacion = document.querySelector("#mc-validacion-resumen");
 
         if (totalEsperadoInput) {
@@ -227,7 +227,7 @@
             validacion.classList.toggle("text-success", totalEsperado > 0 && diferencia === 0);
             validacion.classList.toggle("text-danger", diferencia !== 0 || totalEsperado <= 0);
             validacion.textContent = totalEsperado > 0 && diferencia === 0
-                ? "Totales coincidentes. En una etapa posterior esto confirmara caja y asiento."
+                ? "Totales coincidentes. Listo para confirmar el movimiento."
                 : "El total de lineas debe coincidir con el total esperado.";
         }
     }
@@ -363,7 +363,7 @@
             agregar.addEventListener("click", agregarLinea);
         }
 
-        const confirmar = document.querySelector("#mc-confirmar-wip");
+        const confirmar = document.querySelector("#mc-confirmar");
         if (confirmar) {
             confirmar.addEventListener("click", () => {
                 window.alert("WIP: movimiento de caja validado visualmente. Persistencia pendiente.");

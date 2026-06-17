@@ -3,13 +3,13 @@
 {% from "components/buttons.html" import secondary_link %}
 
 {% block content %}
-<section id="cl-cobro" data-table="clientes_cobros" data-form="cobro-cliente" class="row g-3">
+<section id="cl-cobro" data-table="clientes_cobros" data-form="cobro-cliente-intencion" class="row g-3">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
                 <h1 id="cl-cobro-titulo" class="h3 mb-1">Nuevo recibo de cobro</h1>
                 <p id="cl-cobro-descripcion" class="text-muted mb-0">
-                    Seleccioná una FC/ND confirmada y el medio de caja para confirmar recibo, caja, asiento y cuenta corriente.
+                    Seleccioná una FC/ND confirmada. La carga de medios operativos se completa en la pantalla transversal de caja.
                 </p>
             </div>
             <div id="cl-cobro-acciones-superiores">
@@ -152,46 +152,6 @@
                 {% endcall %}
             </div>
 
-            <div id="cl-cobro-caja" class="col-12">
-                {% call card("Caja", "Medio operativo") %}
-                    <div class="row g-3">
-                        <div class="col-12 col-lg-4">
-                            <label for="cl-cobro-medio-caja" class="form-label">Medio operativo</label>
-                            <select id="cl-cobro-medio-caja" name="medio_operativo_codigo" class="form-select" data-ns-select="normal" data-ns-select-placeholder="Seleccionar medio..." required>
-                                <option value="">Seleccionar medio...</option>
-                                {% for medio in medios_operativos %}
-                                    <option value="{{ medio.codigo }}" data-moneda="{{ medio.moneda_codigo }}">{{ medio.descripcion_select }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="col-12 col-md-4 col-lg-2">
-                            <label for="cl-cobro-importe-caja" class="form-label">Importe caja</label>
-                            <input id="cl-cobro-importe-caja" name="importe_caja" type="text" inputmode="decimal" data-money-ar="centavos" class="form-control text-end fw-semibold" value="0,00" readonly required>
-                        </div>
-
-                        <div class="col-12 col-md-4 col-lg-2">
-                            <label for="cl-cobro-fecha-valor" class="form-label">Fecha valor</label>
-                            <input id="cl-cobro-fecha-valor" name="fecha_valor" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ caja_form.fecha_valor }}" placeholder="dd/mm/aaaa" autocomplete="off" required>
-                        </div>
-
-                        <div class="col-12 col-md-4 col-lg-2">
-                            <label for="cl-cobro-referencia" class="form-label">Referencia</label>
-                            <input id="cl-cobro-referencia" name="referencia" type="text" class="form-control" value="{{ caja_form.referencia }}" placeholder="Referencia">
-                        </div>
-
-                        <div class="col-12 col-lg-2">
-                            <label for="cl-cobro-detalle-caja" class="form-label">Detalle caja</label>
-                            <input id="cl-cobro-detalle-caja" name="detalle" type="text" class="form-control" value="{{ caja_form.detalle }}" placeholder="Detalle">
-                        </div>
-                    </div>
-
-                    <div id="cl-cobro-ayuda-caja" class="form-text mt-2">
-                        Primer corte: una FC/ND, cancelación total y una línea de caja por el total del recibo.
-                    </div>
-                {% endcall %}
-            </div>
-
             <div class="col-12">
                 {% call card("Observaciones", "Opcional") %}
                     <label for="cl-cobro-observaciones" class="form-label">Observaciones</label>
@@ -203,11 +163,11 @@
                 <div id="cl-cobro-form-acciones" class="d-flex justify-content-end gap-2">
                     <a class="btn btn-outline-secondary" href="{{ form_cancelar_url }}">Cancelar</a>
                     <button id="cl-cobro-continuar-caja" type="submit" class="btn btn-primary" disabled>
-                        Confirmar cobro
+                        Continuar a movimientos de caja
                     </button>
                 </div>
                 <div id="cl-cobro-ayuda-submit" class="form-text text-end">
-                    Confirma el recibo y genera caja, asiento contable y cuenta corriente.
+                    El impacto definitivo se genera al confirmar la pantalla transversal de caja.
                 </div>
             </div>
         </div>
