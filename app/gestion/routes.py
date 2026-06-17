@@ -25,6 +25,9 @@ from app.gestion.clientes_service import (
 from app.gestion.clientes_cuenta_corriente_service import (
     obtener_contexto_cuenta_corriente_cliente,
 )
+from app.gestion.clientes_cobros_service import (
+    obtener_contexto_formulario_cobro_cliente,
+)
 from app.gestion.grupos_clientes_service import (
     activar_grupo_cliente,
     actualizar_grupo_cliente_desde_formulario,
@@ -209,6 +212,37 @@ def ver_cuenta_corriente_cliente(cliente_id):
     return render_template(
         "gestion/clientes_cuenta_corriente.html",
         page_title=f"Cuenta corriente {cliente['razon_social']}",
+        **contexto,
+    )
+
+
+@bp.get("/clientes/<int:cliente_id>/cobros/nuevo/")
+def ver_formulario_nuevo_cobro_cliente(cliente_id):
+    """Muestra formulario WIP de cobro de cliente."""
+    try:
+        contexto = obtener_contexto_formulario_cobro_cliente(cliente_id)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        return redirect(
+            url_for(
+                "gestion.ver_cuenta_corriente_cliente",
+                cliente_id=cliente_id,
+            )
+        )
+
+    cliente = contexto["cliente"]
+
+    return render_template(
+        "gestion/clientes_cobros_form.html",
+        page_title=f"Nuevo cobro {cliente['razon_social']}",
+        action_url=url_for(
+            "gestion.ver_formulario_nuevo_cobro_cliente",
+            cliente_id=cliente_id,
+        ),
+        form_cancelar_url=url_for(
+            "gestion.ver_cuenta_corriente_cliente",
+            cliente_id=cliente_id,
+        ),
         **contexto,
     )
 

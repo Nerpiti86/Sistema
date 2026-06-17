@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% from "components/cards.html" import card %}
+{% from "components/buttons.html" import secondary_link %}
+
+{% block content %}
+<section id="cl-cobro" data-table="clientes_cobros" data-form="wip-cobro" class="row g-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+                <h1 id="cl-cobro-titulo" class="h3 mb-1">Nuevo recibo de cobro</h1>
+                <p id="cl-cobro-descripcion" class="text-muted mb-0">
+                    WIP: imputación visual de FC/ND confirmadas. Los movimientos de caja se resolverán en un módulo propio.
+                </p>
+            </div>
+            <div id="cl-cobro-acciones-superiores">
+                {{ secondary_link("Volver a cuenta corriente", form_cancelar_url) }}
+            </div>
+        </div>
+    </div>
+
+    <form id="cl-cobro-formulario" class="col-12" data-wip="1" data-total-cobro-centavos="0" novalidate>
+        <div class="row g-3">
+            <div id="cl-cobro-cabecera" class="col-12">
+                {% call card("Cabecera", "Recibo") %}
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-3">
+                            <label for="cl-cobro-tipo-operacion" class="form-label">Tipo operación</label>
+                            <input id="cl-cobro-tipo-operacion" name="tipo_operacion" type="text" class="form-control" value="Recibo" readonly>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="cl-cobro-fecha" class="form-label">Fecha</label>
+                            <input id="cl-cobro-fecha" name="fecha" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ cobro_form.fecha }}" placeholder="dd/mm/aaaa" autocomplete="off" required>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-lg-6">
+                            <label for="cl-cobro-cliente" class="form-label">Cliente</label>
+                            <input id="cl-cobro-cliente" type="text" class="form-control" value="{{ cliente.razon_social }}" readonly>
+                            <input id="cl-cobro-cliente-id" name="cliente_id" type="hidden" value="{{ cliente.id }}">
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="cl-cobro-tipo-comprobante" class="form-label">Tipo</label>
+                            <input id="cl-cobro-tipo-comprobante" name="tipo_comprobante" type="text" class="form-control" value="{{ cobro_form.tipo_comprobante }}" readonly>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="cl-cobro-letra" class="form-label">Letra</label>
+                            <input id="cl-cobro-letra" name="letra" type="text" class="form-control" value="{{ cobro_form.letra }}" readonly>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="cl-cobro-punto-venta" class="form-label">Punto venta</label>
+                            <input id="cl-cobro-punto-venta" name="punto_venta" type="number" min="1" step="1" class="form-control text-end" value="{{ cobro_form.punto_venta }}" readonly>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="cl-cobro-numero" class="form-label">Número</label>
+                            <input id="cl-cobro-numero" name="numero" type="number" min="1" step="1" class="form-control text-end" value="{{ cobro_form.numero }}" readonly>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="cl-cobro-moneda" class="form-label">Moneda</label>
+                            <input id="cl-cobro-moneda" name="moneda_codigo" type="text" class="form-control" value="{{ cobro_form.moneda_codigo }}" readonly>
+                        </div>
+
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label for="cl-cobro-preview" class="form-label">Preview</label>
+                            <input id="cl-cobro-preview" type="text" class="form-control text-end" value="{{ cobro_form.numero_preview }}" readonly>
+                        </div>
+                    </div>
+                {% endcall %}
+            </div>
+
+            <div id="cl-cobro-comprobantes" class="col-12">
+                {% call card("Comprobantes a cobrar", "FC/ND confirmadas") %}
+                    <div class="table-responsive">
+                        <table id="cl-cobro-tabla-comprobantes" class="table table-sm table-hover align-middle mb-2">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 3rem;">Sel.</th>
+                                    <th data-field="comprobante">Comprobante</th>
+                                    <th data-field="fecha">Fecha</th>
+                                    <th data-field="vencimiento">Vencimiento</th>
+                                    <th data-field="saldo_comprobante_centavos" class="text-end">Saldo del comprobante</th>
+                                    <th data-field="importe_a_cobrar_centavos" class="text-end">A cobrar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cl-cobro-comprobantes-tbody">
+                                {% for comprobante in comprobantes_cobrables %}
+                                    <tr id="cl-cobro-comprobante-row-{{ comprobante.movimiento_id }}" data-row-id="{{ comprobante.movimiento_id }}" data-saldo-centavos="{{ comprobante.saldo_comprobante_centavos }}">
+                                        <td class="text-center">
+                                            <input
+                                                id="cl-cobro-comprobante-check-{{ comprobante.movimiento_id }}"
+                                                class="form-check-input cl-cobro-comprobante-check"
+                                                type="checkbox"
+                                                value="{{ comprobante.movimiento_id }}"
+                                                aria-label="Seleccionar {{ comprobante.comprobante_mostrar }}"
+                                            >
+                                        </td>
+                                        <td data-field="comprobante">{{ comprobante.comprobante_mostrar }}</td>
+                                        <td data-field="fecha">{{ comprobante.fecha_argentina }}</td>
+                                        <td data-field="vencimiento">
+                                            {% if comprobante.vencimiento_argentina %}
+                                                {{ comprobante.vencimiento_argentina }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td data-field="saldo_comprobante_centavos" class="text-end">{{ comprobante.saldo_comprobante_argentina }}</td>
+                                        <td data-field="importe_a_cobrar_centavos">
+                                            <input
+                                                id="cl-cobro-importe-{{ comprobante.movimiento_id }}"
+                                                name="importe_a_cobrar_{{ comprobante.movimiento_id }}"
+                                                type="text"
+                                                inputmode="decimal"
+                                                data-money-ar="centavos"
+                                                data-role="cl-cobro-importe"
+                                                class="form-control form-control-sm text-end cl-cobro-importe"
+                                                value=""
+                                                placeholder="0,00"
+                                                disabled
+                                            >
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr id="cl-cobro-row-sin-comprobantes">
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            No hay FC/ND confirmadas cobrables para este cliente.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="cl-cobro-resumen-comprobantes" class="d-flex justify-content-end mt-3">
+                        <div class="row g-2 align-items-end" style="max-width: 32rem;">
+                            <div class="col-12 col-md-6">
+                                <label for="cl-cobro-total-saldo" class="form-label mb-1">Saldo cobrable</label>
+                                <input id="cl-cobro-total-saldo" type="text" data-money-ar="centavos" class="form-control form-control-sm text-end" value="{{ total_saldo_cobrable_argentina }}" readonly>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="cl-cobro-total" class="form-label mb-1">Total a cobrar</label>
+                                <input id="cl-cobro-total" type="text" data-money-ar="centavos" class="form-control form-control-sm text-end fw-semibold" value="0,00" readonly>
+                            </div>
+                        </div>
+                    </div>
+                {% endcall %}
+            </div>
+
+            <div class="col-12">
+                {% call card("Observaciones", "Opcional") %}
+                    <label for="cl-cobro-observaciones" class="form-label">Observaciones</label>
+                    <textarea id="cl-cobro-observaciones" name="observaciones" class="form-control" rows="3">{{ cobro_form.observaciones }}</textarea>
+                {% endcall %}
+            </div>
+
+            <div class="col-12">
+                <div id="cl-cobro-form-acciones" class="d-flex justify-content-end gap-2">
+                    <a class="btn btn-outline-secondary" href="{{ form_cancelar_url }}">Cancelar</a>
+                    <button id="cl-cobro-continuar-caja" type="button" class="btn btn-primary" disabled>
+                        Continuar a movimientos de caja
+                    </button>
+                </div>
+                <div id="cl-cobro-ayuda-wip" class="form-text text-end">
+                    WIP: este botón solo valida la imputación. El módulo de movimientos de caja se integrará más adelante.
+                </div>
+            </div>
+        </div>
+    </form>
+</section>
+
+<script src="{{ url_for('static', filename='js/clientes_cobros_form.js') }}"></script>
+{% endblock %}

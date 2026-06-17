@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "components/cards.html" import card %}
-{% from "components/buttons.html" import secondary_link %}
+{% from "components/buttons.html" import primary_link, secondary_link %}
 
 {% block content %}
 <section id="cl-cc" data-table="clientes_cuenta_corriente_movimientos" data-row-id="{{ cliente.id }}" class="row g-3">
@@ -16,6 +16,7 @@
                 </p>
             </div>
             <div id="cl-cc-acciones" class="d-flex gap-2">
+                {{ primary_link("Nuevo cobro", url_for("gestion.ver_formulario_nuevo_cobro_cliente", cliente_id=cliente.id)) }}
                 {{ secondary_link("Volver a clientes", url_for("gestion.ver_listado_clientes")) }}
             </div>
         </div>
