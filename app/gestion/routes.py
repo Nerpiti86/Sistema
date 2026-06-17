@@ -26,6 +26,7 @@ from app.gestion.clientes_cuenta_corriente_service import (
     obtener_contexto_cuenta_corriente_cliente,
 )
 from app.gestion.clientes_cobros_service import (
+    crear_cobro_cliente_desde_formulario,
     obtener_contexto_formulario_cobro_cliente,
 )
 from app.gestion.grupos_clientes_service import (
@@ -236,7 +237,7 @@ def ver_formulario_nuevo_cobro_cliente(cliente_id):
         "gestion/clientes_cobros_form.html",
         page_title=f"Nuevo cobro {cliente['razon_social']}",
         action_url=url_for(
-            "gestion.ver_formulario_nuevo_cobro_cliente",
+            "gestion.crear_cobro_cliente",
             cliente_id=cliente_id,
         ),
         form_cancelar_url=url_for(
@@ -244,6 +245,55 @@ def ver_formulario_nuevo_cobro_cliente(cliente_id):
             cliente_id=cliente_id,
         ),
         **contexto,
+    )
+
+
+
+
+@bp.post("/clientes/<int:cliente_id>/cobros/nuevo/")
+def crear_cobro_cliente(cliente_id):
+    """Confirma un cobro aplicado simple desde formulario."""
+    try:
+        resultado = crear_cobro_cliente_desde_formulario(cliente_id, request.form)
+    except ValueError as exc:
+        flash(str(exc), "danger")
+        try:
+            contexto = obtener_contexto_formulario_cobro_cliente(cliente_id)
+        except ValueError as exc_contexto:
+            flash(str(exc_contexto), "danger")
+            return redirect(
+                url_for(
+                    "gestion.ver_cuenta_corriente_cliente",
+                    cliente_id=cliente_id,
+                )
+            )
+
+        cliente = contexto["cliente"]
+
+        return (
+            render_template(
+                "gestion/clientes_cobros_form.html",
+                page_title=f"Nuevo cobro {cliente['razon_social']}",
+                action_url=url_for(
+                    "gestion.crear_cobro_cliente",
+                    cliente_id=cliente_id,
+                ),
+                form_cancelar_url=url_for(
+                    "gestion.ver_cuenta_corriente_cliente",
+                    cliente_id=cliente_id,
+                ),
+                **contexto,
+            ),
+            400,
+        )
+
+    flash("Cobro confirmado correctamente.", "success")
+    return redirect(
+        url_for(
+            "gestion.ver_cuenta_corriente_cliente",
+            cliente_id=cliente_id,
+            cobranza=resultado["cobranza"]["id"],
+        )
     )
 
 

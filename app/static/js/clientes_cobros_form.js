@@ -73,14 +73,14 @@
         return importe;
     }
 
+    function obtenerChecksSeleccionados() {
+        return Array.from(document.querySelectorAll(SELECTOR_CHECK_COMPROBANTE)).filter((check) => check.checked);
+    }
+
     function obtenerTotalCobroCentavos(normalizar) {
         let total = 0;
 
-        document.querySelectorAll(SELECTOR_CHECK_COMPROBANTE).forEach((check) => {
-            if (!check.checked) {
-                return;
-            }
-
+        obtenerChecksSeleccionados().forEach((check) => {
             const fila = check.closest("tr[data-saldo-centavos]");
             const input = fila ? fila.querySelector(SELECTOR_IMPORTE_COMPROBANTE) : null;
 
@@ -94,10 +94,45 @@
         return total;
     }
 
+    function sincronizarCajaConTotal(total) {
+        const inputCaja = document.querySelector("#cl-cobro-importe-caja");
+
+        if (!inputCaja) {
+            return;
+        }
+
+        setearCentavosEnInput(inputCaja, total);
+    }
+
+    function validarCancelacionTotalSeleccionada() {
+        const seleccionados = obtenerChecksSeleccionados();
+
+        if (seleccionados.length !== 1) {
+            return false;
+        }
+
+        const fila = seleccionados[0].closest("tr[data-saldo-centavos]");
+        const input = fila ? fila.querySelector(SELECTOR_IMPORTE_COMPROBANTE) : null;
+
+        if (!fila || !input) {
+            return false;
+        }
+
+        const saldo = obtenerSaldoFila(fila);
+        const importe = obtenerImporteComprobante(input, false);
+
+        return saldo > 0 && importe === saldo;
+    }
+
+    function validarMedioCajaSeleccionado() {
+        const medio = document.querySelector("#cl-cobro-medio-caja");
+        return Boolean(medio && medio.value);
+    }
+
     function actualizarResumenCobro(normalizar) {
         const form = document.querySelector("#cl-cobro-formulario");
         const totalInput = document.querySelector("#cl-cobro-total");
-        const continuar = document.querySelector("#cl-cobro-continuar-caja");
+        const confirmar = document.querySelector("#cl-cobro-continuar-caja");
         const total = obtenerTotalCobroCentavos(Boolean(normalizar));
 
         if (form) {
@@ -108,9 +143,33 @@
             setearCentavosEnInput(totalInput, total);
         }
 
-        if (continuar) {
-            continuar.disabled = total <= 0;
+        sincronizarCajaConTotal(total);
+
+        if (confirmar) {
+            confirmar.disabled = (
+                total <= 0
+                || !validarCancelacionTotalSeleccionada()
+                || !validarMedioCajaSeleccionado()
+            );
         }
+    }
+
+    function desmarcarOtrosComprobantes(checkSeleccionado) {
+        document.querySelectorAll(SELECTOR_CHECK_COMPROBANTE).forEach((check) => {
+            if (check === checkSeleccionado) {
+                return;
+            }
+
+            check.checked = false;
+
+            const fila = check.closest("tr[data-saldo-centavos]");
+            const input = fila ? fila.querySelector(SELECTOR_IMPORTE_COMPROBANTE) : null;
+
+            if (input) {
+                input.disabled = true;
+                input.value = "";
+            }
+        });
     }
 
     function manejarCambioSeleccionComprobante(check) {
@@ -121,9 +180,13 @@
             return;
         }
 
+        if (check.checked) {
+            desmarcarOtrosComprobantes(check);
+        }
+
         input.disabled = !check.checked;
 
-        if (check.checked && !input.value.trim()) {
+        if (check.checked) {
             setearCentavosEnInput(input, obtenerSaldoFila(fila));
         }
 
@@ -158,35 +221,20 @@
             });
         });
 
-        const botonContinuar = document.querySelector("#cl-cobro-continuar-caja");
-        if (botonContinuar) {
-            botonContinuar.addEventListener("click", () => {
+        const medioCaja = document.querySelector("#cl-cobro-medio-caja");
+        if (medioCaja) {
+            medioCaja.addEventListener("change", () => actualizarResumenCobro(true));
+        }
+
+        const formulario = document.querySelector("#cl-cobro-formulario");
+        if (formulario) {
+            formulario.addEventListener("submit", (event) => {
                 actualizarResumenCobro(true);
 
-                const form = document.querySelector("#cl-cobro-formulario");
-                const urlBase = form ? form.dataset.urlMovimientoCaja : "";
-                const totalCobro = Number.parseInt(
-                    form ? form.dataset.totalCobroCentavos || "0" : "0",
-                    10
-                ) || 0;
-
-                if (!urlBase || totalCobro <= 0) {
-                    return;
+                const boton = document.querySelector("#cl-cobro-continuar-caja");
+                if (boton && boton.disabled) {
+                    event.preventDefault();
                 }
-
-                const url = new URL(urlBase, window.location.origin);
-                const clienteId = document.querySelector("#cl-cobro-cliente-id");
-
-                url.searchParams.set("tipo_movimiento", "INGRESO");
-                url.searchParams.set("origen_tipo", "RECIBO_CLIENTE_WIP");
-                url.searchParams.set("origen_descripcion", "Recibo cliente WIP");
-                url.searchParams.set("total_esperado_centavos", String(totalCobro));
-
-                if (clienteId && clienteId.value) {
-                    url.searchParams.set("cliente_id", clienteId.value);
-                }
-
-                window.location.href = url.toString();
             });
         }
 

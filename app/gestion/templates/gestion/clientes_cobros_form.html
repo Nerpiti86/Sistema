@@ -3,13 +3,13 @@
 {% from "components/buttons.html" import secondary_link %}
 
 {% block content %}
-<section id="cl-cobro" data-table="clientes_cobros" data-form="wip-cobro" class="row g-3">
+<section id="cl-cobro" data-table="clientes_cobros" data-form="cobro-cliente" class="row g-3">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
             <div>
                 <h1 id="cl-cobro-titulo" class="h3 mb-1">Nuevo recibo de cobro</h1>
                 <p id="cl-cobro-descripcion" class="text-muted mb-0">
-                    WIP: imputación visual de FC/ND confirmadas. Los movimientos de caja se resolverán en un módulo propio.
+                    Seleccioná una FC/ND confirmada y el medio de caja para confirmar recibo, caja, asiento y cuenta corriente.
                 </p>
             </div>
             <div id="cl-cobro-acciones-superiores">
@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <form id="cl-cobro-formulario" class="col-12" data-wip="1" data-total-cobro-centavos="0" data-url-movimiento-caja="{{ url_for('caja.ver_formulario_nuevo_movimiento_caja') }}" novalidate>
+    <form id="cl-cobro-formulario" class="col-12" method="post" action="{{ action_url }}" data-total-cobro-centavos="0" novalidate>
         <div class="row g-3">
             <div id="cl-cobro-cabecera" class="col-12">
                 {% call card("Cabecera", "Recibo") %}
@@ -92,11 +92,14 @@
                                         <td class="text-center">
                                             <input
                                                 id="cl-cobro-comprobante-check-{{ comprobante.movimiento_id }}"
+                                                name="movimientos_ctacte_cancelados"
                                                 class="form-check-input cl-cobro-comprobante-check"
                                                 type="checkbox"
                                                 value="{{ comprobante.movimiento_id }}"
                                                 aria-label="Seleccionar {{ comprobante.comprobante_mostrar }}"
                                             >
+                                            <input name="venta_comprobante_id_{{ comprobante.movimiento_id }}" type="hidden" value="{{ comprobante.venta_comprobante_id }}">
+                                            <input name="tipo_movimiento_{{ comprobante.movimiento_id }}" type="hidden" value="{{ comprobante.tipo_movimiento }}">
                                         </td>
                                         <td data-field="comprobante">{{ comprobante.comprobante_mostrar }}</td>
                                         <td data-field="fecha">{{ comprobante.fecha_argentina }}</td>
@@ -134,7 +137,7 @@
                         </table>
                     </div>
 
-                    <div id="cl-cobro-resumen-comprobantes" class="d-flex justify-content-end mt-3">
+                    <div id="cl-cobro-totales-comprobantes" class="d-flex justify-content-end mt-3">
                         <div class="row g-2 align-items-end" style="max-width: 32rem;">
                             <div class="col-12 col-md-6">
                                 <label for="cl-cobro-total-saldo" class="form-label mb-1">Saldo cobrable</label>
@@ -149,6 +152,46 @@
                 {% endcall %}
             </div>
 
+            <div id="cl-cobro-caja" class="col-12">
+                {% call card("Caja", "Medio operativo") %}
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-4">
+                            <label for="cl-cobro-medio-caja" class="form-label">Medio operativo</label>
+                            <select id="cl-cobro-medio-caja" name="medio_operativo_codigo" class="form-select" data-ns-select="normal" data-ns-select-placeholder="Seleccionar medio..." required>
+                                <option value="">Seleccionar medio...</option>
+                                {% for medio in medios_operativos %}
+                                    <option value="{{ medio.codigo }}" data-moneda="{{ medio.moneda_codigo }}">{{ medio.descripcion_select }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label for="cl-cobro-importe-caja" class="form-label">Importe caja</label>
+                            <input id="cl-cobro-importe-caja" name="importe_caja" type="text" inputmode="decimal" data-money-ar="centavos" class="form-control text-end fw-semibold" value="0,00" readonly required>
+                        </div>
+
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label for="cl-cobro-fecha-valor" class="form-label">Fecha valor</label>
+                            <input id="cl-cobro-fecha-valor" name="fecha_valor" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ caja_form.fecha_valor }}" placeholder="dd/mm/aaaa" autocomplete="off" required>
+                        </div>
+
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label for="cl-cobro-referencia" class="form-label">Referencia</label>
+                            <input id="cl-cobro-referencia" name="referencia" type="text" class="form-control" value="{{ caja_form.referencia }}" placeholder="Referencia">
+                        </div>
+
+                        <div class="col-12 col-lg-2">
+                            <label for="cl-cobro-detalle-caja" class="form-label">Detalle caja</label>
+                            <input id="cl-cobro-detalle-caja" name="detalle" type="text" class="form-control" value="{{ caja_form.detalle }}" placeholder="Detalle">
+                        </div>
+                    </div>
+
+                    <div id="cl-cobro-ayuda-caja" class="form-text mt-2">
+                        Primer corte: una FC/ND, cancelación total y una línea de caja por el total del recibo.
+                    </div>
+                {% endcall %}
+            </div>
+
             <div class="col-12">
                 {% call card("Observaciones", "Opcional") %}
                     <label for="cl-cobro-observaciones" class="form-label">Observaciones</label>
@@ -159,12 +202,12 @@
             <div class="col-12">
                 <div id="cl-cobro-form-acciones" class="d-flex justify-content-end gap-2">
                     <a class="btn btn-outline-secondary" href="{{ form_cancelar_url }}">Cancelar</a>
-                    <button id="cl-cobro-continuar-caja" type="button" class="btn btn-primary" disabled>
-                        Continuar a movimientos de caja
+                    <button id="cl-cobro-continuar-caja" type="submit" class="btn btn-primary" disabled>
+                        Confirmar cobro
                     </button>
                 </div>
-                <div id="cl-cobro-ayuda-wip" class="form-text text-end">
-                    WIP: este botón solo valida la imputación. El módulo de movimientos de caja se integrará más adelante.
+                <div id="cl-cobro-ayuda-submit" class="form-text text-end">
+                    Confirma el recibo y genera caja, asiento contable y cuenta corriente.
                 </div>
             </div>
         </div>
