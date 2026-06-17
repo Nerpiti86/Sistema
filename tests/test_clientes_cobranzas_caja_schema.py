@@ -401,3 +401,107 @@ def test_asientos_contables_permite_tipos_cobranza_y_caja_en_schema():
 
     assert "'COBRANZA'" in row["sql"]
     assert "'CAJA'" in row["sql"]
+
+
+
+def test_cobranzas_caja_guard_rails_crean_indices_unicos():
+    """
+    Contrato: las migraciones agregan indices unicos parciales para evitar
+    duplicaciones funcionales entre cobranzas, caja, asientos e imputaciones.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        rows = get_db().execute(
+            """
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'index'
+              AND name IN (
+                  'ux_movimientos_caja_origen_unico',
+                  'ux_clientes_cobranzas_asiento',
+                  'ux_movimientos_caja_asiento',
+                  'ux_clientes_cobranzas_lineas_ctacte_generada',
+                  'ux_clientes_cobranzas_lineas_cobranza_ctacte_cancelada',
+                  'ux_clientes_cobranzas_lineas_cobranza_comprobante',
+                  'ux_clientes_cobranzas_lineas_anticipo_unico'
+              )
+            """
+        ).fetchall()
+
+    nombres = {row["name"] for row in rows}
+
+    assert nombres == {
+        "ux_movimientos_caja_origen_unico",
+        "ux_clientes_cobranzas_asiento",
+        "ux_movimientos_caja_asiento",
+        "ux_clientes_cobranzas_lineas_ctacte_generada",
+        "ux_clientes_cobranzas_lineas_cobranza_ctacte_cancelada",
+        "ux_clientes_cobranzas_lineas_cobranza_comprobante",
+        "ux_clientes_cobranzas_lineas_anticipo_unico",
+    }
+
+
+def test_movimientos_caja_rechaza_origen_duplicado():
+    """
+    Contrato: un mismo origen funcional no puede generar dos movimientos de caja.
+    """
+    app = create_app(TestConfig)
+
+    with app.app_context():
+        apply_migrations()
+        db = get_db()
+
+        db.execute(
+            """
+            INSERT INTO movimientos_caja (
+                fecha,
+                tipo_movimiento,
+                origen_tipo,
+                origen_id,
+                moneda_contable_codigo,
+                total_contable_centavos,
+                estado,
+                creado_en
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "2026-06-16",
+                "INGRESO",
+                "CLIENTES_COBRANZA",
+                10,
+                "ARS",
+                100000,
+                "BORRADOR",
+                "2026-06-16 10:00:00",
+            ),
+        )
+
+        with pytest.raises(sqlite3.IntegrityError):
+            db.execute(
+                """
+                INSERT INTO movimientos_caja (
+                    fecha,
+                    tipo_movimiento,
+                    origen_tipo,
+                    origen_id,
+                    moneda_contable_codigo,
+                    total_contable_centavos,
+                    estado,
+                    creado_en
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "2026-06-16",
+                    "INGRESO",
+                    "CLIENTES_COBRANZA",
+                    10,
+                    "ARS",
+                    100000,
+                    "BORRADOR",
+                    "2026-06-16 10:01:00",
+                ),
+            )
