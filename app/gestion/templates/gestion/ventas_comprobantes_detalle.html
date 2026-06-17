@@ -1,221 +1,671 @@
 {% extends "base.html" %}
-{% from "components/cards.html" import card %}
-{% from "components/buttons.html" import primary_link, secondary_link %}
+
+{% block page_css %}
+<style>
+    .vc-paper-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .vc-paper-actions__buttons {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .vc-paper {
+        background: #fff;
+        border: 2px solid #212529;
+        box-shadow: 0 .75rem 2rem rgba(0, 0, 0, .08);
+        min-height: 980px;
+    }
+
+    .vc-paper__copy {
+        text-align: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        letter-spacing: .05em;
+        padding: .35rem 0;
+        border-bottom: 2px solid #212529;
+    }
+
+    .vc-paper__header {
+        display: grid;
+        grid-template-columns: 1fr 5.25rem 1fr;
+        border-bottom: 2px solid #212529;
+        min-height: 9rem;
+    }
+
+    .vc-paper__issuer,
+    .vc-paper__doc {
+        padding: .9rem 1rem;
+    }
+
+    .vc-paper__issuer {
+        border-right: 2px solid #212529;
+    }
+
+    .vc-paper__doc {
+        border-left: 2px solid #212529;
+    }
+
+    .vc-paper__issuer-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        margin-bottom: .85rem;
+    }
+
+    .vc-paper__letter {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: .45rem;
+        text-align: center;
+    }
+
+    .vc-paper__letter-main {
+        font-size: 2.35rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .vc-paper__letter-code {
+        font-size: .65rem;
+        font-weight: 700;
+    }
+
+    .vc-paper__title {
+        font-size: 1.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        margin-bottom: .75rem;
+    }
+
+    .vc-paper__row {
+        display: grid;
+        grid-template-columns: 9.5rem 1fr;
+        gap: .35rem;
+        margin: .22rem 0;
+    }
+
+    .vc-paper__row--inline {
+        grid-template-columns: 6.2rem 1fr 6rem 1fr;
+    }
+
+    .vc-paper__label {
+        font-weight: 800;
+    }
+
+    .vc-paper__value {
+        min-height: 1rem;
+        overflow-wrap: anywhere;
+    }
+
+    .vc-paper__placeholder {
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    .vc-paper__status {
+        display: inline-block;
+        border: 1px solid #6c757d;
+        border-radius: 999px;
+        padding: .1rem .55rem;
+        font-size: .7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .vc-paper__band {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        border-bottom: 2px solid #212529;
+        background: #f8f9fa;
+    }
+
+    .vc-paper__band-cell {
+        padding: .45rem .65rem;
+        border-right: 1px solid #212529;
+    }
+
+    .vc-paper__band-cell:last-child {
+        border-right: 0;
+    }
+
+    .vc-paper__client {
+        padding: .65rem 1rem;
+        border-bottom: 2px solid #212529;
+        min-height: 5.85rem;
+    }
+
+    .vc-paper__client-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 1.75rem;
+    }
+
+    .vc-paper__table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .vc-paper__table th {
+        background: #d6d6d6;
+        border-right: 1px solid #212529;
+        border-bottom: 2px solid #212529;
+        padding: .38rem .32rem;
+        font-size: .7rem;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .vc-paper__table td {
+        padding: .45rem .32rem;
+        border-right: 1px solid #adb5bd;
+        vertical-align: top;
+    }
+
+    .vc-paper__table th:last-child,
+    .vc-paper__table td:last-child {
+        border-right: 0;
+    }
+
+    .vc-paper__items-space {
+        min-height: 22rem;
+        border-bottom: 2px solid #212529;
+    }
+
+    .vc-paper__totals-area {
+        display: grid;
+        grid-template-columns: 1fr 18rem;
+        min-height: 9.5rem;
+        border-bottom: 2px solid #212529;
+    }
+
+    .vc-paper__observations {
+        padding: .85rem 1rem;
+        border-right: 1px solid #212529;
+        color: #6c757d;
+    }
+
+    .vc-paper__totals {
+        padding: 1rem 1rem .8rem;
+        align-self: end;
+    }
+
+    .vc-paper__total-line {
+        display: grid;
+        grid-template-columns: 1fr 7.2rem;
+        gap: .5rem;
+        margin: .45rem 0;
+        font-weight: 700;
+    }
+
+    .vc-paper__total-line--grand {
+        border-top: 2px solid #212529;
+        padding-top: .55rem;
+        font-size: .95rem;
+        font-weight: 900;
+    }
+
+    .vc-paper__footer {
+        min-height: 3.2rem;
+        padding: .75rem 1rem;
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        color: #6c757d;
+        font-weight: 700;
+    }
+
+    .vc-technical {
+        margin-top: 1rem;
+        border: 1px dashed #adb5bd;
+        border-radius: .5rem;
+        background: #fff;
+    }
+
+    .vc-technical summary {
+        padding: .75rem 1rem;
+        cursor: pointer;
+        font-weight: 800;
+        color: #6c757d;
+    }
+
+    .vc-technical__body {
+        border-top: 1px dashed #adb5bd;
+        padding: .9rem 1rem;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    @media (max-width: 768px) {
+        .vc-paper-actions,
+        .vc-paper__header,
+        .vc-paper__band,
+        .vc-paper__client-grid,
+        .vc-paper__totals-area,
+        .vc-technical__body {
+            grid-template-columns: 1fr;
+        }
+
+        .vc-paper-actions {
+            flex-direction: column;
+        }
+
+        .vc-paper__issuer,
+        .vc-paper__doc,
+        .vc-paper__letter {
+            border-left: 0;
+            border-right: 0;
+            border-bottom: 2px solid #212529;
+        }
+
+        .vc-paper__doc {
+            border-bottom: 0;
+        }
+
+        .vc-paper__band-cell {
+            border-right: 0;
+            border-bottom: 1px solid #212529;
+        }
+
+        .vc-paper__observations {
+            border-right: 0;
+            border-bottom: 1px solid #212529;
+        }
+
+        .vc-paper__table {
+            font-size: .72rem;
+        }
+
+        .vc-paper__table th:nth-child(1),
+        .vc-paper__table td:nth-child(1),
+        .vc-paper__table th:nth-child(5),
+        .vc-paper__table td:nth-child(5) {
+            display: none;
+        }
+    }
+
+    @media print {
+        body {
+            background: #fff;
+        }
+
+        nav,
+        .vc-paper-actions,
+        .vc-technical,
+        .alert {
+            display: none !important;
+        }
+
+        main.container {
+            max-width: none;
+            padding: 0 !important;
+        }
+
+        .vc-paper {
+            border: 2px solid #000;
+            box-shadow: none;
+            min-height: 100vh;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-{% set estado_badge = "text-bg-secondary" %}
-{% if comprobante_venta.estado == "CONFIRMADO" %}
-    {% set estado_badge = "text-bg-success" %}
-{% elif comprobante_venta.estado == "BORRADOR" %}
-    {% set estado_badge = "text-bg-warning" %}
-{% elif comprobante_venta.estado == "ANULADO" %}
-    {% set estado_badge = "text-bg-danger" %}
-{% endif %}
+<section id="vc-detalle" data-table="ventas_comprobantes" data-row-id="{{ comprobante_venta.id }}">
+    <div class="vc-paper-actions">
+        <div>
+            <h1 id="vc-detalle-titulo" class="h4 mb-1">Detalle de Comprobante</h1>
+            <p id="vc-detalle-descripcion" class="text-muted mb-0">
+                Vista tipo papel para lectura e impresión.
+            </p>
+        </div>
 
-<section id="vc-detalle" data-table="ventas_comprobantes" data-row-id="{{ comprobante_venta.id }}" class="row g-3">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-            <div>
-                <h1 id="vc-detalle-titulo" class="h3 mb-1">Detalle comprobante de venta</h1>
-                <p id="vc-detalle-descripcion" class="text-muted mb-0">
-                    {{ comprobante_venta.numero_formateado }} - {{ comprobante_venta.cliente_razon_social }}
-                </p>
+        <div id="vc-detalle-acciones" class="vc-paper-actions__buttons">
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('gestion.ver_listado_comprobantes_venta') }}">
+                Volver
+            </a>
+
+            <button id="vc-imprimir" type="button" class="btn btn-primary btn-sm" onclick="window.print()">
+                Imprimir
+            </button>
+
+            {% if comprobante_venta.comprobante_impago %}
+                <a
+                    id="vc-cobrar"
+                    class="btn btn-success btn-sm"
+                    href="{{ url_for('gestion.ver_formulario_nuevo_cobro_cliente', cliente_id=comprobante_venta.cliente_id) }}"
+                >
+                    Cobrar
+                </a>
+            {% endif %}
+
+            {% if comprobante_venta.estado == "BORRADOR" %}
+                <form method="post" action="{{ url_for('gestion.confirmar_comprobante_venta_existente', comprobante_id=comprobante_venta.id) }}">
+                    <button id="vc-confirmar" type="submit" class="btn btn-warning btn-sm">Confirmar</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <article id="vc-detalle-comprobante" class="vc-paper">
+        <div class="vc-paper__copy">ORIGINAL</div>
+
+        <header class="vc-paper__header">
+            <section id="vc-emisor" class="vc-paper__issuer">
+                <div class="vc-paper__issuer-title vc-paper__placeholder">DATOS DEL EMISOR</div>
+
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Razón Social:</div>
+                    <div class="vc-paper__value vc-paper__placeholder">Pendiente de configurar</div>
+                </div>
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Domicilio Comercial:</div>
+                    <div class="vc-paper__value vc-paper__placeholder">Pendiente de configurar</div>
+                </div>
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Condición frente al IVA:</div>
+                    <div class="vc-paper__value vc-paper__placeholder">Pendiente de configurar</div>
+                </div>
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">CUIT:</div>
+                    <div class="vc-paper__value vc-paper__placeholder">Pendiente de configurar</div>
+                </div>
+            </section>
+
+            <section class="vc-paper__letter" aria-label="Letra del comprobante">
+                <div id="vc-comprobante-letra" data-field="letra" class="vc-paper__letter-main">
+                    {{ comprobante_venta.letra }}
+                </div>
+                {% if comprobante_venta.codigo_comprobante_mostrar %}
+                    <div class="vc-paper__letter-code">COD. {{ comprobante_venta.codigo_comprobante_mostrar }}</div>
+                {% endif %}
+            </section>
+
+            <section class="vc-paper__doc">
+                <div id="vc-comprobante-tipo" data-field="tipo_comprobante" class="vc-paper__title">
+                    {{ comprobante_venta.tipo_comprobante_titulo }}
+                </div>
+
+                <div class="vc-paper__row vc-paper__row--inline">
+                    <div class="vc-paper__label">Punto de Venta:</div>
+                    <div id="vc-comprobante-punto-venta" data-field="punto_venta" class="vc-paper__value">
+                        {{ comprobante_venta.punto_venta_mostrar }}
+                    </div>
+                    <div class="vc-paper__label">Comp. Nro:</div>
+                    <div id="vc-comprobante-numero" data-field="numero" class="vc-paper__value">
+                        {{ comprobante_venta.numero_mostrar }}
+                    </div>
+                </div>
+
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Fecha de Emisión:</div>
+                    <div id="vc-fecha" data-field="fecha" class="vc-paper__value">
+                        {{ comprobante_venta.fecha_argentina }}
+                    </div>
+                </div>
+
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Estado:</div>
+                    <div id="vc-estado" data-field="estado" class="vc-paper__value">
+                        <span class="vc-paper__status">{{ comprobante_venta.estado_publico_mostrar }}</span>
+                    </div>
+                </div>
+            </section>
+        </header>
+
+        <section class="vc-paper__band">
+            <div class="vc-paper__band-cell">
+                <span class="vc-paper__label">Tipo:</span>
+                <span id="vc-comprobante-tipo-abreviado" class="vc-paper__value">
+                    {{ comprobante_venta.tipo_comprobante_abreviado }}
+                </span>
             </div>
-            <div id="vc-detalle-acciones" class="d-flex gap-2">
-                {{ primary_link("Nuevo comprobante", url_for("gestion.ver_formulario_nuevo_comprobante_venta")) }}
-                {{ secondary_link("Volver al listado", url_for("gestion.ver_listado_comprobantes_venta")) }}
-                {% if comprobante_venta.estado == "BORRADOR" %}
-                    <form method="post" action="{{ url_for('gestion.confirmar_comprobante_venta_existente', comprobante_id=comprobante_venta.id) }}">
-                        <button id="vc-confirmar" type="submit" class="btn btn-sm btn-success">Confirmar</button>
-                    </form>
+            <div class="vc-paper__band-cell">
+                <span class="vc-paper__label">Clase:</span>
+                <span class="vc-paper__value">{{ comprobante_venta.letra }}</span>
+            </div>
+            <div class="vc-paper__band-cell">
+                <span class="vc-paper__label">Condición:</span>
+                <span id="vc-comprobante-condicion" data-field="condicion_venta" class="vc-paper__value">
+                    {{ comprobante_venta.condicion_venta_mostrar }}
+                </span>
+            </div>
+        </section>
+
+        <section class="vc-paper__band">
+            <div class="vc-paper__band-cell">
+                <span class="vc-paper__label">Período Facturado Desde:</span>
+                <span class="vc-paper__value">{{ comprobante_venta.fecha_argentina }}</span>
+            </div>
+            <div class="vc-paper__band-cell">
+                <span class="vc-paper__label">Hasta:</span>
+                <span class="vc-paper__value">{{ comprobante_venta.fecha_argentina }}</span>
+            </div>
+            <div class="vc-paper__band-cell">
+                <span class="vc-paper__label">Fecha de Vto. para el pago:</span>
+                <span id="vc-fecha-vencimiento" data-field="fecha_vencimiento" class="vc-paper__value">
+                    {% if comprobante_venta.fecha_vencimiento_argentina %}
+                        {{ comprobante_venta.fecha_vencimiento_argentina }}
+                    {% else %}
+                        Sin vencimiento
+                    {% endif %}
+                </span>
+            </div>
+        </section>
+
+        <section class="vc-paper__client">
+            <div class="vc-paper__client-grid">
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Documento:</div>
+                    <div id="vc-cliente-documento" class="vc-paper__value">
+                        {{ cliente_comprobante_venta.documento_fiscal_mostrar }}
+                    </div>
+                </div>
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Apellido y Nombre / Razón Social:</div>
+                    <div id="vc-cliente" data-field="cliente_razon_social" class="vc-paper__value">
+                        {{ cliente_comprobante_venta.razon_social_mostrar }}
+                    </div>
+                </div>
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Condición frente al IVA:</div>
+                    <div id="vc-cliente-iva" class="vc-paper__value">
+                        {{ cliente_comprobante_venta.condicion_iva_mostrar }}
+                    </div>
+                </div>
+                <div class="vc-paper__row">
+                    <div class="vc-paper__label">Domicilio:</div>
+                    <div id="vc-cliente-domicilio" class="vc-paper__value">
+                        {{ cliente_comprobante_venta.domicilio_mostrar }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="vc-paper__row mt-1">
+                <div class="vc-paper__label">Condición de venta:</div>
+                <div class="vc-paper__value">{{ comprobante_venta.condicion_venta_mostrar }}</div>
+            </div>
+
+            {% if asociacion_comprobante_venta %}
+                <div class="vc-paper__row mt-1">
+                    <div class="vc-paper__label">Modifica a:</div>
+                    <div id="vc-comprobante-asociado-detalle" data-field="comprobante_asociado_id" class="vc-paper__value">
+                        {{ asociacion_comprobante_venta.comprobante_asociado_numero_formateado }}
+                    </div>
+                </div>
+            {% endif %}
+        </section>
+
+        <section id="vc-detalle-renglones" data-table="ventas_comprobantes_detalle">
+            <table id="vc-detalle-tabla" class="vc-paper__table">
+                <thead>
+                    <tr>
+                        <th data-field="articulo_venta_id" style="width: 4.5rem;">Código</th>
+                        <th data-field="descripcion">Producto / Servicio</th>
+                        <th data-field="cantidad_1000000" class="text-end" style="width: 5.5rem;">Cantidad</th>
+                        <th data-field="unidad_medida_codigo" class="text-center" style="width: 5.5rem;">U. Medida</th>
+                        <th data-field="precio_unitario_centavos" class="text-end" style="width: 7rem;">Precio Unit.</th>
+                        {% if mostrar_columna_bonificacion %}
+                            <th data-field="tipo_bonificacion_codigo" class="text-end" style="width: 6rem;">Bonif.</th>
+                            <th data-field="descuento_centavos" class="text-end" style="width: 6.5rem;">Imp. Bonif.</th>
+                        {% endif %}
+                        <th data-field="iva_centavos" class="text-end" style="width: 6.5rem;">IVA</th>
+                        <th data-field="total_linea_centavos" class="text-end" style="width: 7rem;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="vc-detalle-tbody">
+                    {% for detalle in detalles_comprobante_venta %}
+                        <tr id="vc-detalle-row-{{ detalle.id }}" data-row-id="{{ detalle.id }}">
+                            <td data-field="articulo_venta_id">{{ detalle.articulo_venta_id }}</td>
+                            <td data-field="descripcion">
+                                {{ detalle.descripcion }}
+                                {% if detalle.observaciones %}
+                                    <div class="text-muted small">{{ detalle.observaciones }}</div>
+                                {% endif %}
+                            </td>
+                            <td data-field="cantidad_1000000" class="text-end">{{ detalle.cantidad_argentina }}</td>
+                            <td data-field="unidad_medida_codigo" class="text-center">
+                                {% if detalle.unidad_medida_descripcion %}
+                                    {{ detalle.unidad_medida_descripcion }}
+                                {% else %}
+                                    {{ detalle.unidad_medida_codigo }}
+                                {% endif %}
+                            </td>
+                            <td data-field="precio_unitario_centavos" class="text-end">{{ detalle.precio_unitario_argentina }}</td>
+                            {% if mostrar_columna_bonificacion %}
+                                <td data-field="tipo_bonificacion_codigo" class="text-end">
+                                    {% if detalle.mostrar_bonificacion %}
+                                        {{ detalle.bonificacion_valor_argentina }}
+                                    {% else %}
+                                        0,00
+                                    {% endif %}
+                                </td>
+                                <td data-field="descuento_centavos" class="text-end">
+                                    {% if detalle.mostrar_bonificacion %}
+                                        {{ detalle.descuento_argentina }}
+                                    {% else %}
+                                        0,00
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                            <td data-field="iva_centavos" class="text-end">{{ detalle.iva_argentina }}</td>
+                            <td data-field="total_linea_centavos" class="text-end fw-bold">{{ detalle.total_linea_argentina }}</td>
+                        </tr>
+                    {% else %}
+                        <tr id="vc-detalle-row-sin-datos">
+                            <td colspan="8" class="text-center text-muted py-4">
+                                No hay renglones para este comprobante.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="vc-paper__items-space"></div>
+        </section>
+
+        <section class="vc-paper__totals-area">
+            <div class="vc-paper__observations">
+                <div class="vc-paper__label mb-1">Observaciones:</div>
+                {% if comprobante_venta.observaciones %}
+                    {{ comprobante_venta.observaciones }}
+                {% else %}
+                    Sin observaciones.
                 {% endif %}
             </div>
-        </div>
-    </div>
 
-    <div class="col-12 col-lg-6">
-        <div id="vc-detalle-cabecera">
-            {% call card("Cabecera") %}
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Estado</dt>
-                    <dd id="vc-estado" data-field="estado" class="col-sm-8">
-                        <span class="badge {{ estado_badge }}">{{ comprobante_venta.estado }}</span>
-                    </dd>
-
-                    <dt class="col-sm-4">Fecha</dt>
-                    <dd id="vc-fecha" data-field="fecha" class="col-sm-8">{{ comprobante_venta.fecha_argentina }}</dd>
-
-                    <dt class="col-sm-4">Vencimiento</dt>
-                    <dd id="vc-fecha-vencimiento" data-field="fecha_vencimiento" class="col-sm-8">
-                        {% if comprobante_venta.fecha_vencimiento_argentina %}
-                            {{ comprobante_venta.fecha_vencimiento_argentina }}
-                        {% else %}
-                            <span class="text-muted">Sin vencimiento</span>
-                        {% endif %}
-                    </dd>
-
-                    <dt class="col-sm-4">Cliente</dt>
-                    <dd id="vc-cliente" data-field="cliente_razon_social" class="col-sm-8">{{ comprobante_venta.cliente_razon_social }}</dd>
-
-                    {% if asociacion_comprobante_venta %}
-                        <dt class="col-sm-4">Modifica a</dt>
-                        <dd id="vc-comprobante-asociado-detalle" data-field="comprobante_asociado_id" class="col-sm-8">
-                            {{ asociacion_comprobante_venta.comprobante_asociado_numero_formateado }}
-                        </dd>
-                    {% endif %}
-
-                    <dt class="col-sm-4">Asiento</dt>
-                    <dd id="vc-asiento" data-field="asiento_id" class="col-sm-8 mb-0">
-                        {% if comprobante_venta.asiento_mostrar %}
-                            <a id="vc-asiento-link" href="{{ url_for('contabilidad.ver_detalle_asiento_contable', asiento_id=comprobante_venta.asiento_id) }}">
-                                {{ comprobante_venta.asiento_mostrar }}
-                            </a>
-                        {% elif comprobante_venta.asiento_id %}
-                            ID {{ comprobante_venta.asiento_id }}
-                        {% else %}
-                            <span class="text-muted">Sin asiento</span>
-                        {% endif %}
-                    </dd>
-                </dl>
-            {% endcall %}
-        </div>
-    </div>
-
-    <div class="col-12 col-lg-6">
-        <div id="vc-detalle-importes">
-            {% call card("Importes") %}
-                <dl class="row mb-3">
-                    <dt class="col-sm-4">Subtotal</dt>
-                    <dd id="vc-subtotal" data-field="subtotal_centavos" class="col-sm-8 text-end">{{ comprobante_venta.subtotal_argentina }}</dd>
-
-                    <dt class="col-sm-4">Descuento</dt>
-                    <dd id="vc-descuento" data-field="descuento_centavos" class="col-sm-8 text-end">{{ comprobante_venta.descuento_argentina }}</dd>
-
-                    <dt class="col-sm-4">Recargo</dt>
-                    <dd id="vc-recargo" data-field="recargo_centavos" class="col-sm-8 text-end">{{ comprobante_venta.recargo_argentina }}</dd>
-
-                    <dt class="col-sm-4">IVA</dt>
-                    <dd id="vc-iva" data-field="iva_centavos" class="col-sm-8 text-end mb-0">{{ comprobante_venta.iva_argentina }}</dd>
-                </dl>
-
-                <div class="d-flex justify-content-between align-items-center border rounded bg-light p-3">
-                    <div class="fw-semibold fs-5">Total</div>
-                    <div id="vc-total" data-field="total_centavos" class="fw-bold fs-4 text-end">
+            <div id="vc-detalle-importes" class="vc-paper__totals">
+                <div class="vc-paper__total-line">
+                    <div>Subtotal: $</div>
+                    <div id="vc-subtotal" data-field="subtotal_centavos" class="text-end">
+                        {{ comprobante_venta.subtotal_argentina }}
+                    </div>
+                </div>
+                <div class="vc-paper__total-line">
+                    <div>Descuento: $</div>
+                    <div id="vc-descuento" data-field="descuento_centavos" class="text-end">
+                        {{ comprobante_venta.descuento_argentina }}
+                    </div>
+                </div>
+                <div class="vc-paper__total-line">
+                    <div>Recargo: $</div>
+                    <div id="vc-recargo" data-field="recargo_centavos" class="text-end">
+                        {{ comprobante_venta.recargo_argentina }}
+                    </div>
+                </div>
+                <div class="vc-paper__total-line">
+                    <div>IVA: $</div>
+                    <div id="vc-iva" data-field="iva_centavos" class="text-end">
+                        {{ comprobante_venta.iva_argentina }}
+                    </div>
+                </div>
+                <div class="vc-paper__total-line vc-paper__total-line--grand">
+                    <div>Importe Total: $</div>
+                    <div id="vc-total" data-field="total_centavos" class="text-end">
                         {{ comprobante_venta.total_argentina }}
                     </div>
                 </div>
-            {% endcall %}
-        </div>
-    </div>
+            </div>
+        </section>
 
-    <div class="col-12">
-        <div id="vc-detalle-comprobante">
-            {% call card("Comprobante") %}
-                <div class="row g-0 border rounded overflow-hidden">
-                    <div class="col-12 col-md-2 p-3 border-end">
-                        <div class="text-muted small">Tipo</div>
-                        <div id="vc-comprobante-tipo" data-field="tipo_comprobante" class="fw-semibold">
-                            {{ comprobante_venta.tipo_comprobante }}
-                        </div>
-                    </div>
+        <footer class="vc-paper__footer">
+            <div>Comprobante generado desde NeriSoft</div>
+            <div>Vista interna de gestión</div>
+        </footer>
+    </article>
 
-                    <div class="col-12 col-md-1 p-3 border-end">
-                        <div class="text-muted small">Clase</div>
-                        <div id="vc-comprobante-letra" data-field="letra" class="fw-semibold">
-                            {{ comprobante_venta.letra }}
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-2 p-3 border-end">
-                        <div class="text-muted small">Punto de venta</div>
-                        <div id="vc-comprobante-punto-venta" data-field="punto_venta" class="fw-semibold">
-                            {{ comprobante_venta.punto_venta_mostrar }}
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-2 p-3 border-end">
-                        <div class="text-muted small">Número</div>
-                        <div id="vc-comprobante-numero" data-field="numero" class="fw-semibold">
-                            {{ comprobante_venta.numero_mostrar }}
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-1 p-3 border-end">
-                        <div class="text-muted small">Moneda</div>
-                        <div id="vc-comprobante-moneda" data-field="moneda_codigo" class="fw-semibold">
-                            {{ comprobante_venta.moneda_codigo }}
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-2 p-3 border-end">
-                        <div class="text-muted small">Condición</div>
-                        <div id="vc-comprobante-condicion" data-field="condicion_venta" class="fw-semibold">
-                            {{ comprobante_venta.condicion_venta_mostrar }}
-                        </div>
-                    </div>
-
-                    <div class="col-12 col-md-2 p-3">
-                        <div class="text-muted small">Comprobante completo</div>
-                        <div id="vc-comprobante-numero-formateado" data-field="numero_formateado" class="fw-semibold">
-                            {{ comprobante_venta.numero_formateado }}
-                        </div>
-                    </div>
+    <details id="vc-datos-contables" class="vc-technical">
+        <summary>Datos contables y técnicos</summary>
+        <div class="vc-technical__body">
+            <div>
+                <div class="vc-paper__label">Asiento contable</div>
+                <div id="vc-asiento" data-field="asiento_id" class="vc-paper__value">
+                    {% if comprobante_venta.asiento_mostrar %}
+                        <a id="vc-asiento-link" href="{{ url_for('contabilidad.ver_detalle_asiento_contable', asiento_id=comprobante_venta.asiento_id) }}">
+                            {{ comprobante_venta.asiento_mostrar }}
+                        </a>
+                    {% elif comprobante_venta.asiento_id %}
+                        ID {{ comprobante_venta.asiento_id }}
+                    {% else %}
+                        Sin asiento
+                    {% endif %}
                 </div>
-            {% endcall %}
-        </div>
-    </div>
-
-    <div class="col-12">
-        <div id="vc-detalle-renglones" data-table="ventas_comprobantes_detalle">
-            {% call card("Renglones") %}
-                <div class="table-responsive">
-                    <table id="vc-detalle-tabla" class="table table-sm align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th data-field="descripcion">Descripción</th>
-                                <th data-field="cantidad_1000000" class="text-end">Cantidad</th>
-                                <th data-field="unidad_medida_codigo">U. medida</th>
-                                <th data-field="precio_unitario_centavos" class="text-end">Precio unitario</th>
-                                <th data-field="tipo_bonificacion_codigo">Bonificación</th>
-                                <th data-field="subtotal_centavos" class="text-end">Subtotal</th>
-                                <th data-field="iva_centavos" class="text-end">IVA</th>
-                                <th data-field="total_linea_centavos" class="text-end">Total línea</th>
-                            </tr>
-                        </thead>
-                        <tbody id="vc-detalle-tbody">
-                            {% for detalle in detalles_comprobante_venta %}
-                                <tr id="vc-detalle-row-{{ detalle.id }}" data-row-id="{{ detalle.id }}">
-                                    <td data-field="descripcion">{{ detalle.descripcion }}</td>
-                                    <td data-field="cantidad_1000000" class="text-end">{{ detalle.cantidad_argentina }}</td>
-                                    <td data-field="unidad_medida_codigo">
-                                        {% if detalle.unidad_medida_descripcion %}
-                                            {{ detalle.unidad_medida_descripcion }}
-                                        {% else %}
-                                            {{ detalle.unidad_medida_codigo }}
-                                        {% endif %}
-                                    </td>
-                                    <td data-field="precio_unitario_centavos" class="text-end">{{ detalle.precio_unitario_argentina }}</td>
-                                    <td data-field="tipo_bonificacion_codigo">
-                                        {% if detalle.tipo_bonificacion_descripcion %}
-                                            {{ detalle.tipo_bonificacion_descripcion }}
-                                        {% else %}
-                                            <span class="text-muted">Sin bonificación</span>
-                                        {% endif %}
-                                    </td>
-                                    <td data-field="subtotal_centavos" class="text-end">{{ detalle.subtotal_argentina }}</td>
-                                    <td data-field="iva_centavos" class="text-end">{{ detalle.iva_argentina }}</td>
-                                    <td data-field="total_linea_centavos" class="text-end fw-semibold">{{ detalle.total_linea_argentina }}</td>
-                                </tr>
-                            {% else %}
-                                <tr id="vc-detalle-row-sin-datos">
-                                    <td colspan="8" class="text-center text-muted py-4">No hay renglones para este comprobante.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            </div>
+            <div>
+                <div class="vc-paper__label">ID interno</div>
+                <div class="vc-paper__value">Comprobante #{{ comprobante_venta.id }}</div>
+            </div>
+            <div>
+                <div class="vc-paper__label">Estado interno</div>
+                <div class="vc-paper__value">{{ comprobante_venta.estado }}</div>
+            </div>
+            <div>
+                <div class="vc-paper__label">Moneda</div>
+                <div id="vc-comprobante-moneda" data-field="moneda_codigo" class="vc-paper__value">
+                    {{ comprobante_venta.moneda_codigo }}
                 </div>
-            {% endcall %}
+            </div>
+            <div>
+                <div class="vc-paper__label">Número completo</div>
+                <div id="vc-comprobante-numero-formateado" data-field="numero_formateado" class="vc-paper__value">
+                    {{ comprobante_venta.numero_formateado }}
+                </div>
+            </div>
+            <div>
+                <div class="vc-paper__label">Saldo abierto</div>
+                <div class="vc-paper__value">
+                    {{ comprobante_venta.saldo_abierto_argentina }}
+                </div>
+            </div>
         </div>
-    </div>
+    </details>
 </section>
 {% endblock %}

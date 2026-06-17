@@ -26,6 +26,9 @@ from app.gestion.clientes_repository import (
     obtener_cliente_por_id,
     validar_cliente_activo,
 )
+from app.gestion.clientes_cobranzas_repository import (
+    obtener_total_confirmado_aplicado_a_movimiento,
+)
 from app.gestion.clientes_cuenta_corriente_service import (
     crear_movimiento_debe_cliente,
     crear_movimiento_haber_cliente,
@@ -239,6 +242,15 @@ def obtener_contexto_detalle_comprobante_venta(
         _obtener_movimiento_cuenta_corriente_comprobante_para_pantalla(comprobante)
     )
     asociacion_comprobante = obtener_asociacion_comprobante_venta(comprobante["id"])
+    cliente = obtener_cliente_por_id(comprobante["cliente_id"])
+    cliente_pantalla = _preparar_cliente_comprobante_venta_para_pantalla(cliente)
+    info_cobranza = _preparar_info_cobranza_comprobante_venta(
+        movimiento_cuenta_corriente
+    )
+    comprobante_pantalla.update(info_cobranza)
+    mostrar_columna_bonificacion = any(
+        detalle["mostrar_bonificacion"] for detalle in detalles_pantalla
+    )
 
     return {
         "comprobante_venta": comprobante_pantalla,
@@ -246,6 +258,8 @@ def obtener_contexto_detalle_comprobante_venta(
         "cantidad_detalles_comprobante_venta": len(detalles_pantalla),
         "movimiento_cuenta_corriente_venta": movimiento_cuenta_corriente,
         "asociacion_comprobante_venta": asociacion_comprobante,
+        "cliente_comprobante_venta": cliente_pantalla,
+        "mostrar_columna_bonificacion": mostrar_columna_bonificacion,
     }
 
 
@@ -315,9 +329,140 @@ def _preparar_comprobante_venta_para_pantalla(
         8,
     )
     comprobante_pantalla["condicion_venta_mostrar"] = "Cuenta corriente cliente"
+    comprobante_pantalla["tipo_comprobante_titulo"] = (
+        _formatear_tipo_comprobante_titulo(comprobante.get("tipo_comprobante"))
+    )
+    comprobante_pantalla["tipo_comprobante_abreviado"] = (
+        _formatear_tipo_comprobante_abreviado(comprobante.get("tipo_comprobante"))
+    )
+    comprobante_pantalla["estado_publico_mostrar"] = _formatear_estado_publico(
+        comprobante.get("estado")
+    )
+    comprobante_pantalla["codigo_comprobante_mostrar"] = str(
+        comprobante.get("tipo_comprobante_codigo") or ""
+    ).strip()
     _agregar_asiento_contable_para_pantalla(comprobante_pantalla)
 
     return comprobante_pantalla
+
+
+
+def _preparar_cliente_comprobante_venta_para_pantalla(
+    cliente: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Prepara datos del cliente para vista tipo comprobante papel."""
+    if cliente is None:
+        return {
+            "razon_social_mostrar": "Cliente no disponible",
+            "documento_fiscal_mostrar": "Sin informar",
+            "condicion_iva_mostrar": "Sin informar",
+            "domicilio_mostrar": "Sin informar",
+        }
+
+    cliente_pantalla = dict(cliente)
+    cliente_pantalla["razon_social_mostrar"] = _texto_o_guion(
+        cliente.get("razon_social")
+    )
+    cliente_pantalla["documento_fiscal_mostrar"] = _unir_textos(
+        cliente.get("tipo_documento_fiscal_descripcion"),
+        cliente.get("numero_documento_fiscal"),
+        separador=": ",
+        valor_vacio="Sin informar",
+    )
+    cliente_pantalla["condicion_iva_mostrar"] = _texto_o_guion(
+        cliente.get("condicion_iva_descripcion")
+        or cliente.get("condicion_iva_codigo")
+    )
+    cliente_pantalla["domicilio_mostrar"] = _formatear_domicilio_cliente(cliente)
+
+    return cliente_pantalla
+
+
+def _preparar_info_cobranza_comprobante_venta(
+    movimiento_cuenta_corriente: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Calcula si el comprobante puede mostrarse como cobrable."""
+    saldo_abierto_centavos = 0
+
+    if movimiento_cuenta_corriente is not None:
+        tipo_movimiento = str(
+            movimiento_cuenta_corriente.get("tipo_movimiento") or ""
+        ).strip().upper()
+        debe_centavos = int(movimiento_cuenta_corriente.get("debe_centavos") or 0)
+
+        if tipo_movimiento in _TIPOS_COMPROBANTE_DEBE_CLIENTE and debe_centavos > 0:
+            total_aplicado_centavos = obtener_total_confirmado_aplicado_a_movimiento(
+                movimiento_cuenta_corriente["id"]
+            )
+            saldo_abierto_centavos = max(debe_centavos - total_aplicado_centavos, 0)
+
+    return {
+        "saldo_abierto_centavos": saldo_abierto_centavos,
+        "saldo_abierto_argentina": _formatear_centavos(saldo_abierto_centavos),
+        "comprobante_impago": saldo_abierto_centavos > 0,
+    }
+
+
+def _formatear_tipo_comprobante_titulo(tipo_comprobante: Any) -> str:
+    tipo_normalizado = str(tipo_comprobante or "").strip().upper()
+    return {
+        "FACTURA": "Factura",
+        "NOTA_DEBITO": "Nota de Débito",
+        "NOTA_CREDITO": "Nota de Crédito",
+    }.get(tipo_normalizado, tipo_normalizado or "Comprobante")
+
+
+def _formatear_tipo_comprobante_abreviado(tipo_comprobante: Any) -> str:
+    tipo_normalizado = str(tipo_comprobante or "").strip().upper()
+    return {
+        "FACTURA": "FC",
+        "NOTA_DEBITO": "ND",
+        "NOTA_CREDITO": "NC",
+    }.get(tipo_normalizado, tipo_normalizado or "CP")
+
+
+def _formatear_estado_publico(estado: Any) -> str:
+    estado_normalizado = str(estado or "").strip().upper()
+    return {
+        "CONFIRMADO": "Registrado",
+        "BORRADOR": "Pendiente",
+        "ANULADO": "Anulado",
+    }.get(estado_normalizado, estado_normalizado.title() or "Sin estado")
+
+
+def _formatear_domicilio_cliente(cliente: dict[str, Any]) -> str:
+    partes = [
+        cliente.get("domicilio"),
+        cliente.get("codigo_postal"),
+        cliente.get("ciudad"),
+        cliente.get("provincia_nombre"),
+    ]
+    partes_normalizadas = [
+        str(parte).strip()
+        for parte in partes
+        if str(parte or "").strip()
+    ]
+    return ", ".join(partes_normalizadas) or "Sin informar"
+
+
+def _unir_textos(
+    primero: Any,
+    segundo: Any,
+    *,
+    separador: str = " ",
+    valor_vacio: str = "",
+) -> str:
+    primero_normalizado = str(primero or "").strip()
+    segundo_normalizado = str(segundo or "").strip()
+
+    if primero_normalizado and segundo_normalizado:
+        return f"{primero_normalizado}{separador}{segundo_normalizado}"
+
+    return primero_normalizado or segundo_normalizado or valor_vacio
+
+
+def _texto_o_guion(valor: Any) -> str:
+    return str(valor or "").strip() or "Sin informar"
 
 
 def _agregar_asiento_contable_para_pantalla(

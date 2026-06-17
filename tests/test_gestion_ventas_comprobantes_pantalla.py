@@ -90,15 +90,25 @@ def _crear_cliente(db, cuenta_deudores: str | None = CUENTA_DEUDORES) -> int:
         INSERT INTO clientes (
             razon_social,
             grupo_cliente_id,
+            domicilio,
+            ciudad,
+            condicion_iva_codigo,
+            tipo_documento_fiscal_codigo,
+            numero_documento_fiscal,
             cuenta_deudores_ventas_codigo,
             activo,
             creado_en
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             "Cliente pantalla venta",
             grupo_id,
+            "Calle Test 123",
+            "Rosario",
+            "5",
+            "80",
+            "20-12345678-9",
             cuenta_deudores,
             1,
             "2026-01-01 10:00:00",
@@ -273,16 +283,26 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
         response = client.get(f"/gestion/ventas/comprobantes/{comprobante['id']}/")
 
     assert response.status_code == 200
-    assert b"Detalle comprobante de venta" in response.data
+    assert b"Detalle de Comprobante" in response.data
+    assert b"ORIGINAL" in response.data
+    assert b"DATOS DEL EMISOR" in response.data
+    assert b"Pendiente de configurar" in response.data
+    assert b"FACTURA" in response.data.upper()
     assert b"Cliente pantalla venta" in response.data
+    assert b"CUIT: 20-12345678-9" in response.data
+    assert b"Consumidor Final" in response.data
+    assert b"Calle Test 123" in response.data
+    assert b"Cuenta corriente cliente" in response.data
     assert b"Servicio pantalla venta" in response.data
     assert b"1.000,00" in response.data
     assert b'data-field="subtotal_centavos"' in response.data
     assert b'id="vc-confirmar"' in response.data
     assert b"Sin asiento" in response.data
     assert b'id="vc-detalle-comprobante"' in response.data
-    assert b"Comprobante completo" in response.data
-    assert b"Cuenta corriente cliente" in response.data
+    assert b"Datos contables y t\xc3\xa9cnicos" in response.data
+    assert b"Nuevo comprobante" not in response.data
+    assert b"CAE" not in response.data
+    assert b"Vto. CAE" not in response.data
     assert b'id="vc-detalle-cuenta-corriente"' not in response.data
     assert b"Sin movimiento de cuenta corriente asociado." not in response.data
     assert b"Cuenta ingreso" not in response.data
@@ -309,11 +329,13 @@ def test_confirmar_venta_desde_pantalla():
 
     assert response.status_code == 200
     assert b"Comprobante de venta confirmado correctamente." in response.data
+    assert b"Registrado" in response.data
     assert b"CONFIRMADO" in response.data
     assert b"Sin asiento" not in response.data
     assert b"EJ2026-0000001" in response.data
     assert b'id="vc-detalle-comprobante"' in response.data
-    assert b"Comprobante completo" in response.data
+    assert b"Datos contables y t\xc3\xa9cnicos" in response.data
+    assert b'id="vc-cobrar"' in response.data
     assert b'id="vc-detalle-cuenta-corriente"' not in response.data
     assert b'id="vc-cuenta-corriente-movimiento"' not in response.data
     assert b"VENTA_COMPROBANTE" not in response.data
