@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <form id="cl-cobro-formulario" class="col-12" data-wip="1" data-total-cobro-centavos="0" novalidate>
+    <form id="cl-cobro-formulario" class="col-12" data-wip="1" data-total-cobro-centavos="0" data-url-movimiento-caja="{{ url_for('caja.ver_formulario_nuevo_movimiento_caja') }}" novalidate>
         <div class="row g-3">
             <div id="cl-cobro-cabecera" class="col-12">
                 {% call card("Cabecera", "Recibo") %}

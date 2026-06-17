@@ -161,7 +161,32 @@
         const botonContinuar = document.querySelector("#cl-cobro-continuar-caja");
         if (botonContinuar) {
             botonContinuar.addEventListener("click", () => {
-                window.alert("WIP: imputacion validada. El modulo Movimientos de caja se integrara mas adelante.");
+                actualizarResumenCobro(true);
+
+                const form = document.querySelector("#cl-cobro-formulario");
+                const urlBase = form ? form.dataset.urlMovimientoCaja : "";
+                const totalCobro = Number.parseInt(
+                    form ? form.dataset.totalCobroCentavos || "0" : "0",
+                    10
+                ) || 0;
+
+                if (!urlBase || totalCobro <= 0) {
+                    return;
+                }
+
+                const url = new URL(urlBase, window.location.origin);
+                const clienteId = document.querySelector("#cl-cobro-cliente-id");
+
+                url.searchParams.set("tipo_movimiento", "INGRESO");
+                url.searchParams.set("origen_tipo", "RECIBO_CLIENTE_WIP");
+                url.searchParams.set("origen_descripcion", "Recibo cliente WIP");
+                url.searchParams.set("total_esperado_centavos", String(totalCobro));
+
+                if (clienteId && clienteId.value) {
+                    url.searchParams.set("cliente_id", clienteId.value);
+                }
+
+                window.location.href = url.toString();
             });
         }
 

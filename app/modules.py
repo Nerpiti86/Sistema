@@ -1,3 +1,4 @@
+from app.caja import register as register_caja
 from app.contabilidad import register as register_contabilidad
 from app.gestion import register as register_gestion
 from app.tablas_comunes import register as register_tablas_comunes
@@ -8,4 +9,5 @@ def register_modules(app):
     register_ui(app)
     register_tablas_comunes(app)
     register_gestion(app)
+    register_caja(app)
     register_contabilidad(app)
