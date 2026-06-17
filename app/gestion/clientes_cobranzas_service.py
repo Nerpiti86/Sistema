@@ -43,12 +43,12 @@ def crear_cobranza_aplicada_confirmada(
     lineas_caja: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """
-    Crea una cobranza aplicada simple y confirmada.
+    Crea una cobranza aplicada y confirmada.
 
-    Contrato del primer corte:
+    Contrato:
     - ARS.
-    - Una sola linea aplicada contra una FC/ND confirmada.
-    - Cancelacion total del movimiento DEBE informado.
+    - Una o mas lineas aplicadas contra FC/ND confirmadas.
+    - Cancelacion total del saldo abierto de cada movimiento DEBE informado.
     - Una o mas lineas de caja.
     - Un solo asiento automatico tipo COBRANZA.
     - Impacto atomico en cobranza, caja, asiento y cuenta corriente.
@@ -62,7 +62,7 @@ def crear_cobranza_aplicada_confirmada(
 
         _validar_numero_recibo_vigente(datos)
 
-        linea_aplicada = _normalizar_linea_cobranza_aplicada(
+        lineas_aplicadas = _normalizar_lineas_cobranza_aplicada(
             datos,
             lineas_cobranza,
             cuenta_deudores_codigo,
@@ -72,7 +72,7 @@ def crear_cobranza_aplicada_confirmada(
             lineas_caja,
         )
 
-        _validar_totales(datos, linea_aplicada, lineas_caja_normalizadas)
+        _validar_totales(datos, lineas_aplicadas, lineas_caja_normalizadas)
 
         descripcion = _descripcion_cobranza(datos, cliente)
 
@@ -110,16 +110,17 @@ def crear_cobranza_aplicada_confirmada(
             },
             [
                 {
-                    "tipo_linea": linea_aplicada["tipo_linea"],
-                    "movimiento_ctacte_cancelado_id": linea_aplicada[
+                    "tipo_linea": linea["tipo_linea"],
+                    "movimiento_ctacte_cancelado_id": linea[
                         "movimiento_ctacte_cancelado_id"
                     ],
-                    "venta_comprobante_id": linea_aplicada["venta_comprobante_id"],
-                    "importe_centavos": linea_aplicada["importe_centavos"],
+                    "venta_comprobante_id": linea["venta_comprobante_id"],
+                    "importe_centavos": linea["importe_centavos"],
                     "cuenta_cancelacion_codigo": cuenta_deudores_codigo,
-                    "orden": 1,
-                    "observaciones": linea_aplicada["observaciones"],
+                    "orden": indice,
+                    "observaciones": linea["observaciones"],
                 }
+                for indice, linea in enumerate(lineas_aplicadas, start=1)
             ],
         )
 
@@ -138,25 +139,31 @@ def crear_cobranza_aplicada_confirmada(
             lineas_caja_normalizadas,
         )
 
-        movimiento_cuenta_corriente = crear_movimiento_haber_cliente(
-            {
-                "cliente_id": datos["cliente_id"],
-                "fecha": datos["fecha"],
-                "tipo_movimiento": "COBRANZA",
-                "descripcion": _descripcion_movimiento_ctacte(cobranza),
-                "moneda_codigo": _MONEDA_CONTABLE,
-                "estado": "CONFIRMADO",
-                "origen_tipo": _ORIGEN_CLIENTE_COBRANZA,
-                "origen_id": cobranza["id"],
-                "asiento_id": asiento["id"],
-                "importe_centavos": datos["total_centavos"],
-            }
-        )
+        movimientos_cuenta_corriente = []
 
-        vincular_linea_cobranza_movimiento_ctacte_generado(
-            cobranza["lineas"][0]["id"],
-            movimiento_cuenta_corriente["id"],
-        )
+        for linea_cobranza, linea_aplicada in zip(cobranza["lineas"], lineas_aplicadas):
+            movimiento_cuenta_corriente = crear_movimiento_haber_cliente(
+                {
+                    "cliente_id": datos["cliente_id"],
+                    "fecha": datos["fecha"],
+                    "tipo_movimiento": "COBRANZA",
+                    "descripcion": (
+                        f"{_descripcion_movimiento_ctacte(cobranza)} | "
+                        f"{linea_aplicada['tipo_linea']} {linea_aplicada['venta_comprobante_id']}"
+                    ),
+                    "moneda_codigo": _MONEDA_CONTABLE,
+                    "estado": "CONFIRMADO",
+                    "origen_tipo": _ORIGEN_CLIENTE_COBRANZA,
+                    "origen_id": cobranza["id"],
+                    "asiento_id": asiento["id"],
+                    "importe_centavos": linea_aplicada["importe_centavos"],
+                }
+            )
+            movimientos_cuenta_corriente.append(movimiento_cuenta_corriente)
+            vincular_linea_cobranza_movimiento_ctacte_generado(
+                linea_cobranza["id"],
+                movimiento_cuenta_corriente["id"],
+            )
 
         cobranza_actualizada = obtener_cobranza_cliente_por_id(cobranza["id"])
 
@@ -167,7 +174,8 @@ def crear_cobranza_aplicada_confirmada(
             "cobranza": cobranza_actualizada,
             "movimiento_caja": movimiento_caja,
             "asiento": asiento,
-            "movimiento_cuenta_corriente": movimiento_cuenta_corriente,
+            "movimiento_cuenta_corriente": movimientos_cuenta_corriente[0],
+            "movimientos_cuenta_corriente": movimientos_cuenta_corriente,
         }
 
     return ejecutar_en_transaccion(_operacion)
@@ -211,37 +219,71 @@ def _normalizar_datos_cobranza(datos_cobranza: dict[str, Any]) -> dict[str, Any]
     }
 
 
-def _normalizar_linea_cobranza_aplicada(
+def _normalizar_lineas_cobranza_aplicada(
     datos_cobranza: dict[str, Any],
     lineas_cobranza: list[dict[str, Any]],
     cuenta_deudores_codigo: str,
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     lineas = list(lineas_cobranza or [])
 
-    if len(lineas) != 1:
-        raise ValueError("La cobranza aplicada simple debe tener exactamente una linea.")
+    if not lineas:
+        raise ValueError("La cobranza aplicada debe tener al menos una linea.")
 
-    linea = _copiar_dict(lineas[0], "La linea de cobranza es obligatoria.")
+    normalizadas = []
+    movimientos_usados = set()
+    comprobantes_usados = set()
+
+    for indice, linea in enumerate(lineas, start=1):
+        normalizada = _normalizar_linea_cobranza_aplicada(
+            datos_cobranza,
+            linea,
+            cuenta_deudores_codigo,
+            indice,
+        )
+
+        movimiento_id = normalizada["movimiento_ctacte_cancelado_id"]
+        comprobante_id = normalizada["venta_comprobante_id"]
+
+        if movimiento_id in movimientos_usados:
+            raise ValueError("No se puede aplicar dos veces el mismo movimiento en una cobranza.")
+
+        if comprobante_id in comprobantes_usados:
+            raise ValueError("No se puede aplicar dos veces el mismo comprobante en una cobranza.")
+
+        movimientos_usados.add(movimiento_id)
+        comprobantes_usados.add(comprobante_id)
+        normalizadas.append(normalizada)
+
+    return normalizadas
+
+
+def _normalizar_linea_cobranza_aplicada(
+    datos_cobranza: dict[str, Any],
+    linea_cobranza: dict[str, Any],
+    cuenta_deudores_codigo: str,
+    indice: int,
+) -> dict[str, Any]:
+    linea = _copiar_dict(linea_cobranza, f"La linea de cobranza {indice} es obligatoria.")
     movimiento_id = _validar_entero_positivo(
         linea.get("movimiento_ctacte_cancelado_id"),
-        "El movimiento de cuenta corriente cancelado es obligatorio.",
+        f"El movimiento de cuenta corriente cancelado de la linea {indice} es obligatorio.",
     )
     comprobante_id = _validar_entero_positivo(
         linea.get("venta_comprobante_id"),
-        "El comprobante de venta cancelado es obligatorio.",
+        f"El comprobante de venta cancelado de la linea {indice} es obligatorio.",
     )
     importe_centavos = _validar_entero_positivo(
         linea.get("importe_centavos"),
-        "El importe aplicado debe ser mayor a cero.",
+        f"El importe aplicado de la linea {indice} debe ser mayor a cero.",
     )
 
     movimiento = obtener_movimiento_cliente_cuenta_corriente_por_id(movimiento_id)
     if movimiento is None:
-        raise ValueError("No existe el movimiento de cuenta corriente cancelado.")
+        raise ValueError(f"No existe el movimiento de cuenta corriente cancelado de la linea {indice}.")
 
     comprobante = obtener_venta_comprobante_por_id(comprobante_id)
     if comprobante is None:
-        raise ValueError("No existe el comprobante de venta cancelado.")
+        raise ValueError(f"No existe el comprobante de venta cancelado de la linea {indice}.")
 
     _validar_movimiento_cancelable(
         datos_cobranza,
@@ -407,11 +449,11 @@ def _validar_numero_recibo_vigente(datos_cobranza: dict[str, Any]) -> None:
 
 def _validar_totales(
     datos_cobranza: dict[str, Any],
-    linea_aplicada: dict[str, Any],
+    lineas_aplicadas: list[dict[str, Any]],
     lineas_caja: list[dict[str, Any]],
 ) -> None:
     total_cobranza = int(datos_cobranza["total_centavos"])
-    total_aplicado = int(linea_aplicada["importe_centavos"])
+    total_aplicado = sum(int(linea["importe_centavos"]) for linea in lineas_aplicadas)
     total_caja = sum(int(linea["importe_contable_centavos"]) for linea in lineas_caja)
 
     if total_aplicado != total_cobranza:

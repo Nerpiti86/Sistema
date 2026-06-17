@@ -1,3 +1,5 @@
+from werkzeug.datastructures import MultiDict
+
 from app import create_app
 from app.config import TestConfig
 from app.db import apply_migrations, get_db
@@ -522,3 +524,136 @@ def test_cobranza_confirmada_no_reaparece_y_segunda_usa_numero_siguiente():
     assert response_confirmar_2.status_code == 302
     assert [int(cobranza["numero"]) for cobranza in cobranzas] == [1, 2]
     assert [int(cobranza["total_centavos"]) for cobranza in cobranzas] == [3500000, 1200000]
+
+
+
+def test_cobro_cliente_permite_cobrar_varios_comprobantes_en_un_recibo():
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        base = _preparar_base_cobro()
+        db = get_db()
+
+        segundo_comprobante_id = _crear_factura_confirmada(
+            db,
+            base["cliente_id"],
+            1200000,
+            numero=922,
+        )
+        segundo_movimiento = crear_movimiento_debe_cliente(
+            {
+                "cliente_id": base["cliente_id"],
+                "fecha": "2026-06-11",
+                "tipo_movimiento": "FACTURA",
+                "descripcion": "FC C 0001-00000922",
+                "moneda_codigo": "ARS",
+                "estado": "CONFIRMADO",
+                "origen_tipo": "VENTA_COMPROBANTE",
+                "origen_id": segundo_comprobante_id,
+                "importe_centavos": 1200000,
+            }
+        )
+
+        response_intencion = client.post(
+            f"/gestion/clientes/{base['cliente_id']}/cobros/nuevo/",
+            data=MultiDict(
+                [
+                    ("cliente_id", str(base["cliente_id"])),
+                    ("fecha", "17/06/2026"),
+                    ("tipo_comprobante", "RC"),
+                    ("letra", "C"),
+                    ("punto_venta", "1"),
+                    ("numero", "1"),
+                    ("moneda_codigo", "ARS"),
+                    ("movimientos_ctacte_cancelados", str(base["movimiento_id"])),
+                    ("movimientos_ctacte_cancelados", str(segundo_movimiento["id"])),
+                    (
+                        f"venta_comprobante_id_{base['movimiento_id']}",
+                        str(base["comprobante_id"]),
+                    ),
+                    (
+                        f"tipo_movimiento_{base['movimiento_id']}",
+                        "FACTURA",
+                    ),
+                    (
+                        f"importe_a_cobrar_{base['movimiento_id']}",
+                        "35.000,00",
+                    ),
+                    (
+                        f"venta_comprobante_id_{segundo_movimiento['id']}",
+                        str(segundo_comprobante_id),
+                    ),
+                    (
+                        f"tipo_movimiento_{segundo_movimiento['id']}",
+                        "FACTURA",
+                    ),
+                    (
+                        f"importe_a_cobrar_{segundo_movimiento['id']}",
+                        "12.000,00",
+                    ),
+                    ("observaciones", "Cobranza multiple"),
+                ]
+            ),
+        )
+
+        intencion = db.execute(
+            """
+            SELECT *
+            FROM caja_intenciones
+            WHERE estado = 'PENDIENTE'
+            ORDER BY id DESC
+            LIMIT 1
+            """
+        ).fetchone()
+
+        response_confirmar = client.post(
+            "/caja/movimientos/nuevo/",
+            data={
+                "intencion_id": str(intencion["id"]),
+                "tipo_movimiento": "INGRESO",
+                "fecha": "17/06/2026",
+                "lineas[0][medio_operativo_codigo]": "1",
+                "lineas[0][medio_operativo_codigo_select]": "1",
+                "lineas[0][fecha_valor]": "17/06/2026",
+                "lineas[0][referencia]": "EFECTIVO",
+                "lineas[0][importe]": "47.000,00",
+                "lineas[0][detalle]": "Cobranza multiple",
+            },
+        )
+
+        cobranza = db.execute("SELECT * FROM clientes_cobranzas").fetchone()
+        lineas_cobranza = db.execute(
+            """
+            SELECT importe_centavos
+            FROM clientes_cobranzas_lineas
+            WHERE cobranza_cliente_id = ?
+            ORDER BY importe_centavos
+            """,
+            (cobranza["id"],),
+        ).fetchall()
+        movimientos_cc = db.execute(
+            """
+            SELECT haber_centavos
+            FROM clientes_cuenta_corriente_movimientos
+            WHERE tipo_movimiento = 'COBRANZA'
+              AND origen_tipo = 'CLIENTE_COBRANZA'
+              AND origen_id = ?
+            ORDER BY haber_centavos
+            """,
+            (cobranza["id"],),
+        ).fetchall()
+        response_form_despues = client.get(
+            f"/gestion/clientes/{base['cliente_id']}/cobros/nuevo/"
+        )
+
+    assert response_intencion.status_code == 302
+    assert intencion["total_esperado_centavos"] == 4700000
+    assert response_confirmar.status_code == 302
+
+    assert cobranza["total_centavos"] == 4700000
+    assert [int(linea["importe_centavos"]) for linea in lineas_cobranza] == [1200000, 3500000]
+    assert [int(movimiento["haber_centavos"]) for movimiento in movimientos_cc] == [1200000, 3500000]
+
+    assert f"cl-cobro-comprobante-row-{base['movimiento_id']}".encode() not in response_form_despues.data
+    assert f"cl-cobro-comprobante-row-{segundo_movimiento['id']}".encode() not in response_form_despues.data

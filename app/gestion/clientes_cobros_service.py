@@ -86,9 +86,9 @@ def crear_intencion_cobro_cliente_desde_formulario(
     """
     Crea una intencion pendiente para confirmar luego desde caja transversal.
 
-    Contrato primer corte:
-    - un solo comprobante seleccionado;
-    - cancelacion total;
+    Contrato:
+    - uno o mas comprobantes seleccionados;
+    - cancelacion total del saldo abierto de cada comprobante;
     - ARS;
     - no genera impacto definitivo.
     """
@@ -106,28 +106,6 @@ def crear_intencion_cobro_cliente_desde_formulario(
         "La fecha de cobro es obligatoria.",
     )
 
-    movimiento_id = _obtener_unico_movimiento_seleccionado(formulario)
-    importe_centavos = _normalizar_importe_argentino(
-        _obtener_valor_formulario(
-            formulario,
-            f"importe_a_cobrar_{movimiento_id}",
-        ),
-        "El importe a cobrar debe respetar formato argentino 9.999,99.",
-    )
-    venta_comprobante_id = _normalizar_id(
-        _obtener_valor_formulario(
-            formulario,
-            f"venta_comprobante_id_{movimiento_id}",
-        )
-    )
-    tipo_movimiento = _validar_tipo_cobrable(
-        _obtener_valor_formulario(
-            formulario,
-            f"tipo_movimiento_{movimiento_id}",
-            "FACTURA",
-        )
-    )
-
     letra = _validar_texto_obligatorio(
         _obtener_valor_formulario(formulario, "letra", _LETRA_RECIBO),
         "La letra del recibo es obligatoria.",
@@ -142,28 +120,64 @@ def crear_intencion_cobro_cliente_desde_formulario(
         _obtener_valor_formulario(formulario, "observaciones", "")
     )
 
-    comprobante_cobrable = _obtener_comprobante_cobrable_por_movimiento_id(
-        cliente_id_normalizado,
-        movimiento_id,
-    )
-    if comprobante_cobrable is None:
-        raise ValueError("El comprobante seleccionado no tiene saldo abierto para cobrar.")
+    movimientos_ids = _obtener_movimientos_seleccionados(formulario)
+    lineas_cobranza = []
+    total_centavos = 0
 
-    if int(comprobante_cobrable["venta_comprobante_id"] or 0) != venta_comprobante_id:
-        raise ValueError("El comprobante seleccionado no coincide con la cuenta corriente.")
+    for movimiento_id in movimientos_ids:
+        importe_centavos = _normalizar_importe_argentino(
+            _obtener_valor_formulario(
+                formulario,
+                f"importe_a_cobrar_{movimiento_id}",
+            ),
+            "El importe a cobrar debe respetar formato argentino 9.999,99.",
+        )
+        venta_comprobante_id = _normalizar_id(
+            _obtener_valor_formulario(
+                formulario,
+                f"venta_comprobante_id_{movimiento_id}",
+            )
+        )
+        tipo_movimiento = _validar_tipo_cobrable(
+            _obtener_valor_formulario(
+                formulario,
+                f"tipo_movimiento_{movimiento_id}",
+                "FACTURA",
+            )
+        )
 
-    if comprobante_cobrable["tipo_movimiento"] != tipo_movimiento:
-        raise ValueError("El tipo de movimiento seleccionado no coincide con el comprobante.")
+        comprobante_cobrable = _obtener_comprobante_cobrable_por_movimiento_id(
+            cliente_id_normalizado,
+            movimiento_id,
+        )
+        if comprobante_cobrable is None:
+            raise ValueError("Uno de los comprobantes seleccionados no tiene saldo abierto para cobrar.")
 
-    saldo_abierto_centavos = int(comprobante_cobrable["saldo_comprobante_centavos"])
-    if importe_centavos != saldo_abierto_centavos:
-        raise ValueError("El primer corte solo permite cobrar el saldo total abierto del comprobante.")
+        if int(comprobante_cobrable["venta_comprobante_id"] or 0) != venta_comprobante_id:
+            raise ValueError("Uno de los comprobantes seleccionados no coincide con la cuenta corriente.")
+
+        if comprobante_cobrable["tipo_movimiento"] != tipo_movimiento:
+            raise ValueError("El tipo de movimiento seleccionado no coincide con el comprobante.")
+
+        saldo_abierto_centavos = int(comprobante_cobrable["saldo_comprobante_centavos"])
+        if importe_centavos != saldo_abierto_centavos:
+            raise ValueError("El primer corte solo permite cobrar el saldo total abierto de cada comprobante.")
+
+        total_centavos += importe_centavos
+        lineas_cobranza.append(
+            {
+                "tipo_linea": tipo_movimiento,
+                "movimiento_ctacte_cancelado_id": movimiento_id,
+                "venta_comprobante_id": venta_comprobante_id,
+                "importe_centavos": importe_centavos,
+            }
+        )
 
     return crear_intencion_caja(
         {
             "origen_tipo": _ORIGEN_RECIBO_CLIENTE,
             "tipo_movimiento": "INGRESO",
-            "total_esperado_centavos": importe_centavos,
+            "total_esperado_centavos": total_centavos,
             "observaciones": "Recibo cliente pendiente",
             "origen_payload": {
                 "origen_tipo": _ORIGEN_RECIBO_CLIENTE,
@@ -181,17 +195,10 @@ def crear_intencion_cobro_cliente_desde_formulario(
                     "punto_venta": punto_venta,
                     "numero": numero,
                     "moneda_codigo": _MONEDA_CONTABLE,
-                    "total_centavos": importe_centavos,
+                    "total_centavos": total_centavos,
                     "observaciones": observaciones,
                 },
-                "lineas_cobranza": [
-                    {
-                        "tipo_linea": tipo_movimiento,
-                        "movimiento_ctacte_cancelado_id": movimiento_id,
-                        "venta_comprobante_id": venta_comprobante_id,
-                        "importe_centavos": importe_centavos,
-                    }
-                ],
+                "lineas_cobranza": lineas_cobranza,
             },
         }
     )
@@ -253,7 +260,7 @@ def _obtener_comprobante_cobrable_por_movimiento_id(
     return None
 
 
-def _obtener_unico_movimiento_seleccionado(formulario: Any) -> int:
+def _obtener_movimientos_seleccionados(formulario: Any) -> list[int]:
     seleccionados = [
         str(valor or "").strip()
         for valor in _obtener_lista_formulario(
@@ -263,10 +270,24 @@ def _obtener_unico_movimiento_seleccionado(formulario: Any) -> int:
         if str(valor or "").strip()
     ]
 
-    if len(seleccionados) != 1:
-        raise ValueError("Debe seleccionar exactamente un comprobante a cobrar.")
+    if not seleccionados:
+        raise ValueError("Debe seleccionar al menos un comprobante a cobrar.")
 
-    return _normalizar_id(seleccionados[0])
+    movimientos = []
+    vistos = set()
+
+    for seleccionado in seleccionados:
+        movimiento_id = _normalizar_id(seleccionado)
+        if movimiento_id in vistos:
+            continue
+
+        vistos.add(movimiento_id)
+        movimientos.append(movimiento_id)
+
+    if not movimientos:
+        raise ValueError("Debe seleccionar al menos un comprobante a cobrar.")
+
+    return movimientos
 
 
 def _obtener_valor_formulario(

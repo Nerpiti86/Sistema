@@ -97,21 +97,23 @@
     function validarCancelacionTotalSeleccionada() {
         const seleccionados = obtenerChecksSeleccionados();
 
-        if (seleccionados.length !== 1) {
+        if (seleccionados.length < 1) {
             return false;
         }
 
-        const fila = seleccionados[0].closest("tr[data-saldo-centavos]");
-        const input = fila ? fila.querySelector(SELECTOR_IMPORTE_COMPROBANTE) : null;
+        return seleccionados.every((check) => {
+            const fila = check.closest("tr[data-saldo-centavos]");
+            const input = fila ? fila.querySelector(SELECTOR_IMPORTE_COMPROBANTE) : null;
 
-        if (!fila || !input) {
-            return false;
-        }
+            if (!fila || !input) {
+                return false;
+            }
 
-        const saldo = obtenerSaldoFila(fila);
-        const importe = obtenerImporteComprobante(input, false);
+            const saldo = obtenerSaldoFila(fila);
+            const importe = obtenerImporteComprobante(input, false);
 
-        return saldo > 0 && importe === saldo;
+            return saldo > 0 && importe === saldo;
+        });
     }
 
     function actualizarResumenCobro(normalizar) {
@@ -133,34 +135,12 @@
         }
     }
 
-    function desmarcarOtrosComprobantes(checkSeleccionado) {
-        document.querySelectorAll(SELECTOR_CHECK_COMPROBANTE).forEach((check) => {
-            if (check === checkSeleccionado) {
-                return;
-            }
-
-            check.checked = false;
-
-            const fila = check.closest("tr[data-saldo-centavos]");
-            const input = fila ? fila.querySelector(SELECTOR_IMPORTE_COMPROBANTE) : null;
-
-            if (input) {
-                input.disabled = true;
-                input.value = "";
-            }
-        });
-    }
-
     function manejarCambioSeleccionComprobante(check) {
         const fila = check.closest("tr[data-saldo-centavos]");
         const input = fila ? fila.querySelector(SELECTOR_IMPORTE_COMPROBANTE) : null;
 
         if (!input) {
             return;
-        }
-
-        if (check.checked) {
-            desmarcarOtrosComprobantes(check);
         }
 
         input.disabled = !check.checked;
