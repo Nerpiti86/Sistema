@@ -300,7 +300,12 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
     assert b"Sin asiento" in response.data
     assert b'id="vc-detalle-comprobante"' in response.data
     assert b"Datos contables y t\xc3\xa9cnicos" in response.data
-    assert b"Nuevo comprobante" not in response.data
+    html = response.data.decode("utf-8")
+    acciones_inicio = html.index('id="vc-detalle-acciones"')
+    acciones_fin = html.index('</div>', acciones_inicio)
+    acciones_detalle = html[acciones_inicio:acciones_fin]
+    assert "Nuevo comprobante" not in acciones_detalle
+    assert "/gestion/ventas/comprobantes/nuevo/" not in acciones_detalle
     assert b"CAE" not in response.data
     assert b"Vto. CAE" not in response.data
     assert b'id="vc-detalle-cuenta-corriente"' not in response.data
@@ -634,7 +639,7 @@ def test_confirmar_comprobante_venta_desde_formulario_nuevo():
     assert response.status_code == 200
     assert b"Comprobante de venta confirmado correctamente." in response.data
     assert b"Servicio pantalla venta" in response.data
-    assert b"Monto" in response.data
+    assert b"Imp. Bonif." in response.data
     assert b"100,00" in response.data
     assert b"1.500,00" in response.data
     assert b"CONFIRMADO" in response.data
