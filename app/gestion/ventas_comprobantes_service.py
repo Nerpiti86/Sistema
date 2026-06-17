@@ -317,6 +317,8 @@ def _preparar_comprobante_venta_para_pantalla(
     comprobante_pantalla["iva_argentina"] = _formatear_centavos(
         comprobante.get("iva_centavos", 0)
     )
+    letra_comprobante = str(comprobante.get("letra") or "").strip().upper()
+    comprobante_pantalla["mostrar_iva"] = letra_comprobante != "C"
     comprobante_pantalla["total_argentina"] = _formatear_centavos(
         comprobante.get("total_centavos", 0)
     )

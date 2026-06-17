@@ -506,7 +506,9 @@
                             <th data-field="tipo_bonificacion_codigo" class="text-end" style="width: 6rem;">Bonif.</th>
                             <th data-field="descuento_centavos" class="text-end" style="width: 6.5rem;">Imp. Bonif.</th>
                         {% endif %}
-                        <th data-field="iva_centavos" class="text-end" style="width: 6.5rem;">IVA</th>
+                        {% if comprobante_venta.mostrar_iva %}
+                            <th data-field="iva_centavos" class="text-end" style="width: 6.5rem;">IVA</th>
+                        {% endif %}
                         <th data-field="total_linea_centavos" class="text-end" style="width: 7rem;">Subtotal</th>
                     </tr>
                 </thead>
@@ -545,12 +547,14 @@
                                     {% endif %}
                                 </td>
                             {% endif %}
-                            <td data-field="iva_centavos" class="text-end">{{ detalle.iva_argentina }}</td>
+                            {% if comprobante_venta.mostrar_iva %}
+                                <td data-field="iva_centavos" class="text-end">{{ detalle.iva_argentina }}</td>
+                            {% endif %}
                             <td data-field="total_linea_centavos" class="text-end fw-bold">{{ detalle.total_linea_argentina }}</td>
                         </tr>
                     {% else %}
                         <tr id="vc-detalle-row-sin-datos">
-                            <td colspan="8" class="text-center text-muted py-4">
+                            <td colspan="{{ 6 + (2 if mostrar_columna_bonificacion else 0) + (1 if comprobante_venta.mostrar_iva else 0) }}" class="text-center text-muted py-4">
                                 No hay renglones para este comprobante.
                             </td>
                         </tr>
@@ -590,12 +594,14 @@
                         {{ comprobante_venta.recargo_argentina }}
                     </div>
                 </div>
-                <div class="vc-paper__total-line">
-                    <div>IVA: $</div>
-                    <div id="vc-iva" data-field="iva_centavos" class="text-end">
-                        {{ comprobante_venta.iva_argentina }}
+                {% if comprobante_venta.mostrar_iva %}
+                    <div class="vc-paper__total-line">
+                        <div>IVA: $</div>
+                        <div id="vc-iva" data-field="iva_centavos" class="text-end">
+                            {{ comprobante_venta.iva_argentina }}
+                        </div>
                     </div>
-                </div>
+                {% endif %}
                 <div class="vc-paper__total-line vc-paper__total-line--grand">
                     <div>Importe Total: $</div>
                     <div id="vc-total" data-field="total_centavos" class="text-end">

@@ -194,7 +194,12 @@ def _crear_ejercicio(db) -> int:
     return int(cursor.lastrowid)
 
 
-def _crear_comprobante_borrador(db, *, cuenta_deudores=CUENTA_DEUDORES) -> dict:
+def _crear_comprobante_borrador(
+    db,
+    *,
+    cuenta_deudores=CUENTA_DEUDORES,
+    letra="X",
+) -> dict:
     _crear_cuenta_contable(
         db,
         CUENTA_DEUDORES,
@@ -220,7 +225,7 @@ def _crear_comprobante_borrador(db, *, cuenta_deudores=CUENTA_DEUDORES) -> dict:
             "fecha": "2026-01-15",
             "fecha_vencimiento": "2026-02-15",
             "tipo_comprobante": "FACTURA",
-            "letra": "X",
+            "letra": letra,
             "punto_venta": "1",
             "numero": "25",
             "moneda_codigo": "ARS",
@@ -318,6 +323,25 @@ def test_pantalla_detalle_venta_muestra_cabecera_y_renglones():
     assert b"Cantidad esc." not in response.data
     assert b"Valor bonif." not in response.data
     assert b"1,00" in response.data
+
+
+def test_pantalla_detalle_venta_clase_c_oculta_iva_visualmente():
+    """Valida que comprobantes clase C no muestren IVA en vista tipo papel."""
+    app = create_app(TestConfig)
+    client = app.test_client()
+
+    with app.app_context():
+        apply_migrations()
+        comprobante = _crear_comprobante_borrador(get_db(), letra="C")
+        response = client.get(f"/gestion/ventas/comprobantes/{comprobante['id']}/")
+
+    assert response.status_code == 200
+    assert b"Detalle de Comprobante" in response.data
+    assert b'id="vc-comprobante-letra"' in response.data
+    assert b">\n                    C\n                </div>" in response.data
+    assert b'id="vc-iva"' not in response.data
+    assert b'data-field="iva_centavos"' not in response.data
+    assert b"Importe Total" in response.data
 
 
 def test_confirmar_venta_desde_pantalla():
