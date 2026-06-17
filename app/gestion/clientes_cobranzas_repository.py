@@ -208,6 +208,47 @@ def listar_lineas_cobranza_cliente(cobranza_id: Any) -> list[dict[str, Any]]:
     return [_normalizar_fila_linea(fila) for fila in filas]
 
 
+
+def vincular_linea_cobranza_movimiento_ctacte_generado(
+    linea_cobranza_id: Any,
+    movimiento_ctacte_generado_id: Any,
+) -> None:
+    """
+    Vincula una linea de cobranza con el movimiento de cuenta corriente generado.
+
+    Repository: ejecuta el UPDATE tecnico necesario luego de crear el movimiento
+    al HABER de clientes dentro de la misma transaccion de negocio.
+    """
+    linea_id_validada = _validar_entero_positivo(
+        linea_cobranza_id,
+        "El id de la linea de cobranza es obligatorio.",
+    )
+    movimiento_id_validado = _validar_entero_positivo(
+        movimiento_ctacte_generado_id,
+        "El movimiento de cuenta corriente generado es obligatorio.",
+    )
+
+    db = get_db()
+
+    try:
+        with contexto_escritura(db):
+            cursor = db.execute(
+                """
+                UPDATE clientes_cobranzas_lineas
+                SET movimiento_ctacte_generado_id = ?
+                WHERE id = ?
+                """,
+                (movimiento_id_validado, linea_id_validada),
+            )
+    except sqlite3.IntegrityError as exc:
+        raise ValueError(
+            "No se pudo vincular la linea de cobranza con el movimiento generado."
+        ) from exc
+
+    if cursor.rowcount != 1:
+        raise ValueError("No existe la linea de cobranza informada.")
+
+
 def listar_cobranzas_cliente(
     cliente_id: Any,
     limite: int = 100,
