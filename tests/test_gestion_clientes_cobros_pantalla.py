@@ -348,14 +348,18 @@ def test_caja_transversal_confirma_intencion_recibo_cliente():
     assert b'data-form="movimiento-caja"' in response_caja_get.data
     assert b"RECIBO_CLIENTE" in response_caja_get.data
     assert b"Confirmar cobro" in response_caja_get.data
-    assert b"Cobro a registrar" in response_caja_get.data
+    assert b"Datos del cobro" in response_caja_get.data
     assert b"Medios de cobro" in response_caja_get.data
-    assert b"Medio de cobro" in response_caja_get.data
+    assert "Código".encode("utf-8") in response_caja_get.data
+    assert "Medio vinculado al código".encode("utf-8") in response_caja_get.data
     assert b"Total cargado" in response_caja_get.data
     assert b"Importe a cobrar" in response_caja_get.data
     assert b"Agregar otro medio" in response_caja_get.data
     assert b"Datos t\xc3\xa9cnicos del medio seleccionado" in response_caja_get.data
     assert b"Carga transversal de medios operativos" not in response_caja_get.data
+    assert b"Origen del cobro" not in response_caja_get.data
+    assert b"Tipo de medio" not in response_caja_get.data
+    assert b"Estado:" not in response_caja_get.data
     assert response_confirmar.status_code == 302
     assert f"/gestion/clientes/{base['cliente_id']}/cuenta-corriente/".encode() in response_confirmar.headers["Location"].encode()
 

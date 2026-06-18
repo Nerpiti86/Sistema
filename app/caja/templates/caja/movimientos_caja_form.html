@@ -28,7 +28,7 @@
             <div>
                 <div class="fw-semibold">{{ movimiento_form.resumen_operacion }}</div>
                 <div class="small mb-0">
-                    Estado: {{ movimiento_form.estado_mostrar }} · Fecha: {{ movimiento_form.fecha }}
+                    Fecha: {{ movimiento_form.fecha }}
                 </div>
             </div>
             <div class="text-end">
@@ -42,48 +42,31 @@
         <input id="mc-intencion-id" name="intencion_id" type="hidden" value="{{ movimiento_form.intencion_id }}">
         <div class="row g-3">
             <div class="col-12 col-xl-8">
-                {% call card("Cobro a registrar", "Resumen de la operación") %}
+                {% call card("Datos del cobro", "Fecha y nota interna") %}
                     <div class="row g-3">
-                        <div class="col-12 col-md-4 col-lg-3">
-                            <label for="mc-tipo-movimiento" class="form-label">Entrada / salida</label>
-                            <select id="mc-tipo-movimiento" name="tipo_movimiento" class="form-select" data-ns-select="normal">
-                                <option value="INGRESO" {% if movimiento_form.tipo_movimiento == "INGRESO" %}selected{% endif %}>Ingreso de dinero</option>
-                                <option value="EGRESO" {% if movimiento_form.tipo_movimiento == "EGRESO" %}selected{% endif %}>Salida de dinero</option>
-                            </select>
+                        <input id="mc-tipo-movimiento" name="tipo_movimiento" type="hidden" value="{{ movimiento_form.tipo_movimiento }}">
+                        <input id="mc-numero" name="numero" type="hidden" value="{{ movimiento_form.numero_preview }}">
+                        <input id="mc-estado" name="estado" type="hidden" value="{{ movimiento_form.estado }}">
+                        <input id="mc-tipo-motivo" name="tipo_motivo" type="hidden" value="{{ movimiento_form.tipo_motivo }}">
+                        <input id="mc-origen" name="origen" type="hidden" value="{{ movimiento_form.origen_descripcion or 'Manual / sin origen' }}">
+                        <input id="mc-origen-tipo" name="origen_tipo" type="hidden" value="{{ movimiento_form.origen_tipo }}">
+                        <input id="mc-origen-id" name="origen_id" type="hidden" value="{{ movimiento_form.origen_id }}">
+                        <input id="mc-cliente-id" name="cliente_id" type="hidden" value="{{ movimiento_form.cliente_id }}">
+                        <input name="total_esperado_centavos" type="hidden" value="{{ movimiento_form.total_esperado_centavos }}">
+
+                        <div class="col-12 col-md-4">
+                            <label for="mc-tipo-movimiento-mostrar" class="form-label">Entrada / salida</label>
+                            <input id="mc-tipo-movimiento-mostrar" type="text" class="form-control" value="{{ movimiento_form.tipo_movimiento_mostrar }}" readonly>
                         </div>
 
-                        <div class="col-6 col-md-4 col-lg-2">
-                            <label for="mc-numero" class="form-label">Nº interno</label>
-                            <input id="mc-numero" name="numero" type="text" class="form-control text-end" value="{{ movimiento_form.numero_preview }}" readonly>
+                        <div class="col-12 col-md-4">
+                            <label for="mc-numero-mostrar" class="form-label">Nº interno</label>
+                            <input id="mc-numero-mostrar" type="text" class="form-control text-end" value="{{ movimiento_form.numero_preview }}" readonly>
                         </div>
 
-                        <div class="col-6 col-md-4 col-lg-2">
+                        <div class="col-12 col-md-4">
                             <label for="mc-fecha" class="form-label">Fecha</label>
-                            <input id="mc-fecha" name="fecha" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ movimiento_form.fecha }}" placeholder="dd/mm/aaaa" autocomplete="off">
-                        </div>
-
-                        <div class="col-12 col-md-4 col-lg-2">
-                            <label for="mc-estado" class="form-label">Estado</label>
-                            <input id="mc-estado" name="estado" type="text" class="form-control" value="{{ movimiento_form.estado_mostrar }}" readonly>
-                        </div>
-
-                        <div class="col-12 col-md-4 col-lg-3">
-                            <label for="mc-total-esperado" class="form-label">{{ movimiento_form.total_label }}</label>
-                            <input id="mc-total-esperado" name="total_esperado" type="text" data-money-ar="centavos" class="form-control text-end fw-semibold" value="{{ movimiento_form.total_esperado_argentina }}" readonly>
-                            <input name="total_esperado_centavos" type="hidden" value="{{ movimiento_form.total_esperado_centavos }}">
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="mc-tipo-motivo" class="form-label">Operación</label>
-                            <input id="mc-tipo-motivo" name="tipo_motivo" type="text" class="form-control" value="{{ movimiento_form.origen_tipo_mostrar }}" readonly>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="mc-origen" class="form-label">Origen del cobro</label>
-                            <input id="mc-origen" name="origen" type="text" class="form-control" value="{{ movimiento_form.origen_descripcion or 'Manual / sin origen' }}" readonly>
-                            <input id="mc-origen-tipo" name="origen_tipo" type="hidden" value="{{ movimiento_form.origen_tipo }}">
-                            <input id="mc-origen-id" name="origen_id" type="hidden" value="{{ movimiento_form.origen_id }}">
-                            <input id="mc-cliente-id" name="cliente_id" type="hidden" value="{{ movimiento_form.cliente_id }}">
+                            <input id="mc-fecha" name="fecha" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control" value="{{ movimiento_form.fecha }}" placeholder="dd/mm/aaaa" autocomplete="off" {% if movimiento_form.intencion_id %}readonly{% endif %}>
                         </div>
 
                         <div class="col-12">
@@ -127,9 +110,8 @@
                         <table id="mc-lineas-tabla" class="table table-sm table-hover align-middle mb-2">
                             <thead>
                                 <tr>
-                                    <th class="d-none" style="width: 7rem;">Código</th>
-                                    <th style="width: 18rem;">Medio de cobro</th>
-                                    <th style="width: 11rem;">Tipo de medio</th>
+                                    <th style="width: 6rem;">Código</th>
+                                    <th style="width: 20rem;">Medio vinculado al código</th>
                                     <th style="width: 7rem;">Moneda</th>
                                     <th style="width: 9rem;">Fecha acreditación</th>
                                     <th style="width: 12rem;">Referencia / comprobante</th>
@@ -141,7 +123,7 @@
                             </thead>
                             <tbody id="mc-lineas-tbody">
                                 <tr data-role="mc-linea" data-row-index="0">
-                                    <td class="d-none">
+                                    <td>
                                         <input name="lineas[0][medio_operativo_codigo]" type="text" class="form-control form-control-sm mc-medio-codigo" value="">
                                     </td>
                                     <td>
@@ -153,16 +135,13 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <input name="lineas[0][tipo_medio]" type="text" class="form-control form-control-sm mc-medio-tipo" value="" readonly>
-                                    </td>
-                                    <td>
                                         <input name="lineas[0][moneda_codigo]" type="text" class="form-control form-control-sm mc-medio-moneda" value="" readonly>
                                     </td>
                                     <td>
                                         <input name="lineas[0][fecha_valor]" type="text" inputmode="numeric" data-datepicker="fecha-argentina" class="form-control form-control-sm" value="{{ movimiento_form.fecha }}" placeholder="dd/mm/aaaa">
                                     </td>
                                     <td>
-                                        <input name="lineas[0][referencia]" type="text" class="form-control form-control-sm" value="" placeholder="Referencia">
+                                        <input name="lineas[0][referencia]" type="text" class="form-control form-control-sm" value="" placeholder="Comprobante / referencia">
                                     </td>
                                     <td>
                                         <input name="lineas[0][importe]" type="text" inputmode="decimal" data-money-ar="centavos" class="form-control form-control-sm text-end mc-linea-importe" value="" placeholder="0,00">
@@ -171,7 +150,7 @@
                                         <input name="lineas[0][cotizacion]" type="text" inputmode="decimal" data-cotizacion-ar="1000000" class="form-control form-control-sm text-end mc-linea-cotizacion" value="" placeholder="-" readonly>
                                     </td>
                                     <td>
-                                        <input name="lineas[0][detalle]" type="text" class="form-control form-control-sm" value="" placeholder="Detalle">
+                                        <input name="lineas[0][detalle]" type="text" class="form-control form-control-sm" value="" placeholder="Observación">
                                     </td>
                                     <td class="text-end">
                                         <button type="button" class="btn btn-sm btn-outline-danger mc-linea-quitar">Quitar</button>
@@ -184,24 +163,22 @@
                     <details id="mc-medio-info" class="mt-3">
                         <summary class="text-muted fw-semibold">Datos técnicos del medio seleccionado</summary>
                         <div class="row g-2 mt-2">
-                        <div class="col-12 col-md-3">
-                            <label for="mc-info-cuenta" class="form-label">Cuenta contable</label>
-                            <input id="mc-info-cuenta" type="text" class="form-control form-control-sm" value="" readonly>
-                        </div>
-                        <div class="col-12 col-md-3">
-                            <label for="mc-info-banco" class="form-label">Banco</label>
-                            <input id="mc-info-banco" type="text" class="form-control form-control-sm" value="" readonly>
-                        </div>
-                        <div class="col-12 col-md-3">
-                            <label for="mc-info-plaza-sucursal" class="form-label">Plaza / sucursal</label>
-                            <input id="mc-info-plaza-sucursal" type="text" class="form-control form-control-sm" value="" readonly>
-                        </div>
-                        <div class="col-12 col-md-3">
-                            <label for="mc-info-cuenta-cuit" class="form-label">Cuenta / CUIT</label>
-                            <input id="mc-info-cuenta-cuit" type="text" class="form-control form-control-sm" value="" readonly>
-                        </div>
-                    </div>
-
+                            <div class="col-12 col-md-3">
+                                <label for="mc-info-cuenta" class="form-label">Cuenta contable</label>
+                                <input id="mc-info-cuenta" type="text" class="form-control form-control-sm" value="" readonly>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="mc-info-banco" class="form-label">Banco</label>
+                                <input id="mc-info-banco" type="text" class="form-control form-control-sm" value="" readonly>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="mc-info-plaza-sucursal" class="form-label">Plaza / sucursal</label>
+                                <input id="mc-info-plaza-sucursal" type="text" class="form-control form-control-sm" value="" readonly>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="mc-info-cuenta-cuit" class="form-label">Cuenta / CUIT</label>
+                                <input id="mc-info-cuenta-cuit" type="text" class="form-control form-control-sm" value="" readonly>
+                            </div>
                         </div>
                     </details>
 
